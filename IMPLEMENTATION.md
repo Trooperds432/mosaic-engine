@@ -3,6 +3,12 @@
 Baseline: 7548fd77e5c0c2297d67fd9b6da2c48b95e73c27. Scope: local implementation;
 no publication, deployment, broker requests, model fitting or production data migration performed.
 
+GitHub integration: reconciled with 25f6cf3. Its updated insider artifacts, research ledger,
+non-PIT feature exclusion and imported bot limits are retained. The stricter publication,
+recipe-specific readiness and external-policy optimizer supersede overlapping implementations.
+Supplied bot caps cannot be relaxed by the research policy. Existing saved results were
+produced by their recorded older code and have not been regenerated for this implementation.
+
 ## Implemented
 
 | Specification | Behavior | Evidence |

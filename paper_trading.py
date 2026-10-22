@@ -217,7 +217,7 @@ def run():
            "shadow_book": sh, "shadow_status": promo, "executed_demo_book": ex,
            "live_review_recommendation": "READY_FOR_LIVE_REVIEW (human decision required)" if ready else "NOT_READY",
            "live_review_failed_checks": review_failures,
-           "rule": f">= {MIN_SESSIONS} sessions and >= {MIN_TRADES} closed demo trades with mean net excess > 0 and t >= {MIN_T}; forward IC > 0. Never automatic."}
+           "rule": f"Per current recipe/model: >= {MIN_SESSIONS} sessions and >= {MIN_TRADES} closed demo trades with mean net excess > 0 and t >= {MIN_T}; matching {C.PRIMARY_HORIZON}d forward IC > 0 with HAC t >= {MIN_T}, >= {MIN_SESSIONS} scored dates and >= 3 positive-net shadow cohorts. Never automatic."}
     (C.REPORTS / "paper_trading.json").write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k != "shadow_book"}, indent=1, default=float))
     return out

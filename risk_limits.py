@@ -15,7 +15,10 @@ import config as C
 
 BOT = Path("/opt/t212-bot/bot.py")
 KEYS = {"BOT_POSITION_PCT": ("position_pct", float), "BOT_STOP_LOSS": ("stop_loss", float),
-        "BOT_CHECK_MINUTES": ("check_minutes", int), "BOT_UNIVERSE": ("universe", lambda s: s.split(","))}
+        "BOT_CHECK_MINUTES": ("check_minutes", int), "BOT_UNIVERSE": ("universe", lambda s: s.split(",")),
+        # portfolio constraints (spec 10): imported when the bot defines them, otherwise reported as not supplied
+        "BOT_SECTOR_CAP": ("sector_cap", float), "BOT_TURNOVER_CAP": ("turnover_cap", float), "BOT_RISK_AVERSION": ("risk_aversion", float),
+        "BOT_MAX_BETA": ("max_beta", float), "BOT_MAX_ADV_PARTICIPATION": ("max_adv_participation", float)}
 
 
 def _env_file(path, key):

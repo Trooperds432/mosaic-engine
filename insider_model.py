@@ -378,4 +378,5 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
 
 
 if __name__ == "__main__":
+    _lock = __import__("config").hold_lock()
     run()

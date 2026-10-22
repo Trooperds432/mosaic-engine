@@ -137,3 +137,29 @@ Fixes made in response to the review:
 - a FRED error page no longer stops the nightly job (retry, then keep the cached copy of that series);
 - the long/short per-name cap now scales both legs together, keeping the book beta-neutral (found by the new tests);
 - `requirements.txt` (pinned), `tests/` (`python -m unittest discover -s tests`) and a GitHub Actions workflow.
+
+### Second review (2026-10-22): further corrections
+- **Insider incremental regression:** matched controls now enter with the control firm's own momentum, reversal, ADV
+  and beta on the event date (previously they reused the event firm's covariates). Earnings-revision controls remain
+  NOT_COMPUTED (no point-in-time estimates history).
+- **Live-review readiness** now requires the advertised forward condition (forward IC > 0, HAC t >= 2 at the 20-day
+  horizon) in addition to the executed demo-book conditions.
+- **Intraday insider signals** are validated against `schema/signal_v2.schema.json` before publication; a violation
+  leaves the previous file in place and is logged.
+- **Optimiser limits** (sector cap, turnover cap, risk aversion, max portfolio beta, max ADV participation) are read
+  from the bot's configuration (`BOT_SECTOR_CAP`, `BOT_TURNOVER_CAP`, `BOT_RISK_AVERSION`, `BOT_MAX_BETA`,
+  `BOT_MAX_ADV_PARTICIPATION`). The bot defines none today, so every proposal reports them as
+  `ENGINE_DEFAULT_NOT_BOT_SUPPLIED` with values 30% / 50% / 5 / 1.2 / 1% of ADV. Beta and ADV-participation
+  constraints are new.
+- **Non point-in-time features:** `bio_ph3_trials` (ClinicalTrials.gov keeps only current phase / completion fields) is
+  excluded from model fitting from the next re-validation (`features.NON_PIT_FEATURES`); the current frozen models still
+  contain it. ALFRED twice-monthly snapshots are values *as known on the snapshot date* (point-in-time, sometimes a few
+  days late), not necessarily the first release. FRED "latest" series used in features (yields, spreads, BAA10Y, dollar
+  index) are not materially revised; revised series (NFCI) are not used.
+
+### Deployment policies, stated explicitly
+| Path | Gate that unlocks trading | Why |
+|---|---|---|
+| Trading 212 demo bot (long-only) | Forward-record gate only (`gates.py`); the historical research gate is no longer cumulative because its holdout is reused | Spec 9: only untouched evidence may validate |
+| Live-review recommendation | Forward IC condition **and** >= 63 sessions and >= 20 closed demo trades with positive net and t >= 2; human decision | Never automatic |
+| Alpaca paper long/short bot | None: deliberately trades the research book regardless of verdict (`mode: PAPER_FORWARD_TEST`) | Paper-only execution test approved by the owner; not evidence of validation and never feeds a live account |

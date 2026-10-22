@@ -14,6 +14,17 @@ def load(path, bot_limits):
 def validate(doc, bot_limits):
     if not isinstance(doc, dict) or not isinstance(doc.get("source"), str) or not doc["source"].strip():
         raise ValueError("external constraints require a source")
+    doc = dict(doc)
+    # Preserve the newer bot-import integration. An additional approved research
+    # policy can tighten a bot cap, but cannot relax a supplied bot restriction.
+    for policy_key, bot_key in (("sector_cap", "sector_cap"), ("turnover_cap", "turnover_cap"),
+                                ("beta_max", "max_beta"), ("max_participation", "max_adv_participation")):
+        supplied = bot_limits.get(bot_key)
+        if supplied is not None:
+            if isinstance(supplied, bool) or not isinstance(supplied, (int, float)) or not math.isfinite(supplied):
+                raise ValueError(f"invalid imported bot limit {bot_key}")
+            if isinstance(doc.get(policy_key), (int, float)) and not isinstance(doc[policy_key], bool):
+                doc[policy_key] = min(doc[policy_key], supplied)
     for key in FIELDS:
         v = doc.get(key)
         if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
