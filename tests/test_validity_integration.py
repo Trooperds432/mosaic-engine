@@ -96,6 +96,26 @@ class ForwardBoundaryTests(unittest.TestCase):
         self.assertEqual(selected[0]["generated_at_utc"], "2026-01-06T00:00:00Z")
 
 
+class InventoryAvailabilityTests(unittest.TestCase):
+    def test_macro_inventory_excludes_legacy_rows(self):
+        calendar = pd.bdate_range("2020-01-01", periods=15)
+        observations = pd.to_datetime([f"{year}-01-04" for year in range(2015, 2021)])
+        frame = pd.DataFrame({"series": "crude_stocks_ex_spr", "obs_date": observations,
+                              "available_date": observations + pd.Timedelta(days=5),
+                              "value": np.arange(6) * 10. + 100., "source": "eia_wpsr"})
+        market = pd.DataFrame(1., index=calendar, columns=["DGS10", "BAA10Y", "T10Y3M", "IPG3344S", "A34SNO", "DGASNYH", "DHOILNYH", "DCOILWTICO"])
+        with tempfile.TemporaryDirectory() as directory, patch.object(features, "RAW", Path(directory)), \
+             patch("data_macro.daily", return_value=market), patch("features.pd.read_parquet", return_value=frame), \
+             patch("features._series", return_value=pd.Series(1., index=calendar)), \
+             patch("macro_surprise.daily_z", return_value=pd.DataFrame(index=calendar)):
+            self.assertTrue(features.macro_state(calendar)["crude_inv_z"].isna().all())
+            frame["source"] = "eia_observed_snapshot"
+            frame["available_date"] = pd.Timestamp("2020-01-09")
+            actual = features.macro_state(calendar)["crude_inv_z"]
+            self.assertTrue(actual.loc[:"2020-01-08"].isna().all())
+            self.assertGreater(actual.loc["2020-01-09"], 0.)
+
+
 class ProviderTests(unittest.TestCase):
     def test_env_takes_precedence_over_root_config_without_printing_secrets(self):
         with tempfile.TemporaryDirectory() as d:

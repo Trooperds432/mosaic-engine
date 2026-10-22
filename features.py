@@ -755,11 +755,11 @@ def macro_state(cal):
     s["crack_chg_z"] = ch / ch.rolling(756, min_periods=252).std()
     # EIA crude stocks vs 5-year same-week mean, z-scored by the 5-year same-week std (all data known at t)
     mp = pd.read_parquet(PROC / "macro_pit.parquet")
-    cr = mp[mp["series"] == "crude_stocks_ex_spr"].sort_values("obs_date")
+    cr = mp[(mp["series"] == "crude_stocks_ex_spr") & mp["source"].eq("eia_observed_snapshot")].sort_values("obs_date").copy()
     cr["woy"] = cr["obs_date"].dt.isocalendar().week.astype(int)
     z = []
     for r in cr.itertuples():
-        h = cr[(cr["woy"] == r.woy) & (cr["obs_date"] < r.obs_date) & (cr["obs_date"] >= r.obs_date - pd.Timedelta(days=5 * 366))]["value"]
+        h = cr[(cr["woy"] == r.woy) & (cr["obs_date"] < r.obs_date) & (cr["available_date"] <= r.available_date) & (cr["obs_date"] >= r.obs_date - pd.Timedelta(days=5 * 366))]["value"]
         z.append((r.value - h.mean()) / h.std() if len(h) >= 4 and h.std() > 0 else np.nan)
     cr["z"] = z
     zs = cr.set_index("available_date")["z"]
