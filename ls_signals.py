@@ -20,6 +20,14 @@ LS_PROFILE = "broad"
 LS_SCORE = "20"    # 20-session ensemble rank: best walk-forward variant (ls_grid 2026-10-22)
 
 
+def strategy_preview(weights):
+    """Selection can produce numpy scalars; exported counts must be JSON numbers."""
+    return {"n_long": int(sum(w > 0 for w in weights.values())),
+            "n_short": int(sum(w < 0 for w in weights.values())),
+            "gross": float(sum(abs(w) for w in weights.values())),
+            "net": float(sum(weights.values()))}
+
+
 def run(profile=LS_PROFILE):
     ap = C.PROC / f"asof_panel_{profile}.parquet"
     panel = pd.read_parquet(ap)
@@ -59,8 +67,7 @@ def run(profile=LS_PROFILE):
                       "beta": None if pd.isna(r.beta) else float(r.beta), "si": None if pd.isna(r.si) else float(r.si), "borrow_fee_ann": float(r.borrow_fee_ann)}
                      for s, r in df.iterrows()]}
     preview = R.select(df.reset_index().rename(columns={"index": "symbol"}))
-    doc["preview_without_holdings"] = {"n_long": sum(w > 0 for w in preview.values()), "n_short": sum(w < 0 for w in preview.values()),
-                                       "gross": float(sum(abs(w) for w in preview.values())), "net": float(sum(preview.values()))}
+    doc["preview_without_holdings"] = strategy_preview(preview)
     if deployment["failed_checks"]:
         doc["names"] = []  # no broker targets; offline L/S backtests remain diagnostics
     C.SIGNALS.mkdir(exist_ok=True)

@@ -116,6 +116,14 @@ class InventoryAvailabilityTests(unittest.TestCase):
             self.assertGreater(actual.loc["2020-01-09"], 0.)
 
 
+class LongShortExportTests(unittest.TestCase):
+    def test_numpy_selection_weights_export_as_json_numbers(self):
+        from ls_signals import strategy_preview
+        preview = strategy_preview({"A": np.float64(.25), "B": np.float64(-.25)})
+        exported = json.loads(json.dumps(preview, allow_nan=False))
+        self.assertEqual(exported, {"n_long": 1, "n_short": 1, "gross": .5, "net": 0.})
+
+
 class ProviderTests(unittest.TestCase):
     def test_env_takes_precedence_over_root_config_without_printing_secrets(self):
         with tempfile.TemporaryDirectory() as d:
