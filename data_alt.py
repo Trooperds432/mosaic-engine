@@ -9,13 +9,16 @@
             ~8 business days later; available settlement + 12 calendar days (conservative).
   trials    ClinicalTrials.gov v2 studies whose lead sponsor matches a universe health-care company: phase,
             status, start / primary-completion / first-posted / results-posted dates. Registry rows are
-            edited in place, so only first-posted and results-posted dates are treated as PIT-safe.
+            edited in place. Archive each observed snapshot; historical phase features
+            only use snapshots acquired before the decision date.
   fda       openFDA drugs@FDA submissions (approvals) by sponsor: action date = available date.
 """
 import json
 import re
 import sys
 import time
+from datetime import datetime, timezone
+from uuid import uuid4
 
 import httpx
 import pandas as pd
@@ -169,6 +172,15 @@ def trials(c):
     d = pd.DataFrame(rows)
     for k in ["start", "primary_completion", "first_posted", "results_posted"]:
         d[k] = pd.to_datetime(d[k], errors="coerce", format="mixed")
+    if d.empty:
+        raise ValueError("empty clinical registry response; preserve prior data")
+    observed = datetime.now(timezone.utc)
+    snapshot_id = observed.strftime("%Y%m%dT%H%M%S%f") + "_" + uuid4().hex[:8]
+    d["observed_at_utc"] = observed.isoformat()
+    d["snapshot_id"] = snapshot_id
+    archive = OUT / "clinical_snapshots"
+    archive.mkdir(parents=True, exist_ok=True)
+    d.to_parquet(archive / f"{snapshot_id}.parquet", index=False)
     d.to_parquet(PROC / "clinical_trials.parquet", index=False)
     return f"trials {len(d)} studies for {d['cik'].nunique()} companies"
 

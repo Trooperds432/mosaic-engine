@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import joblib
-import jsonschema
+from publication import VALIDATOR, publish
 import numpy as np
 import pandas as pd
 
@@ -30,8 +30,6 @@ from provenance import dataset_version, sessions_between
 import regime
 from features import FEATURES, FUND_FEATURES, build_panel_chunked, load_insider
 
-SCHEMA = json.loads((C.ROOT / "schema" / "signal_v2.schema.json").read_text())
-VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, format_checker=jsonschema.FormatChecker())
 NY = ZoneInfo("America/New_York")
 LIVE = ("PAPER_TEST_ELIGIBLE", "LIVE_REVIEW_ELIGIBLE")
 
@@ -122,7 +120,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
         tab = pd.DataFrame(cal.get("table") or []).set_index("b").reindex(bucket) if cal.get("table") else None
         for i, sym in enumerate(panel["symbol"]):
             g = (lambda k: clean(tab[k].iat[i]) if ok_cal and tab is not None and k in tab else None)
-            fc_rows.append({"profile": pname, "symbol": sym, "horizon": hh, "ensemble_rank": float(ens_rank[hh][i]), "decile": int(bucket[i]),
+            fc_rows.append({"profile": pname, "model_run_id": model["run_id"], "symbol": sym, "horizon": hh, "ensemble_rank": float(ens_rank[hh][i]), "decile": int(bucket[i]),
                             "model_disagreement": clean(disagree[hh][i]), "calibrated": ok_cal, "exp_excess": g("mean"), "std": g("std"),
                             "q025": g("q025"), "q975": g("q975"), "q05": g("q05"), "p_pos": g("p_pos"), "es05": g("es05"),
                             "cost_round_trip": float(cost_rt[i]), "gate": forward_gate(pname, hh)[0]["status"]})
@@ -146,6 +144,8 @@ def profile_signals(pname, gen, dsv, reg, audit):
         sym, cik = r["symbol"], int(r["cik"])
         p = prim.loc[sym]
         reasons = []
+        if "bio_ph3_trials" in feats and model.get("feature_set_version") != C.FEATURE_SET_VERSION:
+            reasons.append("clinical feature semantics changed: new recipe validation required")
         fund_ok = not any(pd.isna(r[f]) for f in FUND_FEATURES[:3]) and pd.notna(r["fund_age_days"]) and r["fund_age_days"] <= C.FUNDAMENTAL_MAX_AGE_DAYS
         data_ok = market_fresh and insider_fresh and fund_ok and r["quality_score"] >= 0.7 and audit[0]
         if not market_fresh:
@@ -210,7 +210,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
         if errs:
             raise ValueError(f"{sym}: schema violation: {errs[0].message} at {list(errs[0].path)}")
         out.append(sig)
-    meta = {"profile": pname, "as_of": str(asof_day.date()), "model_gate_primary": gate_h, "market_data_sessions_stale": sessions_stale,
+    meta = {"profile": pname, "as_of": str(asof_day.date()), "model_run_id": model["run_id"], "model_gate_primary": gate_h, "market_data_sessions_stale": sessions_stale,
             "insider_coverage_through": str(ins_cov.date()), "evaluated": len(out)}
     return out, fc, meta, asof_day, market_fresh, insider_fresh
 
@@ -250,15 +250,7 @@ def run(dry=False, profiles=None):
     if dry:
         print(json.dumps(doc["signals"][0], indent=1))
         return doc
-    C.SIGNALS.mkdir(exist_ok=True)
-    (C.SIGNALS / "log").mkdir(exist_ok=True)
-    log = C.SIGNALS / "log" / f"{asof_day.date()}_{gen.strftime('%H%M%S')}.jsonl"
-    if log.exists():
-        raise FileExistsError(log)
-    log.write_text("".join(json.dumps(s) + "\n" for s in out))
-    tmp = C.SIGNALS / "latest.json.tmp"
-    tmp.write_text(json.dumps(doc, indent=1))
-    tmp.replace(C.SIGNALS / "latest.json")  # atomic swap so the bot never reads a half-written file
+    publish(doc, C.SIGNALS, f"{asof_day.date()}_{gen.strftime('%H%M%S%f')}")
     vfp = C.PROC / "vol_forecasts.parquet"
     if vfp.exists():  # per-name 1-day risk for the bot's sizing (ticker -> sigma, 99% VaR, 97.5% ES)
         vfd = pd.read_parquet(vfp)
@@ -267,7 +259,7 @@ def run(dry=False, profiles=None):
         tmp = C.SIGNALS / "risk_latest.json.tmp"
         tmp.write_text(json.dumps({"generated_at_utc": iso(gen), "source": "var_backtest.forecast_names", "names": side}))
         tmp.replace(C.SIGNALS / "risk_latest.json")
-    pd.concat(fcs, ignore_index=True).to_parquet(C.REPORTS / "forecast_latest.parquet", index=False)
+    (pd.concat(fcs, ignore_index=True) if fcs else pd.DataFrame()).to_parquet(C.REPORTS / "forecast_latest.parquet", index=False)
     print(f"total evaluated={len(out)} insider_events={len(out) - n_xs} LONG={len(longs)} audit={'pass' if audit[0] else audit[1]}")
     return doc
 

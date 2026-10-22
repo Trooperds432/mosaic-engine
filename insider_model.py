@@ -21,7 +21,7 @@ from research import deflated_sr, psr, sharpe_stats
 PREREG = C.ROOT / "prereg" / "insider_event_v1.json"
 REG = json.loads(PREREG.read_text())
 REG_HASH = hashlib.sha256(PREREG.read_bytes()).hexdigest()
-MODEL_ID, MODEL_VERSION = "insider-event", "1.0.0"
+MODEL_ID, MODEL_VERSION = "insider-event", "1.1.0"
 COST = REG["primary"]["cost_round_trip"]
 DEDUP = 20
 MIN_DV, MIN_PX = 20e6, 5.0
@@ -147,7 +147,7 @@ def daily_portfolio(m, ev, h):
     return pd.Series(r[first:], index=m.cal[first:])
 
 
-def matched_controls(m, ev, b, h):
+def matched_controls(m, ev, b, h, details=False):
     """Same sector, liquid, no code-P filing within +/-90d; nearest on (log dollar volume, 12-1 momentum) ranks."""
     bdates = {c: g["filing_date"].to_numpy() for c, g in b.groupby("issuercik")}
     cik_of = np.array([int(next(c for c, s in m.sym_of.items() if s == sym)) for sym in m.syms])
@@ -164,22 +164,28 @@ def matched_controls(m, ev, b, h):
                 if k < len(d) and d[k] <= np.datetime64(r.fdate) + np.timedelta64(90, "D"):
                     cand[jj] = False
         if not cand.any() or np.isnan(m.mom[i, r.j]):
-            out.append(np.nan)
+            out.append({})
             continue
         live = ~np.isnan(m.mom[i]) & ~np.isnan(ldv)
         rk_m = pd.Series(m.mom[i]).rank(pct=True).to_numpy()
         rk_d = pd.Series(ldv).rank(pct=True).to_numpy()
         dist = np.where(cand & live, (rk_m - rk_m[r.j]) ** 2 + (rk_d - rk_d[r.j]) ** 2, np.inf)
         jj = int(np.argmin(dist))
-        out.append(m.ar(jj, r.e, h))
-    return np.array(out)
+        out.append({"ar": m.ar(jj, r.e, h), "symbol": m.syms[jj], "mom": m.mom[i, jj],
+                    "rev": m.rev[i, jj], "ldv": ldv[jj], "beta": m.beta[i, jj], "sector": m.sector[jj],
+                    "entry_date": r.entry_date})
+    frame = pd.DataFrame(out, index=ev.index).reindex(columns=["ar", "symbol", "mom", "rev", "ldv", "beta", "sector", "entry_date"])
+    return frame if details else frame["ar"].to_numpy()
 
 
-def incremental_regression(ev, ctrl_ar):
-    a = ev[["ar", "mom", "rev", "ldv", "beta", "sector", "entry_date"]].assign(event=1.0)
-    c = ev[["mom", "rev", "ldv", "beta", "sector", "entry_date"]].assign(ar=ctrl_ar, event=0.0)
-    # control covariates are approximated by the event's (matched on momentum and liquidity)
-    d = pd.concat([a, c], ignore_index=True).dropna()
+def incremental_regression(ev, controls):
+    cols = ["ar", "mom", "rev", "ldv", "beta", "sector", "entry_date"]
+    a = ev[cols]
+    c = controls.reindex(ev.index)[cols]
+    paired = a.notna().all(axis=1) & c.notna().all(axis=1)
+    d = pd.concat([a[paired].assign(event=1.0), c[paired].assign(event=0.0)], ignore_index=True)
+    if len(d) < 20 or pd.to_datetime(d["entry_date"]).dt.to_period("M").nunique() < 2:
+        return {"event_coef": None, "t": None, "n": int(len(d)), "status": "NOT_COMPUTED: insufficient matched observations/month clusters"}
     X = pd.get_dummies(d[["event", "mom", "rev", "ldv", "beta", "sector"]], columns=["sector"], drop_first=True, dtype=float)
     X = sm.add_constant(X)
     g = pd.factorize(pd.DatetimeIndex(d["entry_date"]).to_period("M").astype(str))[0]
@@ -230,7 +236,8 @@ def run():
     ev, port = series[("primary", 5)]
     h = 5
     ev = ev.copy()
-    ev["ctrl_ar"] = matched_controls(m, ev, b, h)
+    controls = matched_controls(m, ev, b, h, details=True)
+    ev["ctrl_ar"] = controls["ar"]
     ev["diff"] = ev["ar"] - ev["ctrl_ar"]
     disc = ev[ev["sample"] == "discovery"]
     P = {"events": int(len(ev)), "discovery_n": int(len(disc)), "holdout_n": int((ev["sample"] == "holdout").sum())}
@@ -239,7 +246,7 @@ def run():
     P["holdout_net"] = clustered_mean(ev.loc[ev["sample"] == "holdout", "net"], ev.loc[ev["sample"] == "holdout", "entry_date"])
     P["discovery_control_car"] = clustered_mean(disc["ctrl_ar"], disc["entry_date"])
     P["discovery_event_minus_control"] = clustered_mean(disc["diff"], disc["entry_date"])
-    P["incremental_regression_discovery"] = incremental_regression(disc, disc["ctrl_ar"].to_numpy())
+    P["incremental_regression_discovery"] = incremental_regression(disc, controls.reindex(disc.index))
     eo = earnings_overlap(m, ev, h)
     if eo is not None:
         ev["earn_in_window"] = eo
@@ -262,7 +269,7 @@ def run():
     checks = [
         ("discovery net mean > 0, t >= 3.0", (P["discovery_net"]["t"] or 0) >= 3.0 and (P["discovery_net"]["mean"] or 0) > 0),
         ("event minus matched control t >= 2.0", (P["discovery_event_minus_control"]["t"] or 0) >= 2.0),
-        ("incremental regression event t >= 2.0", P["incremental_regression_discovery"]["t"] >= 2.0),
+        ("incremental regression event t >= 2.0", (P["incremental_regression_discovery"]["t"] or 0) >= 2.0),
         ("deflated Sharpe >= 0.90", dsr is not None and dsr >= 0.90),
         ("holdout net mean > 0", (P["holdout_net"]["mean"] or -1) > 0),
     ]
@@ -320,6 +327,8 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
         data_ok = market_fresh and insider_cov
         reasons = []
         gate = model["gate"]
+        if model.get("model_version") != MODEL_VERSION:
+            reasons.append("control methodology changed: model revalidation required")
         if gate["status"] not in ("PAPER_TEST_ELIGIBLE", "LIVE_REVIEW_ELIGIBLE"):
             reasons.append(f"model gate {gate['status']}: " + "; ".join(gate["failed_checks"]))
         if recent_entry:

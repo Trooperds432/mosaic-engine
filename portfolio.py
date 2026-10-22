@@ -67,13 +67,33 @@ def run(profile="broad"):
     if not longs:
         out["proposal"] = {"status": "NO_SIGNAL", "reason": "no validated LONG signals today; nothing to optimise"}
     else:
-        mu = pd.Series({s["asset"]["ticker"].replace(".", "-"): s["forecast"]["expected_net_excess_return"] * 252 / s["forecast"]["horizon_sessions"] for s in longs})
-        cost = pd.Series({s["asset"]["ticker"].replace(".", "-"): s["forecast"]["expected_cost_return"] / 2 for s in longs})
-        w0 = pd.Series((h["qty"] * h["price"] / lim["account_total_usd"]).to_numpy(), index=h["symbol"]) if len(h) else pd.Series(dtype=float)
-        wopt = optimise(mu, rm, w0, lim, cost=cost)
-        out["proposal"] = {"status": "RESEARCH_PROPOSAL_NOT_AN_ORDER", "weights": wopt.to_dict() if wopt is not None else None,
-                           "risk": rm.decompose(wopt) if wopt is not None and len(wopt) else None,
-                           "objective": "max w'mu - 2.5 w'Sigma w - costs; long-only, per-name cap = bot position_pct, sector cap 30%, turnover cap 50%"}
+        try:
+            from portfolio_constraints import load as load_constraints
+            constraints = load_constraints(C.ROOT / "portfolio_constraints.json", lim)
+            # One signal per ticker: highest expected net return wins, consistently
+            # across alpha, horizon and costs (no duplicate-index dict accident).
+            selected = {}
+            for signal in longs:
+                sym = signal["asset"]["ticker"].replace(".", "-")
+                if sym not in selected or signal["forecast"]["expected_net_excess_return"] > selected[sym]["forecast"]["expected_net_excess_return"]:
+                    selected[sym] = signal
+            mu = pd.Series({sym: sig["forecast"]["expected_net_excess_return"] * 252 / sig["forecast"]["horizon_sessions"] for sym, sig in selected.items()})
+            cost = pd.Series({sym: sig["forecast"]["expected_cost_return"] / 2 for sym, sig in selected.items()})
+            w0 = pd.Series((h["qty"] * h["price"] / lim["account_total_usd"]).to_numpy(), index=h["symbol"]) if len(h) else pd.Series(dtype=float)
+            panel = pd.read_parquet(C.PROC / f"asof_panel_{profile}.parquet").set_index("symbol")
+            # Exit costs must also be observed/modelled; use the same per-name model.
+            from research import name_costs
+            costs_all = pd.Series(name_costs(panel.reset_index(), lim["order_size_usd"]).to_numpy(), index=panel.index)
+            cost = cost.combine_first(costs_all.reindex(w0.index))
+            wopt = optimise(mu, rm, w0, lim, cost=cost, constraints=constraints,
+                            betas=.67 * panel["beta_252"] + .33, adv_dollars=panel["adv_dollar"])
+            out["proposal"] = {"status": "RESEARCH_PROPOSAL_NOT_AN_ORDER" if wopt is not None else "INFEASIBLE",
+                               "weights": wopt.to_dict() if wopt is not None else None,
+                               "risk": rm.decompose(wopt) if wopt is not None and len(wopt) else None,
+                               "constraints_used": constraints,
+                               "objective": "annual net alpha minus factor risk penalty and annualised turnover costs"}
+        except (OSError, ValueError, KeyError) as exc:
+            out["proposal"] = {"status": "NOT_COMPUTED", "reason": str(exc)}
     (C.REPORTS / "portfolio_risk.json").write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k not in ("stress", "tail_liquidity")}, indent=1, default=float)[:3000])
     return out

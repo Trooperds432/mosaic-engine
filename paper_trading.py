@@ -21,10 +21,19 @@ import pandas as pd
 
 import config as C
 import risk_limits
+import gates
 
 HIST = C.PROC / "forecast_history.parquet"
 BOT_TRADES = __import__("pathlib").Path("/opt/t212-bot/trades.jsonl")
 MIN_SESSIONS, MIN_TRADES, MIN_T = 63, 20, 2.0
+
+
+def current_history(history, run_ids):
+    """Never stamp old/unattributed observations as evidence for a new recipe."""
+    if "model_run_id" not in history:
+        return history.iloc[:0].copy()
+    expected = history["profile"].map(run_ids)
+    return history[expected.notna() & history["model_run_id"].eq(expected)].copy()
 
 
 def record():
@@ -32,20 +41,30 @@ def record():
     f = C.REPORTS / "forecast_latest.parquet"
     sig = json.loads((C.SIGNALS / "latest.json").read_text())
     asof = {m["profile"]: m["as_of"] for m in sig.get("profiles", [])}
+    run_ids = {m["profile"]: m.get("model_run_id") for m in sig.get("profiles", [])}
     fc = pd.read_parquet(f)
+    if fc.empty:
+        return 0
+    if "model_run_id" not in fc or not fc["model_run_id"].eq(fc["profile"].map(run_ids)).all():
+        raise ValueError("forecast artifact lacks matching model recipe identity; regenerate signals")
     fc["as_of"] = pd.to_datetime(fc["profile"].map(asof))
     fc["recorded_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    keep = ["as_of", "profile", "horizon", "symbol", "ensemble_rank", "decile", "exp_excess", "cost_round_trip", "gate", "recorded_utc"]
+    keep = ["as_of", "profile", "horizon", "symbol", "ensemble_rank", "decile", "exp_excess", "cost_round_trip", "gate", "recorded_utc", "model_run_id"]
     fc = fc[keep]
     if HIST.exists():
         old = pd.read_parquet(HIST)
-        fc = pd.concat([old, fc[~fc.set_index(["as_of", "profile", "horizon"]).index.isin(old.set_index(["as_of", "profile", "horizon"]).index)]])
+        if "model_run_id" not in old:
+            old["model_run_id"] = None  # preserve legacy history without inventing provenance
+        keys = ["as_of", "profile", "horizon", "symbol", "model_run_id"]
+        fc = pd.concat([old, fc[~fc.set_index(keys).index.isin(old.set_index(keys).index)]], ignore_index=True)
     fc.to_parquet(HIST, index=False)
     return int(fc["as_of"].nunique())
 
 
 def realised(hist):
     """Open-to-open excess return over each forecast's horizon (NaN until it has fully elapsed)."""
+    if hist.empty:
+        return np.array([], dtype=float)
     spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date")
     cal = spy.index
     so = (spy["open"] * spy["adjclose"] / spy["close"]).to_numpy()
@@ -103,7 +122,7 @@ def forward_gate(sh):
     return gate
 
 
-def executed():
+def executed(run_ids=None):
     """Pair the bot's research-signal buys with later sells and Trading 212 fills."""
     if not BOT_TRADES.exists():
         return {"trades": 0}
@@ -136,6 +155,12 @@ def executed():
             open_buys[r["ticker"]] = r
         elif r["kind"] == "SELL" and r["ticker"] in open_buys:
             b = open_buys.pop(r["ticker"])
+            if run_ids is not None:
+                prefix = "mosaic-xs-ridge-"
+                mid = b.get("model_id") or ""
+                profile = mid[len(prefix):] if mid.startswith(prefix) else None
+                if not profile or not b.get("research_run_id") or b["research_run_id"] != run_ids.get(profile):
+                    continue  # preserve raw logs; legacy/different-recipe fills are not current-model evidence
             fb, fs = fills.get(b.get("order_id"), {}), fills.get(r.get("order_id"), {})
             if not fb.get("price") or not fs.get("price"):
                 continue
@@ -144,7 +169,7 @@ def executed():
             gross = fs["price"] / fb["price"] - 1
             fees = (fb.get("fx_fee_gbp") or 0) + (fs.get("fx_fee_gbp") or 0)
             notional = abs(fb.get("net_gbp") or 0) or 1
-            trades.append({"ticker": r["ticker"], "signal_id": b.get("signal_id"), "model_id": b.get("model_id"), "entry": fb["at"], "exit": fs["at"],
+            trades.append({"ticker": r["ticker"], "signal_id": b.get("signal_id"), "model_id": b.get("model_id"), "horizon": b.get("horizon"), "entry": fb["at"], "exit": fs["at"],
                            "gross_return": gross, "spy_return": spy_ret, "fees_frac": fees / notional, "net_excess": gross - spy_ret - fees / notional,
                            "slippage_vs_pretrade": fb["price"] / b["price"] - 1 if b.get("price") else None, "exit_reason": r.get("reason"),
                            "expected_net": b.get("expected_net")})
@@ -158,24 +183,28 @@ def executed():
                 "hit_rate": float((t["net_excess"] > 0).mean()), "mean_fees": float(t["fees_frac"].mean()),
                 "mean_slippage": float(t["slippage_vs_pretrade"].dropna().mean()) if t["slippage_vs_pretrade"].notna().any() else None,
                 "mean_expected_net": float(t["expected_net"].dropna().mean()) if t["expected_net"].notna().any() else None,
-                "by_model": {m: {"n": int(len(g)), "mean_net_excess": float(g["net_excess"].mean())} for m, g in t.groupby("model_id")}}
+                "by_model": {m: {"n": int(len(g)), "mean_net_excess": float(g["net_excess"].mean()),
+                                  "horizons": sorted(g["horizon"].dropna().astype(int).unique().tolist()) if g["horizon"].notna().all() else [],
+                                  "t": float(g["net_excess"].mean() / g["net_excess"].std() * math.sqrt(len(g))) if len(g) > 2 and g["net_excess"].std() > 0 else None,
+                                  "sessions_since_first": __import__("provenance").sessions_between(pd.Timestamp(g["entry"].min()[:10]).date(), datetime.now(timezone.utc).date())}
+                             for m, g in t.groupby("model_id")}}
         t.to_parquet(C.REPORTS / "paper_trades.parquet", index=False)
     return out
 
 
 def run():
     n_dates = record()
-    hist = pd.read_parquet(HIST)
+    run_ids = {p: json.loads((C.PROC / f"model_{p}.json").read_text())["run_id"] for p in C.PROFILES if (C.PROC / f"model_{p}.json").exists()}
+    hist = current_history(pd.read_parquet(HIST), run_ids) if HIST.exists() else pd.DataFrame(columns=["profile", "horizon", "as_of", "symbol", "ensemble_rank", "y", "cost_round_trip"])
     hist["y"] = realised(hist)
     sh = shadow(hist)
-    ex = executed()
+    ex = executed(run_ids)
     gate = forward_gate(sh)
     tmp = C.PROC / "forward_gate.tmp"
     from provenance import dataset_version
-    run_ids = {p: json.loads((C.PROC / f"model_{p}.json").read_text())["run_id"] for p in C.PROFILES if (C.PROC / f"model_{p}.json").exists()}
     tmp.write_text(json.dumps({"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                                "model_run_ids": run_ids, "dataset_version": dataset_version(),
-                               "last_forecast_date": str(pd.Timestamp(hist["as_of"].max()).date()),
+                               "last_forecast_date": str(pd.Timestamp(hist["as_of"].max()).date()) if len(hist) else None,
                                "rule": f">= {MIN_SESSIONS} scored dates, forward IC > 0 with HAC t >= {MIN_T}, shadow top quintile net > 0",
                                "profiles": gate}, indent=1, default=float))
     tmp.replace(C.PROC / "forward_gate.json")
@@ -183,11 +212,11 @@ def run():
     for key, s in sh.items():
         ok_fwd = (s["forward_ic_mean"] or 0) > 0 and (s["forward_ic_t"] or 0) >= MIN_T
         promo[key] = "INSUFFICIENT_FORWARD_HISTORY" if s["scored_dates"] < MIN_SESSIONS else ("FORWARD_EVIDENCE_POSITIVE" if ok_fwd else "FORWARD_EVIDENCE_NEGATIVE")
-    ready = (ex.get("closed_trades", 0) >= MIN_TRADES and (ex.get("sessions_since_first") or 0) >= MIN_SESSIONS
-             and (ex.get("mean_net_excess") or 0) > 0 and (ex.get("t") or 0) >= MIN_T)
+    ready, review_failures = gates.live_review_ready(ex, sh, C.PRIMARY_HORIZON, MIN_SESSIONS, MIN_TRADES, MIN_T)
     out = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "forecast_dates_recorded": n_dates,
            "shadow_book": sh, "shadow_status": promo, "executed_demo_book": ex,
            "live_review_recommendation": "READY_FOR_LIVE_REVIEW (human decision required)" if ready else "NOT_READY",
+           "live_review_failed_checks": review_failures,
            "rule": f">= {MIN_SESSIONS} sessions and >= {MIN_TRADES} closed demo trades with mean net excess > 0 and t >= {MIN_T}; forward IC > 0. Never automatic."}
     (C.REPORTS / "paper_trading.json").write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k != "shadow_book"}, indent=1, default=float))

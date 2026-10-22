@@ -327,7 +327,8 @@ def cycle(state):
                 log.info("not enough free cash for %s (budget %.2f)", sym, budget)
                 break
             order(ticker, qty, reason="research_signal", price=price, pretrade=why, sizing=sizing, signal_id=s["signal_id"], model_id=s["model_id"],
-                  horizon=s["forecast"]["horizon_sessions"], expected_net=s["forecast"]["expected_net_excess_return"])
+                  horizon=s["forecast"]["horizon_sessions"], expected_net=s["forecast"]["expected_net_excess_return"],
+                  research_run_id=s["provenance"]["research_run_id"])
             tracked[ticker] = {"strategy": "signals", "entered": today, "horizon": int(s["forecast"]["horizon_sessions"]),
                                "signal_id": s["signal_id"], "model_id": s["model_id"]}
             free -= budget

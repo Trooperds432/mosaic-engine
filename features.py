@@ -836,15 +836,11 @@ def health_features(dec_dates, ciks, flags):
     out = {k: pd.DataFrame(np.nan, index=dec_dates, columns=ciks) for k in ["bio_ph3_trials", "bio_fda_appr_365"]}
     t = pd.DatetimeIndex(dec_dates)
     pharma = [c for c in ciks if flags.get(c, {}).get("pharma")]
-    tr = PROC / "clinical_trials.parquet"
-    if tr.exists():
-        d = pd.read_parquet(tr)
-        d = d[d["phase"].fillna("").str.contains("PHASE3")]
-        for cik, g in d.groupby("cik"):
-            if cik not in out["bio_ph3_trials"].columns:
-                continue
-            fp, pc = g["first_posted"].to_numpy(), g["primary_completion"].fillna(pd.Timestamp("2100-01-01")).to_numpy()
-            out["bio_ph3_trials"][cik] = [(fp <= x).sum() - ((pc < x) & (fp <= x)).sum() for x in t.to_numpy()]
+    from pit_clinical import phase3_asof
+    archived = sorted((RAW / "alt" / "clinical_snapshots").glob("*.parquet"))
+    if archived:
+        snapshots = pd.concat([pd.read_parquet(f) for f in archived], ignore_index=True)
+        out["bio_ph3_trials"] = phase3_asof(snapshots, t, ciks)
     fd = PROC / "fda_approvals.parquet"
     if fd.exists():
         a = pd.read_parquet(fd)
@@ -856,7 +852,8 @@ def health_features(dec_dates, ciks, flags):
     non = [c for c in ciks if c not in set(pharma)]
     for k in out:
         out[k][non] = np.nan
-        out[k][pharma] = out[k][pharma].fillna(0)
+        # No source/issuer coverage means unknown, never zero. Covered FDA issuers
+        # already have genuine zero counts in windows with no approvals.
     return out
 
 

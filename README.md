@@ -1,5 +1,9 @@
 # Mosaic research engine (spec: Institutional Quantamental Mosaic Theory v2.0)
 
+Local integrity/validation implementation: see [IMPLEMENTATION.md](IMPLEMENTATION.md) for changed behavior,
+tests, migration requirements and remaining specification gaps. Model/data changes require revalidation;
+existing reports are historical artifacts, not results from the updated implementation.
+
 Research, forecasting and validation only. It never places orders, changes bot limits or enables live trading.
 
 ## Bot interface

@@ -11,12 +11,19 @@ import config as C
 def dataset_version():
     """Hash of the size and mtime of the inputs every signal depends on: changes whenever any of them is rewritten."""
     parts = []
-    for p in [C.RAW / "prices" / f"{C.BENCHMARK}.parquet", C.RAW / "facts" / "companyfacts.parquet",
+    paths = [C.RAW / "facts" / "companyfacts.parquet",
               C.RAW / "insider_recent" / "form4_recent.parquet", C.PROC / "inst_ownership_cusip.parquet", C.PROC / "macro_pit.parquet",
-              C.PROC / "short_interest.parquet", *sorted((C.RAW / "insider").glob("*.parquet"))[-2:]]:
+              C.PROC / "short_interest.parquet", C.PROC / "universe.parquet", C.PROC / "sic.parquet",
+              C.PROC / "8k_items.parquet", C.PROC / "fda_approvals.parquet", C.PROC / "cusip_cik.parquet",
+              C.PROC / "av_earnings.parquet", C.PROC / "finnhub_recommendations.parquet",
+              *sorted((C.RAW / "prices").glob("*.parquet")), *sorted((C.RAW / "insider").glob("*.parquet")),
+              *sorted((C.RAW / "alt").rglob("*.parquet")), *sorted((C.RAW / "collect").rglob("*.parquet"))]
+    for p in sorted(set(paths)):
         if p.exists():
             st = p.stat()
-            parts.append(f"{p.name}:{st.st_size}:{int(st.st_mtime)}")
+            parts.append(f"{p.relative_to(C.ROOT).as_posix()}:{st.st_size}:{st.st_mtime_ns}")
+    for name in ("features.py", "pit_clinical.py", "config.py"):
+        parts.append(f"{name}:" + hashlib.sha256((C.ROOT / name).read_bytes()).hexdigest())
     return "ds-" + hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 
 

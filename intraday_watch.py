@@ -3,7 +3,6 @@ for universe issuers with the same parser as data_form4_recent.py, and refresh o
 signals/latest.json. Cross-sectional signals keep their daily cadence; fundamentals are not refreshed here.
 Never places orders. Every refresh is also written to signals/log/ (append-only).
 """
-import fcntl
 import json
 import re
 import time
@@ -51,7 +50,8 @@ def fetch_xml(client, cik, acc):
 def refresh_insider_signals():
     import insider_model
     import regime
-    from signals import iso, session_close_utc, dataset_version
+    from signals import iso, session_close_utc, dataset_version, audit_ok
+    from publication import publish
     f = C.SIGNALS / "latest.json"
     if not f.exists():
         return 0
@@ -59,23 +59,28 @@ def refresh_insider_signals():
     asof_day = pd.Timestamp(doc["as_of_utc"][:10])
     gen = datetime.now(timezone.utc)
     stale = (pd.Timestamp(gen.astimezone(NY).date()) - asof_day).days > 5
-    sigs = insider_model.live_signals(asof_day, gen, dataset_version(), not stale, doc.get("data_audit_passed", False))
+    dsv = dataset_version()
+    audit = audit_ok(dsv)
+    sigs = insider_model.live_signals(asof_day, gen, dsv, not stale, audit[0])
+    doc["data_audit_passed"] = audit[0]
     reg = regime.field()
     for s in sigs:
         s["regime"] = reg
     keep = [s for s in doc["signals"] if s["model_id"] != "insider-event"]
+    if not audit[0]:
+        for s in keep:
+            s["risk"]["data_quality_approved"] = False
+            s["signal"].update(direction="NO_SIGNAL", deployment_eligibility="INSUFFICIENT_DATA", reason=audit[1])
     doc["signals"] = sorted(keep + sigs, key=lambda s: -(s["forecast"]["expected_net_excess_return"] or -9))
     doc["n_insider_event_signals"] = len(sigs)
     doc["n_long"] = sum(s["signal"]["direction"] == "LONG" for s in doc["signals"])
     doc["insider_refreshed_at_utc"] = iso(gen)
-    (C.SIGNALS / "log" / f"intraday_{gen.strftime('%Y%m%dT%H%M%S')}.jsonl").write_text("".join(json.dumps(s) + "\n" for s in sigs))
-    tmp = C.SIGNALS / "latest.json.tmp"
-    tmp.write_text(json.dumps(doc, indent=1))
-    tmp.replace(f)
+    publish(doc, C.SIGNALS, f"intraday_{gen.strftime('%Y%m%dT%H%M%S%f')}")
     return len(sigs)
 
 
 def main():
+    import fcntl
     ciks = set(pd.read_parquet(C.PROC / "universe.parquet")["cik"].astype(int))
     with httpx.Client(timeout=30, headers={"User-Agent": C.SEC_UA}) as client:
         while True:

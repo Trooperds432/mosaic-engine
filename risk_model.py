@@ -226,26 +226,68 @@ def tail_and_liquidity(w, P, order_usd):
             "max_drawdown_2y": float(((1 + port).cumprod() / (1 + port).cumprod().cummax() - 1).min()), "names": names}
 
 
-def optimise(mu, rm, w0, limits, lam=5.0, sector_cap=0.30, turnover_cap=0.5, cost=None):
-    """mu: Series of expected net excess returns (annualised) for validated names only."""
+def optimise(mu, rm, w0, limits, cost=None, constraints=None, betas=None, adv_dollars=None):
+    """Research proposal under explicit external limits; includes liquidation of non-candidates.
+
+    Alpha/covariance are annualised. Transaction costs are converted to annual
+    units using the externally supplied planning horizon. No limits are guessed.
+    """
     import cvxpy as cp
-    syms = list(mu.index)
-    S, B = rm.sigma(syms)
+    from portfolio_constraints import validate
+    constraints = validate(constraints, limits)
+    syms = list(mu.index.union(w0.index, sort=False))
+    if not syms:
+        return pd.Series(dtype=float)
+    if not mu.index.is_unique or not w0.index.is_unique:
+        raise ValueError("duplicate portfolio symbols")
+    if betas is None or adv_dollars is None:
+        raise ValueError("per-name raw beta and dollar ADV required")
+    beta = betas.reindex(syms).to_numpy(dtype=float)
+    adv = adv_dollars.reindex(syms).to_numpy(dtype=float)
+    equity = limits.get("account_total_usd")
+    cap = limits.get("position_pct")
+    if (not np.isfinite(beta).all() or not np.isfinite(adv).all() or (adv <= 0).any()
+            or equity is None or not math.isfinite(equity) or equity <= 0
+            or cap is None or not math.isfinite(cap) or not 0 < cap <= 1):
+        raise ValueError("finite beta, positive ADV/equity and imported position cap required")
+    alpha = mu.reindex(syms, fill_value=0).to_numpy(dtype=float)
+    w0v = w0.reindex(syms, fill_value=0).to_numpy(dtype=float)
+    if not np.isfinite(alpha).all() or not np.isfinite(w0v).all() or (w0v < 0).any():
+        raise ValueError("finite alpha and nonnegative current holdings required")
+    if cost is None:
+        raise ValueError("per-name transaction costs required")
+    c = cost.reindex(syms).to_numpy(dtype=float)
+    if not np.isfinite(c).all() or (c < 0).any():
+        raise ValueError("finite nonnegative costs required for candidates and exits")
+    S, _ = rm.sigma(syms)
+    if not np.isfinite(S).all():
+        raise ValueError("finite risk covariance required")
     S = (S + S.T) / 2 + 1e-8 * np.eye(len(syms))
     w = cp.Variable(len(syms))
-    w0v = w0.reindex(syms).fillna(0).to_numpy()
-    c = (cost.reindex(syms).fillna(C.ROUND_TRIP_COST / 2).to_numpy() if cost is not None else np.full(len(syms), C.ROUND_TRIP_COST / 2))
-    obj = mu.to_numpy() @ w - lam / 2 * cp.quad_form(w, cp.psd_wrap(S)) - c @ cp.abs(w - w0v)
-    cons = [w >= 0, w <= limits["position_pct"], cp.sum(w) <= 1, cp.sum(cp.abs(w - w0v)) <= turnover_cap]
-    sec = rm.X.reindex(syms)["sector"].fillna("Unknown").to_numpy()
-    for s in set(sec):
-        cons.append(cp.sum(w[sec == s]) <= sector_cap)
+    annual_cost = c * 252 / constraints["cost_horizon_sessions"]
+    obj = alpha @ w - constraints["risk_aversion"] / 2 * cp.quad_form(w, cp.psd_wrap(S)) - annual_cost @ cp.abs(w - w0v)
+    cons = [w >= 0, w <= cap, cp.sum(w) <= constraints["gross_limit"],
+            cp.sum(cp.abs(w - w0v)) <= constraints["turnover_cap"],
+            beta @ w >= constraints["beta_min"], beta @ w <= constraints["beta_max"],
+            cp.abs(w - w0v) * equity <= constraints["max_participation"] * adv]
+    candidates = set(mu.index)
+    for i, sym in enumerate(syms):
+        if sym not in candidates:
+            cons.append(w[i] == 0)
+    sec = rm.X.reindex(syms)["sector"]
+    if sec.isna().any():
+        raise ValueError("sector coverage required for all candidates and holdings")
+    for sector in set(sec):
+        cons.append(cp.sum(w[(sec == sector).to_numpy()]) <= constraints["sector_cap"])
     prob = cp.Problem(cp.Maximize(obj), cons)
     prob.solve(solver="CLARABEL")
-    if w.value is None:
+    if prob.status != cp.OPTIMAL or w.value is None:
         return None
-    wv = pd.Series(np.clip(w.value, 0, None), index=syms)
-    return wv[wv > 1e-4].round(4)
+    # Check solver tolerances before export; retain full precision so rounding
+    # cannot increase a weight through a cap or erase liquidation turnover.
+    if any(np.max(np.asarray(cn.violation())) > 1e-6 for cn in cons):
+        return None
+    return pd.Series(np.maximum(w.value, 0), index=syms)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+{
+  "source": "Replace with the approved external policy or bot configuration reference",
+  "gross_limit": null,
+  "sector_cap": null,
+  "turnover_cap": null,
+  "beta_min": null,
+  "beta_max": null,
+  "max_participation": null,
+  "risk_aversion": null,
+  "cost_horizon_sessions": null
+}

@@ -4,10 +4,43 @@ A stored audit or forward gate only counts when it belongs to the data and model
 unreadable, stale or produced for another dataset / model recipe blocks new LONG signals.
 """
 from datetime import datetime, timezone
+import math
 
 AUDIT_MAX_AGE_HOURS = 12        # the audit runs in the same nightly job, minutes before signals.py
 GATE_MAX_AGE_HOURS = 4 * 24     # paper_trading.py runs after signals.py, so the gate is from the previous run (weekends)
 BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps")
+
+
+def live_review_ready(executed, shadow, horizon=20, min_sessions=63, min_trades=20, min_t=2.0):
+    """Human-review recommendation only, requiring executed AND matching forward evidence.
+
+    Each executed model must pass independently. Unknown/event-only models have
+    no matching cross-sectional IC record and cannot be promoted by this rule.
+    """
+    def at_least(value, threshold, strict=False):
+        return (isinstance(value, (int, float)) and not isinstance(value, bool)
+                and math.isfinite(value) and (value > threshold if strict else value >= threshold))
+
+    failures = []
+    books = executed.get("by_model") or {}
+    if not books:
+        failures.append("executed trades lack model attribution")
+    for model, book in books.items():
+        if book.get("horizons") != [horizon]:
+            failures.append(f"{model}: executed horizon does not match forward evidence")
+        if not (at_least(book.get("n"), min_trades) and at_least(book.get("sessions_since_first"), min_sessions)
+                and at_least(book.get("mean_net_excess"), 0, strict=True) and at_least(book.get("t"), min_t)):
+            failures.append(f"{model}: insufficient positive executed evidence")
+        prefix = "mosaic-xs-ridge-"
+        profile = model[len(prefix):] if model.startswith(prefix) else None
+        fwd = shadow.get(f"{profile}_h{horizon}", {}) if profile else {}
+        if not (at_least(fwd.get("scored_dates"), min_sessions)
+                and at_least(fwd.get("forward_ic_mean"), 0, strict=True)
+                and at_least(fwd.get("forward_ic_t"), min_t)
+                and at_least(fwd.get("non_overlapping_cohorts"), 3)
+                and at_least(fwd.get("top_quintile_net_mean"), 0, strict=True)):
+            failures.append(f"{model}: matching positive forward evidence missing")
+    return not failures, failures
 
 
 def _age_hours(stamp, now):
