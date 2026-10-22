@@ -1,0 +1,184 @@
+panel {'first_date': '2009-04-20', 'last_date': '2026-10-16', 'holdout_start': '2024-10-21', 'rows': 1164785, 'symbols': 3064, 'decision_dates': 882, 'avg_names_per_date': 1320.6179138321995}
+Model is not converging.  Current: 4041.6001594752106 is not greater than 4041.8712740479373. Delta is -0.27111457272667394
+Model is not converging.  Current: 5055.936601993978 is not greater than 5056.294084452715. Delta is -0.3574824587367402
+Model is not converging.  Current: 6198.170580392154 is not greater than 6198.336978593424. Delta is -0.16639820126965787
+Model is not converging.  Current: 7437.972376099509 is not greater than 7437.9838441397. Delta is -0.011468040190266038
+Model is not converging.  Current: 11260.21863800669 is not greater than 11260.24550408171. Delta is -0.02686607501891558
+Model is not converging.  Current: 12582.086450388662 is not greater than 12582.12245036916. Delta is -0.03599998049685382
+Model is not converging.  Current: 16502.669321899288 is not greater than 16502.67919646088. Delta is -0.009874561590550002
+Model is not converging.  Current: 17674.830711677027 is not greater than 17674.99031686899. Delta is -0.1596051919623278
+Model is not converging.  Current: 20067.324452886667 is not greater than 20067.349264546327. Delta is -0.024811659659462748
+Model is not converging.  Current: 21330.048521150075 is not greater than 21330.09075721766. Delta is -0.04223606758387177
+Model is not converging.  Current: 22365.894767342175 is not greater than 22366.38084705778. Delta is -0.48607971560340957
+Model is not converging.  Current: 23661.164026199218 is not greater than 23661.850284785636. Delta is -0.686258586418262
+regime {'state': 'uptrend/high_vol', 'spy_above_200d': True, 'vix': 18.440000534057617, 'vix_5y_median': 17.649999618530273, 'hmm_p_high_vol_filtered': 0.26378902782301733, 'as_of': '2026-10-19'}
+univariate mom_12_1
+univariate mom_6_1
+univariate ret_1m
+univariate dist_52w_high
+univariate px_sma200
+univariate rsi_14
+univariate macd_hist
+univariate bb_pctb
+univariate vol_60
+univariate beta_252
+univariate log_mcap
+univariate amihud
+univariate cs_spread
+univariate turnover
+univariate earn_yield
+univariate book_to_mkt
+univariate fcf_yield
+univariate gross_prof
+univariate roa
+univariate roic
+univariate accruals
+univariate leverage
+univariate asset_growth
+univariate capex_intensity
+univariate share_issuance
+univariate sue
+univariate eps_growth
+univariate gm_change
+univariate op_margin_change
+univariate inv_to_sales_chg
+univariate earn_recent
+univariate ins_net_90
+univariate ins_net_180
+univariate ins_buyers_90
+univariate ins_sellers_90
+univariate ins_officer_buy_180
+univariate ins_dir_buy_90
+univariate ins_sponsor_sell_90
+univariate ins_purchase_intensity
+univariate ins_conviction
+univariate ins_opp_net_90
+univariate ins_routine_net_90
+univariate ins_surprise
+univariate ins_buy_x_drawdown
+univariate ins_plan_sale_share
+univariate io_ratio
+univariate io_breadth_chg
+univariate io_holders_chg
+univariate io_hhi
+univariate si_ratio
+univariate si_days_to_cover
+univariate si_change
+univariate beta_rates
+univariate beta_credit
+univariate beta_dollar
+univariate rates_tilt
+univariate credit_tilt
+univariate semi_cycle
+univariate semi_orders
+univariate bio_cash_runway
+univariate bio_rnd_intensity
+univariate bio_ph3_trials
+univariate bio_fda_appr_365
+univariate energy_oil_tilt
+univariate energy_inv_surprise
+univariate energy_cot_z
+univariate fin_deposit_growth
+univariate fin_nim_proxy
+univariate fin_provision_ratio
+univariate fin_slope_tilt
+univariate mat_commodity_tilt
+model 1 ridge wf IC -0.0034
+horizon done 1 {'ridge': (-0.003400477261713177, 0.005703307376738212), 'ensemble': (-0.003400477261713177, 0.005703307376738212)}
+model 5 ridge wf IC 0.0023
+model 5 enet wf IC -0.004
+model 5 huber wf IC 0.0138
+model 5 lgbm wf IC 0.0074
+model 5 gam wf IC 0.004
+model 5 hier wf IC 0.0043
+model 5 logit wf IC -0.0125
+model 5 factor_resid wf IC 0.0155
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+horizon done 5 {'ridge': (0.0022764964985618995, 0.022452589928896698), 'enet': (-0.003973138145085635, 0.018799222920484058), 'huber': (0.013770132535836546, 0.02137757352476606), 'lgbm': (0.007394483318264403, 0.009609395013945688), 'gam': (0.003972531118573646, 0.021898894270075527), 'hier': (0.0042986375454387256, 0.023894562735172046), 'logit': (-0.012498867989399223, -0.013142271782199653), 'factor_resid': (0.015461940173570003, 0.02607006092628081), 'ensemble': (0.008637734807782354, 0.024478106657589028)}
+model 20 ridge wf IC -0.0019
+model 20 enet wf IC -0.0065
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/sklearn/linear_model/_huber.py:348: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  self.n_iter_ = _check_optimize_result("lbfgs", opt_res, self.max_iter)
+model 20 huber wf IC 0.0083
+model 20 lgbm wf IC 0.005
+model 20 gam wf IC 0.0018
+model 20 hier wf IC -0.0003
+model 20 logit wf IC 0.0012
+model 20 factor_resid wf IC 0.0168
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+horizon done 20 {'ridge': (-0.00190236083520476, 0.026442323536423028), 'enet': (-0.006523411845133342, 0.025619758628864155), 'huber': (0.008257347217837236, 0.029488777883326482), 'lgbm': (0.004973578302726561, 0.01272371676889203), 'gam': (0.001848438425145965, 0.02860578920920921), 'hier': (-0.00031697018735350627, 0.028471399910175436), 'logit': (0.0012141261012466073, 0.009977171700634484), 'factor_resid': (0.016829662037919097, 0.02974786972806825), 'ensemble': (0.006301623024165354, 0.02802660271725666)}
+model 60 ridge wf IC -0.0148
+horizon done 60 {'ridge': (-0.014846115935655834, 0.04849271915731148), 'ensemble': (-0.014846115935655834, 0.04849271915731148)}
+model 120 ridge wf IC -0.0277
+horizon done 120 {'ridge': (-0.02773241420685334, 0.06391619409923491), 'ensemble': (-0.02773241420685334, 0.06391619409923491)}
+overfitting {'primary_horizon': 20, 'strategies_tested': 80, 'wf_periods': 332, 'ensemble_wf_sr_per_period': -0.16164482891096393, 'psr_vs_zero': 0.029829668560426386, 'deflated_sharpe_ratio': 3.9100319120897115e-05, 'dsr_benchmark_sr': np.float64(0.17737265958648188), 'min_track_record_periods': None, 'pbo_cscv': 0.0992063492063492, 'reality_check_spa': {'strategies': 80, 'periods': 332, 'reality_check_p': 0.608, 'spa_p': 0.635, 'best_strategy': 'feat:log_mcap', 'best_mean': 0.0010591103814480008}, 'train_vs_test_ic_degradation': -0.02172497969309131}
+{
+ "1": {
+  "ens_wf_ic": -0.003400477261713177,
+  "ens_ho_ic": 0.005703307376738212,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout IC t=0.62 < 2.0",
+    "walk-forward positive-IC years 45% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "5": {
+  "ens_wf_ic": 0.008637734807782354,
+  "ens_ho_ic": 0.024478106657589028,
+  "gate": {
+   "status": "RESEARCH_CANDIDATE",
+   "failed_checks": [
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "20": {
+  "ens_wf_ic": 0.006301623024165354,
+  "ens_ho_ic": 0.02802660271725666,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout long-only net excess <= 0 after per-name costs",
+    "deflated Sharpe 0.0 < 0.9",
+    "Hansen SPA p=0.64 > 0.10",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "60": {
+  "ens_wf_ic": -0.014846115935655834,
+  "ens_ho_ic": 0.04849271915731148,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "walk-forward positive-IC years 27% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "120": {
+  "ens_wf_ic": -0.02773241420685334,
+  "ens_ho_ic": 0.06391619409923491,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "walk-forward positive-IC years 36% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ }
+}

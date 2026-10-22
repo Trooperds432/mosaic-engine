@@ -1,0 +1,12 @@
+# data, environments and generated artefacts stay on the server
+data/
+venv/
+models/
+logs/
+signals/
+__pycache__/
+*.pyc
+.lock
+*.tmp
+.env
+*.env

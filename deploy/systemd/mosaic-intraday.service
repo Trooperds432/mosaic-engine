@@ -1,0 +1,15 @@
+[Unit]
+Description=Mosaic engine intraday Form 4 watcher (refreshes insider-event signals only; never trades)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mosaic-engine
+ExecStart=/opt/mosaic-engine/venv/bin/python -u /opt/mosaic-engine/intraday_watch.py
+Restart=always
+RestartSec=60
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

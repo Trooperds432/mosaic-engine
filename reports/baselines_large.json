@@ -1,0 +1,71 @@
+{
+ "profile": "large",
+ "generated_at_utc": "2026-10-21T13:04:26+00:00",
+ "paths": 2000,
+ "results": {
+  "h5_walk_forward": {
+   "model_mean_net_per_period": -0.0030095690108597846,
+   "model_periods": 544,
+   "random_periods": 544,
+   "random_mean_net_median": -0.002666695485267703,
+   "random_mean_net_q05": -0.002940405897602737,
+   "random_mean_net_q95": -0.002385947748142075,
+   "model_percentile": 0.022,
+   "share_random_beating_model": 0.978,
+   "random_sharpe_median_per_period": -0.3528406216156578,
+   "matched": {
+    "names_share": 0.2,
+    "turnover": 0.2962326238863093,
+    "costs": "per-name model costs"
+   }
+  },
+  "h5_holdout": {
+   "model_mean_net_per_period": -0.0028511722577475294,
+   "model_periods": 99,
+   "random_periods": 99,
+   "random_mean_net_median": -0.002661826896540342,
+   "random_mean_net_q05": -0.0033681873984561152,
+   "random_mean_net_q95": -0.0019265828439458876,
+   "model_percentile": 0.326,
+   "share_random_beating_model": 0.674,
+   "random_sharpe_median_per_period": -0.25789336578025834,
+   "matched": {
+    "names_share": 0.2,
+    "turnover": 0.21856843477938415,
+    "costs": "per-name model costs"
+   }
+  },
+  "h20_walk_forward": {
+   "model_mean_net_per_period": -0.006155638330555154,
+   "model_periods": 136,
+   "random_periods": 136,
+   "random_mean_net_median": -0.004573114692465692,
+   "random_mean_net_q05": -0.005726612760171129,
+   "random_mean_net_q95": -0.003513371508038986,
+   "model_percentile": 0.0105,
+   "share_random_beating_model": 0.9895,
+   "random_sharpe_median_per_period": -0.31344754708313693,
+   "matched": {
+    "names_share": 0.2,
+    "turnover": 0.40721573672130373,
+    "costs": "per-name model costs"
+   }
+  },
+  "h20_holdout": {
+   "model_mean_net_per_period": -0.007755141935517167,
+   "model_periods": 24,
+   "random_periods": 24,
+   "random_mean_net_median": -0.006293388715952242,
+   "random_mean_net_q05": -0.009439847994649782,
+   "random_mean_net_q95": -0.0030793347472379156,
+   "model_percentile": 0.222,
+   "share_random_beating_model": 0.778,
+   "random_sharpe_median_per_period": -0.3242261801675086,
+   "matched": {
+    "names_share": 0.2,
+    "turnover": 0.36407082173748434,
+    "costs": "per-name model costs"
+   }
+  }
+ }
+}

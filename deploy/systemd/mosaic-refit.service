@@ -1,0 +1,9 @@
+[Unit]
+Description=Mosaic engine weekly model refit (frozen recipe; learning only, never trades)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/mosaic-engine
+ExecStart=/opt/mosaic-engine/run_refit.sh
+Nice=10

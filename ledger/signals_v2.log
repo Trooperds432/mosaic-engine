@@ -1,0 +1,40 @@
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/signals.py", line 245, in <module>
+    run(dry="--dry" in sys.argv, profiles=[a for a in sys.argv[1:] if not a.startswith("--")] or None)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/mosaic-engine/signals.py", line 209, in run
+    o, fc, meta, asof_day, market_fresh, insider_fresh = profile_signals(p, gen, dsv, reg, audit)
+                                                         ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/mosaic-engine/signals.py", line 98, in profile_signals
+    m = joblib.load(C.ROOT / "models" / f"{pname}_h{hh}_{n}.joblib")
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/joblib/numpy_pickle.py", line 755, in load
+    obj = _unpickle(
+        fobj,
+    ...<2 lines>...
+        mmap_mode=validated_mmap_mode,
+    )
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/joblib/numpy_pickle.py", line 632, in _unpickle
+    obj = unpickler.load()
+  File "/usr/lib/python3.13/pickle.py", line 1256, in load
+    dispatch[key[0]](self)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/pickle.py", line 1581, in load_stack_global
+    self.append(self.find_class(module, name))
+                ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/pickle.py", line 1624, in find_class
+    return _getattribute(sys.modules[module], name)[0]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/pickle.py", line 326, in _getattribute
+    raise AttributeError("Can't get attribute {!r} on {!r}"
+                         .format(name, top)) from None
+AttributeError: Can't get attribute 'GAM' on <module '__main__' from '/opt/mosaic-engine/signals.py'>
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/report.py", line 318, in <module>
+    run()
+    ~~~^^
+  File "/opt/mosaic-engine/report.py", line 46, in run
+    profiles = [m["profile"] for m in S["profiles"]]
+                                      ~^^^^^^^^^^^^
+KeyError: 'profiles'

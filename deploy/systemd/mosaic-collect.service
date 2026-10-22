@@ -1,0 +1,10 @@
+[Unit]
+Description=Mosaic engine data collectors (options/estimates snapshots, earnings-surprise backfill; never trades)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/mosaic-engine
+ExecStart=/opt/mosaic-engine/run_collect.sh
+Nice=10

@@ -1,0 +1,12 @@
+permutation 1
+permutation 2
+permutation 3
+permutation 4
+permutation 5
+permutation 6
+permutation 7
+permutation 8
+permutation 9
+permutation 10
+top MI: [('vol_60', 0.0089, 9.545530804899727e-05), ('beta_252', 0.0084, 1.2194548371091685e-07), ('earn_recent', 0.0068, 0.0042723350721941555), ('sue', 0.0066, 4.440892098500626e-16), ('ins_sellers_90', 0.0066, 3.110932860728166e-05), ('log_mcap', 0.0054, 0.0007304420669506095), ('energy_cot_z', 0.0053, 1.7949264519145913e-08), ('energy_inv_surprise', 0.0051, 1.644995251126602e-11)] | nonlinear only: ['vol_60', 'beta_252', 'earn_recent', 'sue', 'ins_sellers_90', 'log_mcap', 'energy_cot_z', 'energy_inv_surprise', 'energy_oil_tilt', 'macd_hist', 'fin_nim_proxy', 'fin_slope_tilt', 'fin_provision_ratio', 'bio_cash_runway']
+DONE

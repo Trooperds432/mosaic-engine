@@ -1,0 +1,230 @@
+{
+ "generated_at_utc": "2026-10-20T20:09:03+00:00",
+ "profile": "broad",
+ "limits_used": {
+  "position_pct": 0.09,
+  "stop_loss": 0.08,
+  "account_total_usd": 6664.79208,
+  "order_size_usd": 599.8312872,
+  "long_only": true,
+  "leverage": false
+ },
+ "holdings": [],
+ "current_risk": "no open positions",
+ "tail_dependence": {
+  "basket": "reference basket: top 20 of tonight's forecasts (not holdings)",
+  "symbols": [
+   "DAR",
+   "WKC",
+   "IBKR",
+   "AMD",
+   "ADAM",
+   "LBRT",
+   "ILPT",
+   "MO",
+   "CHCT",
+   "OC",
+   "MU",
+   "MATV",
+   "BRSP",
+   "IRWD",
+   "LXFR",
+   "CRUS",
+   "CSTM",
+   "HUN",
+   "TTI",
+   "BFH"
+  ],
+  "window_years": 3,
+  "vs_spy": {
+   "DAR": {
+    "rho": 0.19976504147052765,
+    "nu": 8.0,
+    "tail_dependence": 0.03675133425446407,
+    "aic_t": -45.35835236560406,
+    "aic_gaussian": -39.61328893628405,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "WKC": {
+    "rho": 0.3080991208553314,
+    "nu": 8.0,
+    "tail_dependence": 0.057003336983691866,
+    "aic_t": -86.60720116626753,
+    "aic_gaussian": -77.76873580555288,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "IBKR": {
+    "rho": 0.541289746761322,
+    "nu": 6.0,
+    "tail_dependence": 0.19213521653201898,
+    "aic_t": -287.1677886091833,
+    "aic_gaussian": -268.76069449199997,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "AMD": {
+    "rho": 0.6064301133155823,
+    "nu": 20.0,
+    "tail_dependence": 0.033983117195953545,
+    "aic_t": -346.86722065122785,
+    "aic_gaussian": -346.38615569053616,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "ADAM": {
+    "rho": 0.43281033635139465,
+    "nu": 6.0,
+    "tail_dependence": 0.1399312362121679,
+    "aic_t": -165.21589064440144,
+    "aic_gaussian": -149.78627429003205,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "LBRT": {
+    "rho": 0.298843652009964,
+    "nu": 12.0,
+    "tail_dependence": 0.02004550473521337,
+    "aic_t": -78.5158609027418,
+    "aic_gaussian": -75.67836785714015,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "ILPT": {
+    "rho": 0.312336266040802,
+    "nu": 8.0,
+    "tail_dependence": 0.057958978318292845,
+    "aic_t": -88.01853185683078,
+    "aic_gaussian": -81.95158644910164,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "MO": {
+    "rho": -0.08873709291219711,
+    "nu": 6.0,
+    "tail_dependence": 0.023251910942908093,
+    "aic_t": -24.26392680037388,
+    "aic_gaussian": -3.995463821151864,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "CHCT": {
+    "rho": 0.22441332042217255,
+    "nu": 12.0,
+    "tail_dependence": 0.013152963938803986,
+    "aic_t": -39.116876898111954,
+    "aic_gaussian": -37.20275091652756,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "OC": {
+    "rho": 0.5742245316505432,
+    "nu": 8.0,
+    "tail_dependence": 0.15314622229492716,
+    "aic_t": -293.6810806275038,
+    "aic_gaussian": -278.1097636786549,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "MU": {
+    "rho": 0.550020158290863,
+    "nu": 30.0,
+    "tail_dependence": 0.005289909052847281,
+    "aic_t": -274.29442512397867,
+    "aic_gaussian": -276.6420915465899,
+    "t_preferred": false,
+    "obs": 756
+   },
+   "MATV": {
+    "rho": 0.38674235343933105,
+    "nu": 8.0,
+    "tail_dependence": 0.07717120374842038,
+    "aic_t": -137.32872668377794,
+    "aic_gaussian": -127.15982813555439,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "BRSP": {
+    "rho": 0.46453580260276794,
+    "nu": 4.0,
+    "tail_dependence": 0.2342899734960328,
+    "aic_t": -210.31151632351907,
+    "aic_gaussian": -170.16604345093486,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "IRWD": {
+    "rho": 0.2807832360267639,
+    "nu": 12.0,
+    "tail_dependence": 0.01812935421696352,
+    "aic_t": -50.582847906197145,
+    "aic_gaussian": -48.812228783120055,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "LXFR": {
+    "rho": 0.47451555728912354,
+    "nu": 6.0,
+    "tail_dependence": 0.15824440909837553,
+    "aic_t": -188.67233516494946,
+    "aic_gaussian": -170.820075016685,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "CRUS": {
+    "rho": 0.5306131839752197,
+    "nu": 4.0,
+    "tail_dependence": 0.2705791994636664,
+    "aic_t": -269.06843803217293,
+    "aic_gaussian": -230.1782758707065,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "CSTM": {
+    "rho": 0.4816921651363373,
+    "nu": 6.0,
+    "tail_dependence": 0.16160415828551314,
+    "aic_t": -226.47382996263607,
+    "aic_gaussian": -211.70670985770022,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "HUN": {
+    "rho": 0.37285980582237244,
+    "nu": 6.0,
+    "tail_dependence": 0.11688354043559324,
+    "aic_t": -119.45352491536192,
+    "aic_gaussian": -105.92999257889898,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "TTI": {
+    "rho": 0.3657703697681427,
+    "nu": 12.0,
+    "tail_dependence": 0.028830855319210282,
+    "aic_t": -107.93396760485962,
+    "aic_gaussian": -105.21185696487503,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "BFH": {
+    "rho": 0.4559856355190277,
+    "nu": 8.0,
+    "tail_dependence": 0.09989365037046025,
+    "aic_t": -189.44530191677052,
+    "aic_gaussian": -182.34589968839634,
+    "t_preferred": true,
+    "obs": 756
+   }
+  },
+  "mean_tail_dependence_vs_spy": 0.09491380374477623,
+  "share_t_preferred_over_gaussian": 0.95,
+  "mean_pairwise_tail_dependence": 0.05190440603052656,
+  "pairs": 190
+ },
+ "proposal": {
+  "status": "NO_SIGNAL",
+  "reason": "no validated LONG signals today; nothing to optimise"
+ }
+}

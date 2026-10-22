@@ -1,0 +1,9 @@
+chunk 1
+chunk 2
+chunk 3
+chunk 4
+chunk 5
+chunk 6
+chunk 7
+chunk 8
+broad rows 1164785 coverage {'ivol_60': 1.0, 'resid_mom_12_1': 0.97, 'max_ret_21': 1.0, 'skew_252': 0.99, 'r2_mkt_252': 0.99, 'vol_ratio_20_60': 1.0, 'vol_of_vol_60': 1.0, 'ar1_60': 1.0, 'variance_ratio_120': 1.0, 'tail_ratio_60': 1.0, 'beta_instability_252': 0.98}

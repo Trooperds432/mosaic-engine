@@ -1,0 +1,279 @@
+{
+ "generated_at_utc": "2026-10-19T17:48:58+00:00",
+ "as_of": "2026-10-16",
+ "issuers": 678,
+ "short_runway_lt_1y": [
+  {
+   "symbol": "CDIO",
+   "runway_years": 0.0,
+   "dilution_to_fund_24m_pct_mcap": 2.2900449135622494
+  },
+  {
+   "symbol": "MAIA",
+   "runway_years": 0.0,
+   "dilution_to_fund_24m_pct_mcap": 0.5632951794621542
+  },
+  {
+   "symbol": "TVGN",
+   "runway_years": 0.0,
+   "dilution_to_fund_24m_pct_mcap": 0.5355990654311291
+  },
+  {
+   "symbol": "UPC",
+   "runway_years": 0.001598851537284166,
+   "dilution_to_fund_24m_pct_mcap": 4560.493374156756
+  },
+  {
+   "symbol": "KALA",
+   "runway_years": 0.007158263261542308,
+   "dilution_to_fund_24m_pct_mcap": 17.349835694854974
+  },
+  {
+   "symbol": "SHPH",
+   "runway_years": 0.00951712492927124,
+   "dilution_to_fund_24m_pct_mcap": 0.7797281867157222
+  },
+  {
+   "symbol": "IBO",
+   "runway_years": 0.010582010582010581,
+   "dilution_to_fund_24m_pct_mcap": 0.013012140806288371
+  },
+  {
+   "symbol": "ABVC",
+   "runway_years": 0.010696852525483885,
+   "dilution_to_fund_24m_pct_mcap": 0.24278577916243124
+  },
+  {
+   "symbol": "PPCB",
+   "runway_years": 0.016408057177700133,
+   "dilution_to_fund_24m_pct_mcap": 5.2058986737170345
+  },
+  {
+   "symbol": "OMER",
+   "runway_years": 0.017124054645373577,
+   "dilution_to_fund_24m_pct_mcap": 0.19630068302729095
+  },
+  {
+   "symbol": "PCSA",
+   "runway_years": 0.01724388559001405,
+   "dilution_to_fund_24m_pct_mcap": 4.7818076194923
+  },
+  {
+   "symbol": "NRSN",
+   "runway_years": 0.021639942641115892,
+   "dilution_to_fund_24m_pct_mcap": 0.15183512497315235
+  },
+  {
+   "symbol": "CELU",
+   "runway_years": 0.027765202957597705,
+   "dilution_to_fund_24m_pct_mcap": 0.6444422235759043
+  },
+  {
+   "symbol": "TPST",
+   "runway_years": 0.029045488441461594,
+   "dilution_to_fund_24m_pct_mcap": 5.72115596956004
+  },
+  {
+   "symbol": "APUS",
+   "runway_years": 0.031187312880436066,
+   "dilution_to_fund_24m_pct_mcap": 2.8823443980851136
+  },
+  {
+   "symbol": "QCLS",
+   "runway_years": 0.03393171497721226,
+   "dilution_to_fund_24m_pct_mcap": 4.04518589016259
+  },
+  {
+   "symbol": "HURA",
+   "runway_years": 0.03604805070007583,
+   "dilution_to_fund_24m_pct_mcap": 0.4837988733651018
+  },
+  {
+   "symbol": "TXMD",
+   "runway_years": 0.04026126018795596,
+   "dilution_to_fund_24m_pct_mcap": 12.715990352735602
+  },
+  {
+   "symbol": "TCRT",
+   "runway_years": 0.043220634367375395,
+   "dilution_to_fund_24m_pct_mcap": 0.8402351790102628
+  },
+  {
+   "symbol": "ONMD",
+   "runway_years": 0.04771424763427962,
+   "dilution_to_fund_24m_pct_mcap": 0.05478306434294307
+  },
+  {
+   "symbol": "SPRY",
+   "runway_years": 0.04777427925977081,
+   "dilution_to_fund_24m_pct_mcap": 0.8343849224586927
+  },
+  {
+   "symbol": "CDT",
+   "runway_years": 0.04802314368370299,
+   "dilution_to_fund_24m_pct_mcap": 164.24200191548994
+  },
+  {
+   "symbol": "HCWB",
+   "runway_years": 0.05535731794002173,
+   "dilution_to_fund_24m_pct_mcap": 11.436729118096501
+  },
+  {
+   "symbol": "ESLA",
+   "runway_years": 0.05600110658186606,
+   "dilution_to_fund_24m_pct_mcap": 0.185593606323094
+  },
+  {
+   "symbol": "ATRA",
+   "runway_years": 0.06323125245386729,
+   "dilution_to_fund_24m_pct_mcap": 1.070679208576189
+  }
+ ],
+ "upcoming_ph2_3_completions": [
+  {
+   "symbol": "AZN",
+   "ph2_3_completions_next_180d": 29,
+   "active_phase3": 171
+  },
+  {
+   "symbol": "NVS",
+   "ph2_3_completions_next_180d": 25,
+   "active_phase3": 92
+  },
+  {
+   "symbol": "ABBV",
+   "ph2_3_completions_next_180d": 21,
+   "active_phase3": 71
+  },
+  {
+   "symbol": "PFE",
+   "ph2_3_completions_next_180d": 21,
+   "active_phase3": 87
+  },
+  {
+   "symbol": "SNY",
+   "ph2_3_completions_next_180d": 18,
+   "active_phase3": 52
+  },
+  {
+   "symbol": "BMY",
+   "ph2_3_completions_next_180d": 11,
+   "active_phase3": 59
+  },
+  {
+   "symbol": "REGN",
+   "ph2_3_completions_next_180d": 8,
+   "active_phase3": 38
+  },
+  {
+   "symbol": "AMGN",
+   "ph2_3_completions_next_180d": 8,
+   "active_phase3": 50
+  },
+  {
+   "symbol": "INCY",
+   "ph2_3_completions_next_180d": 6,
+   "active_phase3": 23
+  },
+  {
+   "symbol": "GILD",
+   "ph2_3_completions_next_180d": 6,
+   "active_phase3": 27
+  },
+  {
+   "symbol": "ONC",
+   "ph2_3_completions_next_180d": 5,
+   "active_phase3": 15
+  },
+  {
+   "symbol": "NVO",
+   "ph2_3_completions_next_180d": 5,
+   "active_phase3": 45
+  },
+  {
+   "symbol": "KPTI",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 3
+  },
+  {
+   "symbol": "ARGX",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 17
+  },
+  {
+   "symbol": "KRYS",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 1
+  },
+  {
+   "symbol": "QNRX",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 4
+  },
+  {
+   "symbol": "VIR",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 2
+  },
+  {
+   "symbol": "VNDA",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 10
+  },
+  {
+   "symbol": "PRAX",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 6
+  },
+  {
+   "symbol": "IONS",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 12
+  },
+  {
+   "symbol": "MDGL",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 3
+  },
+  {
+   "symbol": "SXTP",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 0
+  },
+  {
+   "symbol": "XENE",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 8
+  },
+  {
+   "symbol": "MNOV",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 1
+  },
+  {
+   "symbol": "TRAW",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 0
+  }
+ ],
+ "registry_cohorts": {
+  "PHASE1": {
+   "n": 7230,
+   "share_terminated_or_withdrawn": 0.16431535269709543
+  },
+  "PHASE2": {
+   "n": 6180,
+   "share_terminated_or_withdrawn": 0.2453074433656958
+  },
+  "PHASE3": {
+   "n": 5623,
+   "share_terminated_or_withdrawn": 0.14582962831228882
+  }
+ },
+ "scenario_model": {
+  "formula": "E[R] = sum_j P(outcome j) x R(outcome j)",
+  "probabilities": "NOT_COMPUTED: needs licensed phase-transition / readout-outcome data",
+  "approval_reaction": "see catalysts.json historical_responses.fda_approval",
+  "failure_reaction": "NOT_COMPUTED: rejections not in openFDA"
+ }
+}

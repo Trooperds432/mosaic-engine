@@ -1,0 +1,6 @@
+UNRATE {'releases': 284, 'mae_arima': 0.1113, 'mae_random_walk': 0.2, 'rmse_arima_ex_2020_21': 0.1644, 'rmse_random_walk_ex_2020_21': 0.2176} latest z 1.1
+PAYEMS {'releases': 285, 'mae_arima': 67.5794, 'mae_random_walk': 73.0, 'rmse_arima_ex_2020_21': 106.5649, 'rmse_random_walk_ex_2020_21': 114.0916} latest z -0.99
+CPIAUCSL {'releases': 284, 'mae_arima': 0.1648, 'mae_random_walk': 0.1948, 'rmse_arima_ex_2020_21': 0.3034, 'rmse_random_walk_ex_2020_21': 0.3332} latest z 1.44
+INDPRO {'releases': 284, 'mae_arima': 0.3904, 'mae_random_walk': 0.5938, 'rmse_arima_ex_2020_21': 0.6183, 'rmse_random_walk_ex_2020_21': 0.8039} latest z -0.38
+ICSA {'releases': 930, 'mae_arima': 3.2421, 'mae_random_walk': 5.6883, 'rmse_arima_ex_2020_21': 5.1529, 'rmse_random_walk_ex_2020_21': 8.795} latest z 0.22
+IPG3344S {'releases': 162, 'mae_arima': 0.6995, 'mae_random_walk': 0.9955, 'rmse_arima_ex_2020_21': 1.0364, 'rmse_random_walk_ex_2020_21': 1.2584} latest z -1.39

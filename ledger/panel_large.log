@@ -1,0 +1,284 @@
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 1/6: 253494 rows
+/opt/mosaic-engine/features.py:286: RuntimeWarning: invalid value encountered in divide
+  out[h] = (ext / ent - 1) - bench[:, None]
+/opt/mosaic-engine/features.py:286: RuntimeWarning: divide by zero encountered in divide
+  out[h] = (ext / ent - 1) - bench[:, None]
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 2/6: 7433 rows
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 3/6: 8739 rows
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 4/6: 6446 rows
+/opt/mosaic-engine/features.py:286: RuntimeWarning: divide by zero encountered in divide
+  out[h] = (ext / ent - 1) - bench[:, None]
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 5/6: 9974 rows
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/features.py:350: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ends = np.full((len(dec_dates), len(ciks)), np.datetime64("NaT"), dtype="datetime64[ns]")
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 6/6: 2509 rows
+{'profile': 'large', 'feature_set_version': 'fs-2.0', 'decision_dates': 1046, 'first': '2006-01-13', 'last': '2026-10-16', 'symbols_with_prices': 4717, 'rows': 288595, 'features': ['mom_12_1', 'mom_6_1', 'ret_1m', 'dist_52w_high', 'px_sma200', 'rsi_14', 'macd_hist', 'bb_pctb', 'vol_60', 'beta_252', 'log_mcap', 'amihud', 'cs_spread', 'turnover', 'earn_yield', 'book_to_mkt', 'fcf_yield', 'gross_prof', 'roa', 'roic', 'accruals', 'leverage', 'asset_growth', 'capex_intensity', 'share_issuance', 'sue', 'eps_growth', 'gm_change', 'op_margin_change', 'inv_to_sales_chg', 'earn_recent', 'ins_net_90', 'ins_net_180', 'ins_buyers_90', 'ins_sellers_90', 'ins_officer_buy_180', 'ins_dir_buy_90', 'ins_sponsor_sell_90', 'ins_purchase_intensity', 'ins_conviction', 'ins_opp_net_90', 'ins_routine_net_90', 'ins_surprise', 'ins_buy_x_drawdown', 'ins_plan_sale_share', 'io_ratio', 'io_breadth_chg', 'io_holders_chg', 'io_hhi', 'si_ratio', 'si_days_to_cover', 'si_change', 'beta_rates', 'beta_credit', 'beta_dollar', 'rates_tilt', 'credit_tilt', 'semi_cycle', 'semi_orders', 'bio_cash_runway', 'bio_rnd_intensity', 'bio_ph3_trials', 'bio_fda_appr_365', 'energy_oil_tilt', 'energy_inv_surprise', 'energy_crack_chg', 'energy_cot_z', 'fin_deposit_growth', 'fin_nim_proxy', 'fin_provision_ratio', 'fin_slope_tilt', 'mat_commodity_tilt'], 'chunks': 6}
+date
+2009     2723
+2010     8468
+2011     9921
+2012    10187
+2013    11838
+2014    13882
+2015    14182
+2016    14474
+2017    15348
+2018    16966
+2019    17051
+2020    17280
+2021    19755
+2022    21306
+2023    21354
+2024    23385
+2025    26456
+2026    24019

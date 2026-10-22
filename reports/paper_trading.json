@@ -1,0 +1,14 @@
+{
+ "generated_at_utc": "2026-10-21T20:00:38+00:00",
+ "forecast_dates_recorded": 2,
+ "shadow_book": {},
+ "shadow_status": {},
+ "executed_demo_book": {
+  "closed_trades": 0,
+  "open_signal_positions": [],
+  "skipped_by_pretrade_check": 0,
+  "skip_reasons": {}
+ },
+ "live_review_recommendation": "NOT_READY",
+ "rule": ">= 63 sessions and >= 20 closed demo trades with mean net excess > 0 and t >= 2.0; forward IC > 0. Never automatic."
+}

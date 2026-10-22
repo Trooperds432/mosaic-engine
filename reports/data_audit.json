@@ -1,0 +1,255 @@
+{
+ "generated_at_utc": "2026-10-20T23:52:20+00:00",
+ "profile": "large",
+ "truncation_invariance": {
+  "passed": true,
+  "worst": 0.0,
+  "dates": [
+   {
+    "date": "2008-12-24",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   },
+   {
+    "date": "2010-02-05",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   },
+   {
+    "date": "2024-12-17",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   }
+  ],
+  "symbols_sampled": 150
+ },
+ "label_alignment": {
+  "passed": true,
+  "checked": 3968,
+  "max_abs_error": 1.7285346984863281e-06
+ },
+ "duplicates_timestamps": {
+  "duplicate_insider_rows": 0,
+  "price_files_checked": 316,
+  "weekend_price_rows": 0,
+  "duplicate_price_dates": 0,
+  "8k_acceptance_inconsistent": 82,
+  "8k_checked": 721461,
+  "passed": true
+ },
+ "diagnostics": {
+  "survivorship": {
+   "candidates": 6743,
+   "removed_sp500_without_current_ticker_excluded": 321,
+   "price_series_available": 5982,
+   "series_ending_before_last_session": 0,
+   "note": "Yahoo has no prices for most delisted tickers; delisting returns assumed 0% (vendor survivorship bias)"
+  },
+  "restatement": {
+   "periods": 501685,
+   "periods_with_later_different_value": 30427,
+   "share_restated": 0.06064961081156502,
+   "median_abs_rel_change_when_restated": 0.01790568303938302,
+   "policy": "features use the value known at each filing date (as-reported); the latest-restated series is kept separately in reports/facts_latest_restated.parquet"
+  },
+  "stale": {
+   "share_rows_fundamentals_older_than_limit": 0.0653095167968953,
+   "mean_quality_score": 0.8954752683639526
+  },
+  "missing_not_at_random": {
+   "fundamentals": {
+    "missing_share": 0.011760425509797468,
+    "ic_missing_vs_fwd_return": 0.001054612555356849,
+    "t": 0.22145156272598798
+   },
+   "sue": {
+    "missing_share": 0.09044508740622671,
+    "ic_missing_vs_fwd_return": -0.007660174513560879,
+    "t": -1.3813928251044711
+   },
+   "13f": {
+    "missing_share": 0.31241705504253364,
+    "ic_missing_vs_fwd_return": -0.0033802433809903927,
+    "t": -0.7229228413582256
+   }
+  },
+  "corporate_actions": {
+   "sampled_files": 300,
+   "unexplained_moves_gt_60pct": 424,
+   "note": "split adjustment comes from Yahoo adjclose; large moves present in both raw and adjusted series are reviewed, not removed"
+  }
+ },
+ "blocking": {
+  "truncation_invariance": true,
+  "label_alignment": true,
+  "duplicates_timestamps": true
+ }
+}

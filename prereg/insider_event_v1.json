@@ -1,0 +1,38 @@
+{
+  "id": "insider-event-v1",
+  "registered_utc": "2026-10-19T14:30:00Z",
+  "status_note": "Written before computing any of the tests below. The discovery/holdout split of the existing event study (holdout from 2024-10-16) was already viewed for CEO/CFO and cluster buys at 1/5/20/60d, so the holdout is NOT pristine for those cells; forward paper trading is the only clean test.",
+  "hypothesis": "Discretionary open-market purchases by insiders (especially CEO/CFO, or several insiders together) reveal private valuation views not yet in price (Seyhun 1986; Lakonishok-Lee 2001; Cohen-Malloy-Pomorski 2012). Prediction: positive abnormal return over the first 1-5 sessions after the Form 4 becomes public, decaying thereafter.",
+  "event": {
+    "source": "SEC Form 4 non-derivative table, transaction code P, not flagged as 10b5-1",
+    "primary_trigger": "filing by a CEO/CFO (title match) OR completion of a cluster (>=2 distinct insiders with code-P filings within 30 calendar days)",
+    "timing": "public at filing date; entry at the open of the first session strictly after the filing date; exit at the open h sessions later",
+    "dedup": "at most one event per issuer per 20 sessions (primary horizon x4); later triggers inside an open window are ignored",
+    "liquidity_screen": "60-session average dollar volume >= $20m and close >= $5 on the session before entry (point-in-time)"
+  },
+  "primary": {"horizon_sessions": 5, "return": "open-to-open stock return minus beta*SPY open-to-open return, beta from the 252 sessions before entry", "cost_round_trip": 0.0046},
+  "secondary_variants_counted_as_trials": [
+    {"trigger": "ceo_cfo_only", "h": [1, 3, 5]},
+    {"trigger": "cluster_only", "h": [1, 3, 5]},
+    {"trigger": "primary", "h": [1, 3]},
+    {"trigger": "any_purchase", "h": [1, 3, 5]}
+  ],
+  "section_3_3_controls": {
+    "matched_controls": "per event, the universe stock in the same SIC sector with nearest log dollar volume and nearest 12-1 momentum rank, with no code-P filing in +/-90 days; difference-in-CAR test",
+    "earnings": "8-K item 2.02 filings; report results with and without events whose holding window contains an earnings release",
+    "incremental_value": "OLS of CAR_h on event dummy (events + matched controls) with momentum, 1m reversal, log dollar volume, beta, sector fixed effects; SEs clustered by month",
+    "subgroups": "sector, dollar-volume tercile, regime (SPY>200d x VIX vs 5y median) - descriptive, no gating"
+  },
+  "gate": {
+    "discovery_sample": "events with entry before 2024-10-16",
+    "PAPER_TEST_ELIGIBLE_requires_all": [
+      "discovery mean net-of-cost abnormal return > 0 with month-clustered t >= 3.0",
+      "discovery event-minus-matched-control difference t >= 2.0",
+      "incremental-value regression event coefficient t >= 2.0 (discovery)",
+      "deflated Sharpe ratio >= 0.90 on the discovery daily portfolio series, trials = 1 primary + 11 secondary",
+      "holdout mean net abnormal return > 0 (sign check only; holdout already partly viewed)"
+    ],
+    "never_automatic": "LIVE_REVIEW_ELIGIBLE requires >= 3 months of forward paper trading reviewed by the user"
+  },
+  "frozen_parameters": "no parameter in this file may change after results are seen without registering insider-event-v2"
+}

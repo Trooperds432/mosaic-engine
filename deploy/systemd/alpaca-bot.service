@@ -1,0 +1,18 @@
+[Unit]
+Description=Alpaca PAPER long/short bot (trades Mosaic engine market-neutral book)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/alpaca-bot
+ExecStart=/opt/alpaca-bot/run.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

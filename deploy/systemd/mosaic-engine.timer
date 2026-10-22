@@ -1,0 +1,9 @@
+[Unit]
+Description=Run mosaic-engine after the US close, Mon-Fri (UK time)
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 22:40:00 Europe/London
+Persistent=true
+
+[Install]
+WantedBy=timers.target

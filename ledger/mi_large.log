@@ -1,0 +1,11 @@
+permutation 1
+permutation 2
+permutation 3
+permutation 4
+permutation 5
+permutation 6
+permutation 7
+permutation 8
+permutation 9
+permutation 10
+top MI: [('vol_60', 0.0285, 0.0), ('cs_spread', 0.0265, 0.0), ('turnover', 0.0151, 0.0), ('dist_52w_high', 0.0135, 2.930602760464751e-09), ('mom_12_1', 0.0135, 0.0), ('beta_252', 0.0132, 1.4599432773820809e-13), ('gm_change', 0.0127, 1.697576247017274e-06), ('roic', 0.0116, 1.2527459070099667e-09)] | nonlinear only: ['vol_60', 'cs_spread', 'turnover', 'dist_52w_high', 'mom_12_1', 'beta_252', 'gm_change', 'roic', 'roa', 'log_mcap', 'ins_routine_net_90', 'rates_tilt', 'fcf_yield', 'op_margin_change', 'gross_prof', 'semi_cycle', 'asset_growth', 'semi_orders', 'beta_credit', 'share_issuance', 'mom_6_1', 'earn_yield', 'px_sma200', 'ins_net_90', 'ins_net_180', 'leverage', 'si_ratio', 'ins_sponsor_sell_90', 'io_hhi', 'ins_dir_buy_90', 'ins_buy_x_drawdown', 'energy_oil_tilt', 'si_change', 'ins_officer_buy_180', 'energy_cot_z', 'macd_hist', 'accruals', 'energy_inv_surprise', 'bio_rnd_intensity', 'ins_purchase_intensity', 'bio_ph3_trials', 'ret_1m', 'fin_deposit_growth', 'rsi_14', 'credit_tilt', 'fin_nim_proxy', 'bio_fda_appr_365', 'fin_slope_tilt', 'fin_provision_ratio']

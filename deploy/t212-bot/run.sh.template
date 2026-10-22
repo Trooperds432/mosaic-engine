@@ -1,0 +1,6 @@
+#!/bin/sh
+# Template: set the values on the server (keys live in /root/.hermes/.env), never commit real keys.
+export T212_API_KEY_ID="$(grep -m1 "^T212_API_KEY_ID=" /root/.hermes/.env | cut -d= -f2-)"
+export T212_API_SECRET="$(grep -m1 "^T212_API_SECRET=" /root/.hermes/.env | cut -d= -f2-)"
+export FINNHUB_API_KEY="$(grep -m1 "^FINNHUB_API_KEY=" /root/.hermes/.env | cut -d= -f2-)"
+exec /opt/trading212-mcp/venv/bin/python -u /opt/t212-bot/bot.py

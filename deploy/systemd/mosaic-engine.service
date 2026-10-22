@@ -1,0 +1,10 @@
+[Unit]
+Description=Mosaic research engine daily data refresh + signal export (research only, no orders)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/mosaic-engine
+ExecStart=/opt/mosaic-engine/run_daily.sh
+Nice=10

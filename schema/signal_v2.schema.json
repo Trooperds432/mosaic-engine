@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mosaic-engine/signal/2.0",
+  "title": "Mosaic research signal v2.0",
+  "description": "Units: all returns and volatilities are decimal fractions (0.01 = 1%) measured over forecast.horizon_sessions trading sessions, excess of SPY, entry at the next session open. Unknown values are null, never 0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model_id",
+    "model_version",
+    "signal_id",
+    "generated_at_utc",
+    "as_of_utc",
+    "asset",
+    "forecast",
+    "validation",
+    "risk",
+    "signal",
+    "provenance",
+    "regime"
+  ],
+  "$defs": {
+    "num": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "prob": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "ts": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "eligibility": {
+      "enum": [
+        "INSUFFICIENT_DATA",
+        "UNVALIDATED",
+        "RESEARCH_CANDIDATE",
+        "PAPER_TEST_ELIGIBLE",
+        "LIVE_REVIEW_ELIGIBLE"
+      ]
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "model_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signal_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "generated_at_utc": {
+      "$ref": "#/$defs/ts"
+    },
+    "as_of_utc": {
+      "$ref": "#/$defs/ts"
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticker",
+        "security_id",
+        "exchange",
+        "asset_class"
+      ],
+      "properties": {
+        "ticker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "security_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "SEC CIK, zero-padded to 10 digits"
+        },
+        "exchange": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "asset_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "forecast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "horizon_sessions",
+        "expected_excess_return",
+        "expected_net_excess_return",
+        "predictive_std",
+        "prediction_interval_95",
+        "probability_positive_excess_return",
+        "expected_cost_return"
+      ],
+      "properties": {
+        "horizon_sessions": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "expected_excess_return": {
+          "$ref": "#/$defs/num"
+        },
+        "expected_net_excess_return": {
+          "$ref": "#/$defs/num"
+        },
+        "predictive_std": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "prediction_interval_95": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          ]
+        },
+        "probability_positive_excess_return": {
+          "$ref": "#/$defs/prob"
+        },
+        "expected_cost_return": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "out_of_sample_ic",
+        "ic_uncertainty",
+        "net_sharpe",
+        "deflated_sharpe_ratio",
+        "tested_hypotheses"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/eligibility"
+        },
+        "out_of_sample_ic": {
+          "$ref": "#/$defs/num"
+        },
+        "ic_uncertainty": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "HAC standard error of the holdout mean IC"
+        },
+        "net_sharpe": {
+          "$ref": "#/$defs/num"
+        },
+        "deflated_sharpe_ratio": {
+          "$ref": "#/$defs/prob"
+        },
+        "tested_hypotheses": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "forecast_volatility",
+        "estimated_beta",
+        "expected_shortfall",
+        "liquidity_approved",
+        "data_quality_approved"
+      ],
+      "properties": {
+        "forecast_volatility": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "1-day volatility from the VaR-backtest winner (GARCH(1,1)-t; EWMA fallback) scaled to the horizon by sqrt(h)"
+        },
+        "estimated_beta": {
+          "$ref": "#/$defs/num"
+        },
+        "expected_shortfall": {
+          "$ref": "#/$defs/num",
+          "description": "mean of the worst 5% of out-of-sample excess returns in this forecast decile"
+        },
+        "liquidity_approved": {
+          "type": "boolean"
+        },
+        "data_quality_approved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direction",
+        "deployment_eligibility",
+        "expires_at_utc",
+        "reason",
+        "key_drivers",
+        "contradictory_evidence"
+      ],
+      "properties": {
+        "direction": {
+          "enum": [
+            "LONG",
+            "NO_SIGNAL"
+          ]
+        },
+        "deployment_eligibility": {
+          "$ref": "#/$defs/eligibility"
+        },
+        "expires_at_utc": {
+          "$ref": "#/$defs/ts"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key_drivers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contradictory_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "direction": {
+                "const": "LONG"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deployment_eligibility": {
+                "enum": [
+                  "PAPER_TEST_ELIGIBLE",
+                  "LIVE_REVIEW_ELIGIBLE"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_set_version",
+        "dataset_version",
+        "source_ids",
+        "latest_required_data_utc",
+        "research_run_id"
+      ],
+      "properties": {
+        "feature_set_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dataset_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "latest_required_data_utc": {
+          "$ref": "#/$defs/ts"
+        },
+        "research_run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "regime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "p_high_vol",
+        "method"
+      ],
+      "description": "Market regime at the decision time (spec 12.1). Filtered (real-time) probabilities only.",
+      "properties": {
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "p_high_vol": {
+          "$ref": "#/$defs/prob"
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

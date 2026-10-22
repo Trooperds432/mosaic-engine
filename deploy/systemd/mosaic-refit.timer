@@ -1,0 +1,9 @@
+[Unit]
+Description=Weekly Mosaic model refit, Saturday morning UK time
+
+[Timer]
+OnCalendar=Sat *-*-* 06:15:00 Europe/London
+Persistent=true
+
+[Install]
+WantedBy=timers.target

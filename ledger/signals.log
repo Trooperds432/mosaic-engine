@@ -1,0 +1,20 @@
+as_of=2026-10-16 evaluated=408 LONG=0 gate[20d]=UNVALIDATED stale_sessions=1
+wrote /opt/mosaic-engine/reports/report_2026-10-16.md
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/signals.py", line 245, in <module>
+    run(dry="--dry" in sys.argv, profiles=[a for a in sys.argv[1:] if not a.startswith("--")] or None)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/mosaic-engine/signals.py", line 232, in run
+    log = C.SIGNALS / "log" / f"{asof_day.date()}_{gen.strftime('%H%M%S')}.jsonl"
+                                 ^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'date'
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+profile=large as_of=2026-10-19 evaluated=569 LONG=0 gate=UNVALIDATED
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+profile=broad as_of=2026-10-19 evaluated=2350 LONG=0 gate=UNVALIDATED
+total evaluated=2926 insider_events=7 LONG=0 audit=pass
+wrote report 27338 chars
+wrote report 31661 chars
+wrote report 33701 chars

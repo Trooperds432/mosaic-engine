@@ -1,0 +1,7 @@
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+profile=large as_of=2026-10-19 evaluated=569 LONG=0 gate=UNVALIDATED
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+profile=broad as_of=2026-10-19 evaluated=2350 LONG=0 gate=UNVALIDATED
+total evaluated=2926 insider_events=7 LONG=0 audit=pass

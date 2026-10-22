@@ -1,0 +1,210 @@
+panel {'first_date': '2009-05-04', 'last_date': '2026-10-16', 'holdout_start': '2024-10-21', 'rows': 288595, 'symbols': 896, 'decision_dates': 880, 'avg_names_per_date': 327.9488636363636}
+Model is not converging.  Current: 4041.6001594752106 is not greater than 4041.8712740479373. Delta is -0.27111457272667394
+Model is not converging.  Current: 5055.936601993978 is not greater than 5056.294084452715. Delta is -0.3574824587367402
+Model is not converging.  Current: 6198.170580392154 is not greater than 6198.336978593424. Delta is -0.16639820126965787
+Model is not converging.  Current: 7437.972376099509 is not greater than 7437.9838441397. Delta is -0.011468040190266038
+Model is not converging.  Current: 11260.21863800669 is not greater than 11260.24550408171. Delta is -0.02686607501891558
+Model is not converging.  Current: 12582.086450388662 is not greater than 12582.12245036916. Delta is -0.03599998049685382
+Model is not converging.  Current: 16502.669321900925 is not greater than 16502.67919645901. Delta is -0.009874558083538432
+Model is not converging.  Current: 17674.830711677027 is not greater than 17674.99031686899. Delta is -0.1596051919623278
+Model is not converging.  Current: 20067.324452886667 is not greater than 20067.349264546327. Delta is -0.024811659659462748
+Model is not converging.  Current: 21330.048521149936 is not greater than 21330.09075721587. Delta is -0.042236065932229394
+Model is not converging.  Current: 22365.894767347076 is not greater than 22366.380847013843. Delta is -0.48607966676718206
+Model is not converging.  Current: 23661.164026199218 is not greater than 23661.850284785636. Delta is -0.686258586418262
+regime {'state': 'uptrend/high_vol', 'spy_above_200d': True, 'vix': 18.440000534057617, 'vix_5y_median': 17.649999618530273, 'hmm_p_high_vol_filtered': 0.2637890272997034, 'as_of': '2026-10-19'}
+univariate mom_12_1
+univariate mom_6_1
+univariate ret_1m
+univariate dist_52w_high
+univariate px_sma200
+univariate rsi_14
+univariate macd_hist
+univariate bb_pctb
+univariate vol_60
+univariate beta_252
+univariate log_mcap
+univariate amihud
+univariate cs_spread
+univariate turnover
+univariate earn_yield
+univariate book_to_mkt
+univariate fcf_yield
+univariate gross_prof
+univariate roa
+univariate roic
+univariate accruals
+univariate leverage
+univariate asset_growth
+univariate capex_intensity
+univariate share_issuance
+univariate sue
+univariate eps_growth
+univariate gm_change
+univariate op_margin_change
+univariate inv_to_sales_chg
+univariate earn_recent
+univariate ins_net_90
+univariate ins_net_180
+univariate ins_buyers_90
+univariate ins_sellers_90
+univariate ins_officer_buy_180
+univariate ins_dir_buy_90
+univariate ins_sponsor_sell_90
+univariate ins_purchase_intensity
+univariate ins_conviction
+univariate ins_opp_net_90
+univariate ins_routine_net_90
+univariate ins_surprise
+univariate ins_buy_x_drawdown
+univariate ins_plan_sale_share
+univariate io_ratio
+univariate io_breadth_chg
+univariate io_holders_chg
+univariate io_hhi
+univariate si_ratio
+univariate si_days_to_cover
+univariate si_change
+univariate beta_rates
+univariate beta_credit
+univariate beta_dollar
+univariate rates_tilt
+univariate credit_tilt
+univariate semi_cycle
+univariate semi_orders
+univariate bio_cash_runway
+univariate bio_rnd_intensity
+univariate bio_ph3_trials
+univariate bio_fda_appr_365
+univariate energy_oil_tilt
+univariate energy_inv_surprise
+univariate energy_cot_z
+univariate fin_deposit_growth
+univariate fin_nim_proxy
+univariate fin_provision_ratio
+univariate fin_slope_tilt
+univariate mat_commodity_tilt
+model 1 ridge wf IC -0.0017
+horizon done 1 {'ridge': (-0.001733333904843985, 0.0034472505439368047), 'ensemble': (-0.001733333904843985, 0.0034472505439368047)}
+model 5 ridge wf IC 0.0021
+model 5 enet wf IC 0.0003
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/sklearn/linear_model/_huber.py:348: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  self.n_iter_ = _check_optimize_result("lbfgs", opt_res, self.max_iter)
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/sklearn/linear_model/_huber.py:348: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  self.n_iter_ = _check_optimize_result("lbfgs", opt_res, self.max_iter)
+model 5 huber wf IC 0.0099
+model 5 lgbm wf IC -0.0006
+model 5 gam wf IC 0.0037
+model 5 hier wf IC 0.0034
+model 5 logit wf IC -0.0068
+model 5 factor_resid wf IC 0.0061
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+horizon done 5 {'ridge': (0.0020709346244364027, 0.005490722514874737), 'enet': (0.00025462359159463227, 0.004576146422846415), 'huber': (0.009854523225884404, 0.009018328461898479), 'lgbm': (-0.0006155635975154308, 0.00681617948180123), 'gam': (0.003668763882028442, 0.0025929493832241688), 'hier': (0.0034298194621942705, 0.017943044221201226), 'logit': (-0.006815949702470875, 0.008617298122931256), 'factor_resid': (0.006121443153329718, 0.008490203275380881), 'ensemble': (0.003334979639355272, 0.00844217403178232)}
+model 20 ridge wf IC -0.0027
+model 20 enet wf IC -0.0072
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/sklearn/linear_model/_huber.py:348: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  self.n_iter_ = _check_optimize_result("lbfgs", opt_res, self.max_iter)
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/sklearn/linear_model/_huber.py:348: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  self.n_iter_ = _check_optimize_result("lbfgs", opt_res, self.max_iter)
+model 20 huber wf IC 0.0013
+model 20 lgbm wf IC -0.002
+model 20 gam wf IC 0.0038
+model 20 hier wf IC -0.0024
+model 20 logit wf IC -0.0095
+model 20 factor_resid wf IC 0.0032
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+horizon done 20 {'ridge': (-0.0027060810717444562, 0.006772872709578319), 'enet': (-0.007221329531862109, 0.007587365899422462), 'huber': (0.0013400713877249212, 0.0049341349833560266), 'lgbm': (-0.0019952761969854, 0.004185545847627153), 'gam': (0.003770854969412409, 0.006969246935674744), 'hier': (-0.002364749587238414, 0.026783885388665978), 'logit': (-0.009450884125316125, -0.001295397057029463), 'factor_resid': (0.0031643129055683597, 0.01112395829976052), 'ensemble': (-0.0010878258559335063, 0.007986811351363234)}
+model 60 ridge wf IC -0.0125
+horizon done 60 {'ridge': (-0.012477572157160007, 0.03700978491700841), 'ensemble': (-0.012477572157160007, 0.03700978491700841)}
+model 120 ridge wf IC -0.0201
+horizon done 120 {'ridge': (-0.020142752934470196, 0.04488783004288143), 'ensemble': (-0.020142752934470196, 0.04488783004288143)}
+overfitting {'primary_horizon': 20, 'strategies_tested': 80, 'wf_periods': 331, 'ensemble_wf_sr_per_period': -0.31916774158370326, 'psr_vs_zero': 9.928191539826951e-05, 'deflated_sharpe_ratio': 1.2208265117750384e-12, 'dsr_benchmark_sr': np.float64(0.2818484842137698), 'min_track_record_periods': None, 'pbo_cscv': 0.38095238095238093, 'reality_check_spa': {'strategies': 80, 'periods': 331, 'reality_check_p': 0.987, 'spa_p': 0.96, 'best_strategy': 'feat:fin_provision_ratio', 'best_mean': 0.00018260776043895694}, 'train_vs_test_ic_degradation': -0.00907463720729674}
+{
+ "1": {
+  "ens_wf_ic": -0.001733333904843985,
+  "ens_ho_ic": 0.0034472505439368047,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout IC t=0.38 < 2.0",
+    "walk-forward positive-IC years 55% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "5": {
+  "ens_wf_ic": 0.003334979639355272,
+  "ens_ho_ic": 0.00844217403178232,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout IC t=0.82 < 2.0",
+    "walk-forward positive-IC years 45% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "20": {
+  "ens_wf_ic": -0.0010878258559335063,
+  "ens_ho_ic": 0.007986811351363234,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout IC t=0.43 < 2.0",
+    "walk-forward positive-IC years 55% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "deflated Sharpe 0.0 < 0.9",
+    "Hansen SPA p=0.96 > 0.10",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "60": {
+  "ens_wf_ic": -0.012477572157160007,
+  "ens_ho_ic": 0.03700978491700841,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "holdout IC t=1.56 < 2.0",
+    "walk-forward positive-IC years 36% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ },
+ "120": {
+  "ens_wf_ic": -0.020142752934470196,
+  "ens_ho_ic": 0.04488783004288143,
+  "gate": {
+   "status": "UNVALIDATED",
+   "failed_checks": [
+    "walk-forward positive-IC years 27% < 60%",
+    "holdout long-only net excess <= 0 after per-name costs",
+    "forecast deciles not monotonic out-of-sample"
+   ]
+  }
+ }
+}

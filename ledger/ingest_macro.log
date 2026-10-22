@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/data_macro.py", line 130, in <module>
+    run()
+    ~~~^^
+  File "/opt/mosaic-engine/data_macro.py", line 112, in run
+    parts = [market(c), eia(c), revised(c)]
+             ~~~~~~^^^
+  File "/opt/mosaic-engine/data_macro.py", line 45, in market
+    d = pd.read_csv(io.StringIO(get(client, FRED.format(s)).text))
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 872, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 306, in _read
+    return parser.read(nrows)
+           ~~~~~~~~~~~^^^^^^^
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 1950, in read
+    ) = self._engine.read(  # type: ignore[attr-defined]
+        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        nrows
+        ^^^^^
+    )
+    ^
+  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 238, in read
+    chunks = self._reader.read_low_memory(nrows)
+  File "pandas/_libs/parsers.pyx", line 832, in pandas._libs.parsers.TextReader.read_low_memory
+  File "pandas/_libs/parsers.pyx", line 897, in pandas._libs.parsers.TextReader._read_rows
+  File "pandas/_libs/parsers.pyx", line 868, in pandas._libs.parsers.TextReader._tokenize_rows
+  File "pandas/_libs/parsers.pyx", line 885, in pandas._libs.parsers.TextReader._check_tokenize_status
+  File "pandas/_libs/parsers.pyx", line 2090, in pandas._libs.parsers.raise_parser_error
+pandas.errors.ParserError: Error tokenizing data. C error: Expected 1 fields in line 5, saw 3
+

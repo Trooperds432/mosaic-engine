@@ -1,0 +1,20 @@
+markov-switching: {'current_p_high_vol': 0.02867557885073992, 'walk_forward': {'ic_regime_switching': -8.068903738828018e-06, 'ic_unconditional': -0.0027056608965161824, 'difference': {'mean': 0.0026975919927773543, 'se': 0.0037822842719594796, 't': 0.7132176745085897, 'p': 0.4757110709661615, 'n': 544}}, 'holdout': {'ic_regime_switching': 0.010847528516566673, 'ic_unconditional': 0.006773573934315265, 'difference': {'mean': 0.004073954582251408, 'se': 0.0037644209360460524, 't': 1.0822260983731733, 'p': 0.27915207448921886, 'n': 96}}, 'improves': False, 'weight_vector_correlation_high_vs_low': 0.3462837069112005}
+Model is not converging.  Current: 4041.6014903032856 is not greater than 4041.87257882694. Delta is -0.27108852365427083
+Model is not converging.  Current: 5055.937794711219 is not greater than 5056.295266328308. Delta is -0.35747161708877684
+Model is not converging.  Current: 6198.170962629602 is not greater than 6198.337455245336. Delta is -0.16649261573365948
+Model is not converging.  Current: 7437.972078544506 is not greater than 7437.9835498885295. Delta is -0.011471344023448182
+Model is not converging.  Current: 11260.218646133562 is not greater than 11260.245541239728. Delta is -0.026895106166193727
+Model is not converging.  Current: 12582.086265505393 is not greater than 12582.122280663576. Delta is -0.03601515818263579
+Model is not converging.  Current: 16502.668457475815 is not greater than 16502.678336737703. Delta is -0.009879261888272595
+Model is not converging.  Current: 17674.83043710038 is not greater than 17674.990094107492. Delta is -0.1596570071124006
+Model is not converging.  Current: 20067.32391238958 is not greater than 20067.348750377812. Delta is -0.02483798823232064
+Model is not converging.  Current: 21330.047109503626 is not greater than 21330.089371038484. Delta is -0.04226153485797113
+Model is not converging.  Current: 22365.892946874334 is not greater than 22366.37909031791. Delta is -0.48614344357702066
+Model is not converging.  Current: 23661.162119276418 is not greater than 23661.848451346796. Delta is -0.68633207037783
+Model is not converging.  Current: 4037.930847341747 is not greater than 4038.3087596769246. Delta is -0.3779123351778253
+Model is not converging.  Current: 8706.490587090895 is not greater than 8707.135757746097. Delta is -0.6451706552015821
+Model is not converging.  Current: 20390.35469471787 is not greater than 20390.49806408442. Delta is -0.1433693665494502
+hmm 2 vs 3: {'years_3_state_better': 16, 'years': 19, 'mean_oos_loglik_gain': 18.284186855395074, 't': 3.6487370535503403, 'current_p_stress_3_state': 0.013808395399778399} {'wf_ic_difference': {'mean': -9.916796116381195e-05, 'se': 0.0013154676459245476, 't': -0.07538608909998232, 'p': 0.9399075270035541, 'n': 544}, 'improves': False}
+observable markov: {'long_short_discovery': (0.05, 0.61), 'long_short_holdout': (0.2, 0.99), 'long_cash_discovery': (0.45, 0.61), 'long_cash_holdout': (0.75, 0.99)} signal corr t -0.68
+change points: 15 breaks across 20 series
+factor premia that differ by regime (|t|>=2): {'market': -2.22}

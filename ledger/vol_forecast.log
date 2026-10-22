@@ -1,0 +1,1 @@
+vol forecasts: 2288 symbols, models {'garch_t': 2212, 'ewma_fallback': 76}
