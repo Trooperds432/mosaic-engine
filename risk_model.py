@@ -3,8 +3,8 @@
   r_t = B_t f_t + e_t   daily cross-sectional WLS (weights sqrt mcap) of stock returns on standardised style
                         exposures (beta, size, value, momentum, quality, low-vol, liquidity) + sector dummies.
                         Exposures come from the PIT panel (decision dates) carried forward, so B_t is known at t.
-  Sigma = B F B' + D    F: EWMA factor covariance (half-life 126d) shrunk toward its diagonal (Ledoit-Wolf
-                        style intensity); D: EWMA residual variance (half-life 63d).
+  Sigma = B F B' + D    F: scikit-learn Ledoit-Wolf factor covariance over the last 756 observations;
+                        D: EWMA residual variance (half-life 63d).
 Per-name vol: EWMA (lambda .94) and GARCH(1,1) (arch, Student-t) where 500+ observations exist.
 Stress: historical replay of 2008-09/10, 2020-02/03, 2022-H1, 2024-08 using actual returns (factor-model proxy
 when a name lacks history) plus factor-shock scenarios; correlation spike = mean pairwise correlation in the
@@ -89,6 +89,18 @@ def ewma_cov(X, halflife):
     return pd.DataFrame((1 - k) * S + k * D, index=X.columns, columns=X.columns), k
 
 
+def ledoit_wolf_cov(X):
+    """Actual data-estimated shrinkage; never substitute zero for missing returns."""
+    from sklearn.covariance import LedoitWolf
+    if not X.columns.is_unique:
+        raise ValueError("factor names must be unique")
+    data = X.replace([np.inf, -np.inf], np.nan).dropna()
+    if len(data) < 2 or not len(data.columns):
+        raise ValueError("at least two complete factor-return observations required")
+    fit = LedoitWolf().fit(data.to_numpy(dtype=float))
+    return pd.DataFrame(fit.covariance_, index=X.columns, columns=X.columns), float(fit.shrinkage_)
+
+
 def garch_vol(ret):
     from arch import arch_model
     x = ret.dropna().iloc[-1500:] * 100
@@ -109,7 +121,7 @@ def build(profile=None):
     for k in ["high", "low", "volume", "adj_open", "close"]:
         P.pop(k, None)
     Fdf, resid_sq, fnames = factor_returns(P, E)
-    Fcov, shrink = ewma_cov(Fdf.iloc[-756:], 126)
+    Fcov, shrink = ledoit_wolf_cov(Fdf.iloc[-756:])
     lam = 0.5 ** (1 / 63)
     spec = {}
     for s, v in resid_sq.items():
@@ -122,6 +134,8 @@ def build(profile=None):
     Fdf.to_parquet(C.PROC / f"factor_returns_{prof['name']}.parquet")
     model = {"profile": prof["name"], "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "factors": fnames,
              "factor_cov_annual": (Fcov * 252).to_dict(), "shrinkage_intensity": shrink, "specific_vol_annual": spec,
+             "covariance_estimator": "sklearn.covariance.LedoitWolf", "covariance_window_observations": 756,
+             "covariance_complete_observations": int(Fdf.iloc[-756:].replace([np.inf, -np.inf], np.nan).dropna().shape[0]),
              "ewma_vol_annual": ewma, "exposures_asof": str(E["date"].max().date()),
              "exposures": last[["sector"] + list(STYLE_NAMES.values())].reset_index().to_dict(orient="records"),
              "factor_return_stats": {f: {"ann_mean": float(Fdf[f].mean() * 252), "ann_vol": float(Fdf[f].std() * math.sqrt(252))} for f in fnames}}

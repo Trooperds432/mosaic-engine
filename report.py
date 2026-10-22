@@ -66,6 +66,15 @@ def run():
         if not r:
             continue
         e = r["models"][str(h)]["models"]["ensemble"]
+        cpcv = r["models"][str(h)].get("ridge_cpcv")
+        if cpcv:
+            L.append(f"Discovery-only ridge CPCV: {cpcv['status']}, {len(cpcv['splits'])} purged splits and {len(cpcv['paths'])} paths; no holdout used. This is a stability diagnostic, not forward evidence.")
+        persistence = e.get("factor_persistence_wf")
+        if persistence:
+            rows = [[lag, f(s['rank_autocorrelation'], 3), f(s['top_quantile_turnover'], pct=True), s['turnover_pairs']]
+                    for lag, s in persistence['persistence'].items()]
+            L.append("\nAlphalens-derived signal persistence (lags count observed decision dates):\n")
+            L.append(table(["Lag", "Rank autocorrelation", "Top-quantile name turnover", "Pairs"], rows))
         g = e["gate"]
         prof = C.PROFILES[p]
         L.append(f"- **Universe `{p}` [OBS]:** mcap ≥ ${prof['min_mcap'] / 1e9:g}bn, ADV ≥ {prof['min_adv_shares'] / 1e3:g}k shares and ≥ ${prof['min_dollar_adv'] / 1e6:g}m, "

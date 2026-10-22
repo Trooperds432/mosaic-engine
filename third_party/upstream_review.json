@@ -1,0 +1,57 @@
+{
+  "reviewed_date": "2026-10-22",
+  "mosaic_baseline": "a8effd26af5ed9466c8119df6c401ee091d6ccdd",
+  "packages": {
+    "arch": "8.0.0",
+    "skfolio": "1.9.13",
+    "scikit-learn": "1.9.1"
+  },
+  "upstream_source_review": [
+    {
+      "repository": "skfolio/skfolio",
+      "commit": "392765783de4cbfb99a9e0a6aab6cd0371174070",
+      "decision": "integrated pinned package partitions/path IDs; Mosaic adds date grouping and interval purging"
+    },
+    {
+      "repository": "bashtage/arch",
+      "commit": "5db69b011f6291dc46eadfcde57a1f7c9041d85a",
+      "decision": "integrated existing pinned package SPA/RealityCheck implementations"
+    },
+    {
+      "repository": "stefan-jansen/alphalens-reloaded",
+      "commit": "1bc181de4aafbe33437ed0e362ff96aa7ce20acd",
+      "decision": "adapted two persistence functions; Apache licence retained"
+    },
+    {
+      "repository": "scikit-learn/scikit-learn",
+      "commit": "289c4d5cfa1b5c74c2c03420ed809c499ddf7287",
+      "decision": "use existing pinned LedoitWolf estimator"
+    },
+    {
+      "repository": "cvxgrp/cvxportfolio",
+      "commit": "351c782b9b8b395c1a5f886b77e0d55f1bc9396e",
+      "decision": "not copied; duplicates existing constrained CVXPY integration, GPL-3.0 redistribution choice"
+    },
+    {
+      "repository": "microsoft/qlib",
+      "commit": "54355232463878d2eebb91fe0ee5fa7fa1f5976c",
+      "decision": "not integrated; platform migration without a clear solution to required historical data"
+    },
+    {
+      "repository": "hudson-and-thames/mlfinlab",
+      "commit": "79dcc7120ec84110578f75b025a75850eb72fc73",
+      "decision": "not copied; no inspectable implementation chosen; maintained alternatives used"
+    },
+    {
+      "repository": "shardul0701/SP500-Survivorship-bias-data-2004-2026",
+      "commit": "d615d528e6d7f122019848b103f35597ae05057e",
+      "decision": "not redistributed: no declared repository licence in metadata; S&P membership alone cannot supply missing security returns or all required indices"
+    }
+  ],
+  "installed_implementation_sha256": {
+    "arch.bootstrap.multiple_comparison": "62aec9258d40c129d883abeb319e91f43a94052ccfa491984a5ef4b79280e887",
+    "skfolio.model_selection._combinatorial": "cf205874c660a4eda46b6c746f6709bb3d15f417240c479bbb53db9a89ea628e",
+    "sklearn.covariance._shrunk_covariance": "c49e30a32454ea1186edd02b33519913f79e20875d90c27db0bb70bd5b83c994"
+  },
+  "note": "Reviewed GitHub main commits are source review snapshots, not claims that pinned PyPI distributions equal those commits. Package versions and installed module hashes identify tested implementations."
+}

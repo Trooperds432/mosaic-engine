@@ -245,22 +245,8 @@ def pbo_cscv(M, S=10):
 def reality_check_spa(M, block=4, reps=1000):
     """White (2000) Reality Check and Hansen (2005) consistent SPA p-values for H0: no strategy has positive
     expected net excess return. M: periods x strategies (non-overlapping)."""
-    M = M.dropna(axis=1, how="all").fillna(0)
-    T, K = M.shape
-    if T < 20 or K < 2:
-        return None
-    Xv = M.to_numpy()
-    mu = Xv.mean(axis=0)
-    sd = Xv.std(axis=0, ddof=1)
-    sd[sd == 0] = np.inf
-    boot = np.stack([Xv[i].mean(axis=0) for i in stationary_bootstrap_idx(T, block, reps)])
-    rc_p = float(np.mean(math.sqrt(T) * (boot - mu).max(axis=1) >= math.sqrt(T) * mu.max()))
-    spa_stat = max((math.sqrt(T) * mu / sd).max(), 0)
-    thresh = -np.sqrt(2 * np.log(np.log(T))) * sd / math.sqrt(T)
-    centre = np.where(mu >= thresh, mu, 0.0)
-    spa_boot = np.maximum((math.sqrt(T) * (boot - centre) / sd).max(axis=1), 0)
-    return {"strategies": K, "periods": T, "reality_check_p": rc_p, "spa_p": float(np.mean(spa_boot >= spa_stat)),
-            "best_strategy": str(M.columns[int(np.argmax(mu))]), "best_mean": float(mu.max())}
+    from validation_extensions import multiple_comparison
+    return multiple_comparison(M, block=block, reps=reps)
 
 
 # ------------------------------------------------------------- costs
@@ -655,6 +641,11 @@ def run(profile=None):
         if len(names) > 1:
             res["models"]["ensemble"]["model_disagreement_mean_rank_std"] = float(np.nanmean(np.nanstd(np.stack([ranks[n] for n in names]), axis=0)))
         e = res["models"]["ensemble"]
+        if h == C.PRIMARY_HORIZON:
+            from validation_extensions import cpcv_ridge
+            from factor_persistence import summary as persistence_summary
+            res["ridge_cpcv"] = cpcv_ridge(Xm, y, dates, tpos, h, hpos, embargo=EMBARGO)
+            e["factor_persistence_wf"] = persistence_summary(ens[pre], y[pre], dates[pre], syms[pre])
         tab_wf = calibration(np.where(pre, ens, np.nan), y, dates)
         tab_ho = calibration(np.where(hm, ens, np.nan), y, dates)
         tab = tab_wf  # exported expectations use walk-forward outcomes only: the reused holdout never feeds production numbers
