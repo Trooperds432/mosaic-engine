@@ -56,14 +56,14 @@ matrix establishes increased investment returns.
 
 ## Verification and rollout
 
-All 65 tests pass in the local Python 3.13 environment. New tests exercise actual
+All 66 tests pass in the local Python 3.13 environment. New tests exercise actual
 upstream packages, end-to-end synthetic ridge paths, holdout-label contamination,
 cross-security/date leakage, irregular session gaps, expected signal rank reversal
 and turnover, missing buckets, genuine covariance shrinkage and strict JSON.
 Compilation, dependency consistency and diff checks also pass.
 
 No production dataset, fresh vendor data, model refit, or investment performance
-evaluation was run. These changes are on the local upstream-research-integrations
-branch; this integration batch has not been pushed or deployed. Existing validity
-gates remain in place. Source/dependency changes invalidate a previously frozen
+evaluation was run. The integrations and canonical research CLI repair are pushed. The full isolated
+historical backtest is complete; see [the results](BACKTEST_2026-10-22.md). New
+backtest weights have not been deployed. Existing validity gates remain in place. Source/dependency changes invalidate a previously frozen
 recipe, so rollout requires revalidation and a newly approved forward recipe.
