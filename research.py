@@ -653,7 +653,7 @@ def run(profile=None):
         e = res["models"]["ensemble"]
         tab_wf = calibration(np.where(pre, ens, np.nan), y, dates)
         tab_ho = calibration(np.where(hm, ens, np.nan), y, dates)
-        tab = calibration(ens, y, dates)
+        tab = tab_wf  # exported expectations use walk-forward outcomes only: the reused holdout never feeds production numbers
         mono_wf = stats.spearmanr(tab_wf.index, tab_wf["mean"])[0] if len(tab_wf) > 2 else np.nan
         mono_ho = stats.spearmanr(tab_ho.index, tab_ho["mean"])[0] if len(tab_ho) > 2 else np.nan
         e["calibration"] = {"table": tab.reset_index().to_dict(orient="records"), "wf_monotonicity": float(mono_wf), "holdout_monotonicity": float(mono_ho),

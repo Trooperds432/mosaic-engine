@@ -1,0 +1,15 @@
+# Pinned from the production venv (python 3.13). Install: python -m pip install -r requirements.txt
+arch==8.0.0
+cvxpy==1.9.3
+hmmlearn==0.3.3
+httpx==0.28.1
+joblib==1.6.0
+jsonschema==4.26.0
+lightgbm==4.7.0
+numpy==2.5.4
+pandas==3.0.6
+pyarrow==26.0.0
+ruptures==1.1.10
+scikit-learn==1.9.1
+scipy==1.18.1
+statsmodels==0.15.0

@@ -41,5 +41,7 @@ def select(g, held_long=(), held_short=(), can_short=None, gross=LS_GROSS):
     bl, bs = blume(L["beta"]).mean(), blume(S["beta"]).mean()
     gl = gross * bs / (bl + bs)
     gs = gross - gl
-    wl, ws = min(gl / len(L), MAX_NAME_WEIGHT), min(gs / len(S), MAX_NAME_WEIGHT)
+    wl, ws = gl / len(L), gs / len(S)
+    k = min(1.0, MAX_NAME_WEIGHT / max(wl, ws))  # per-name cap scales both legs together, so the book stays beta-neutral
+    wl, ws = wl * k, ws * k
     return {**{s: wl for s in L["symbol"]}, **{s: -ws for s in S["symbol"]}}

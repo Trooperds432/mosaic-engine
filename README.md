@@ -103,3 +103,33 @@ IC significantly (WF t 0.7 / 1.1, holdout t 1.1 / 1.6) -> not adopted; many feat
 | `screening.py` | k-NN mutual information, permutation null, vol-scaled returns | Diagnostic only |
 | `risk_model.t_copula` | t-copula tail dependence vs SPY and pairwise | In portfolio risk report |
 | `regimes.hmm_k` | 2- vs 3-state HMM | 3 states better OOS likelihood 16/19 years -> live regime uses 3 states; no ranking gain |
+
+## Known limitations and errata (2026-10-22, after an external code review)
+Read every backtest number in `reports/` with these qualifications.
+
+- **Survivorship bias.** The universe starts from current SEC/exchange listings plus historical S&P 500 members, and
+  Yahoo has no prices for most delisted stocks. Historical samples are therefore biased towards survivors; results
+  are optimistic by an unknown amount until delisting returns and historical listings (e.g. CRSP / Norgate) are added.
+- **The 2-year holdout is not independent.** It has been inspected in several research runs (ledger/research_runs.jsonl)
+  and was used in model-selection diagnostics. It must not be quoted as an untouched test. Only the forward record
+  (paper_trading.py, from 2026-10-19) is independent; it alone sets the gate.
+- **Calibration** used walk-forward *and* holdout outcomes up to 2026-10-22; from the next re-validation the exported
+  expected returns use walk-forward outcomes only (`research.py`).
+- **Insider pre-registration timestamp.** `prereg/insider_event_v1.json` says `registered_utc 14:30`, but the run in
+  ledger/research_runs.jsonl is stamped 14:14:27 and already carries the file's SHA-256 (ed1edd44…). The rule text was
+  therefore fixed *before* the run, but the stated registration time is wrong, and the rule was written after the
+  exploratory event study of the same day. Treat it as a rule frozen before its own test, not as a blind pre-registration.
+  The file is left unchanged so the recorded hash still verifies.
+- **Backtest execution.** Long-only backtests use equal weights reset each period (no weight drift), open-to-open
+  returns and modelled (not observed) costs.
+
+Fixes made in response to the review:
+- the Trading 212 bot skips an entry when the VaR forecast is missing, stale, unreadable or non-positive (it used to fall
+  back to full size);
+- `signals.py` only accepts a data audit produced in the same run for the same dataset version (`provenance.py`), and
+  a forward gate that is at most 4 days old and was produced for the current model recipe (`gates.py`);
+- the collectors take their own lock (`.collect.lock`) instead of claiming the engine lock;
+- session counts use the NYSE holiday calendar (`provenance.sessions_between`);
+- a FRED error page no longer stops the nightly job (retry, then keep the cached copy of that series);
+- the long/short per-name cap now scales both legs together, keeping the book beta-neutral (found by the new tests);
+- `requirements.txt` (pinned), `tests/` (`python -m unittest discover -s tests`) and a GitHub Actions workflow.

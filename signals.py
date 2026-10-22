@@ -25,6 +25,8 @@ import numpy as np
 import pandas as pd
 
 import config as C
+import gates
+from provenance import dataset_version, sessions_between
 import regime
 from features import FEATURES, FUND_FEATURES, build_panel_chunked, load_insider
 
@@ -50,34 +52,26 @@ def clean(x):
     return x if math.isfinite(x) else None
 
 
-def dataset_version():
-    parts = []
-    for p in [C.RAW / "prices" / f"{C.BENCHMARK}.parquet", C.RAW / "facts" / "companyfacts.parquet",
-              C.RAW / "insider_recent" / "form4_recent.parquet", C.PROC / "inst_ownership_cusip.parquet", C.PROC / "macro_pit.parquet",
-              C.PROC / "short_interest.parquet", *sorted((C.RAW / "insider").glob("*.parquet"))[-2:]]:
-        if p.exists():
-            st = p.stat()
-            parts.append(f"{p.name}:{st.st_size}:{int(st.st_mtime)}")
-    return "ds-" + hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
-
-
-def audit_ok():
+def audit_ok(dsv):
     f = C.REPORTS / "data_audit.json"
-    if not f.exists():
-        return False, "data audit not run"
-    a = json.loads(f.read_text())
-    bad = [k for k, v in a.get("blocking", {}).items() if not v]
-    return (not bad), ("data audit failed: " + ", ".join(bad)) if bad else None
+    try:
+        doc = json.loads(f.read_text())
+    except (OSError, ValueError):
+        doc = None
+    return gates.check_audit(doc, dsv)
 
 
 @lru_cache(maxsize=None)
 def forward_gate(pname, h):
-    """Gate and out-of-sample statistics from the forward record (paper_trading.py), never the reused holdout."""
-    f = C.PROC / "forward_gate.json"
-    g = json.loads(f.read_text())["profiles"].get(pname, {}).get(str(h)) if f.exists() else None
-    if not g:
-        return {"status": "UNVALIDATED", "failed_checks": ["forward record not yet scored"]}, {"oos_ic": None, "oos_ic_se": None, "net_sharpe": None}
-    return {"status": g["status"], "failed_checks": g["failed_checks"]}, {"oos_ic": g["forward_ic"], "oos_ic_se": g["forward_ic_se"], "net_sharpe": None}
+    """Gate and out-of-sample statistics from the forward record (paper_trading.py), never the reused holdout.
+    Only a fresh gate produced for this profile's current model recipe counts (gates.check_forward_gate)."""
+    try:
+        doc = json.loads((C.PROC / "forward_gate.json").read_text())
+    except (OSError, ValueError):
+        doc = None
+    run_id = json.loads((C.PROC / f"model_{pname}.json").read_text())["run_id"]
+    status, failed, st = gates.check_forward_gate(doc, pname, h, run_id)
+    return {"status": status, "failed_checks": failed}, {"oos_ic": st["forward_ic"], "oos_ic_se": st["forward_ic_se"], "net_sharpe": None}
 
 
 def profile_signals(pname, gen, dsv, reg, audit):
@@ -101,7 +95,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
     cost_rt = (name_costs(panel, model.get("order_size_usd") or 600.0) * 2).to_numpy()
 
     sic = pd.read_parquet(C.PROC / "sic.parquet").set_index("cik")
-    sessions_stale = int(np.busday_count(asof_day.date(), gen.astimezone(NY).date()))
+    sessions_stale = sessions_between(asof_day.date(), gen.astimezone(NY).date())
     market_fresh = sessions_stale <= C.PRICE_MAX_STALENESS_SESSIONS
     ins_cov = pd.Timestamp(load_insider(list(panel["cik"].astype(int)))["filing_date"].max())
     insider_fresh = (asof_day - ins_cov).days <= C.INSIDER_MAX_COVERAGE_GAP_DAYS
@@ -225,7 +219,7 @@ def run(dry=False, profiles=None):
     gen = datetime.now(timezone.utc)
     dsv = dataset_version()
     reg = regime.field()
-    audit = audit_ok()
+    audit = audit_ok(dsv)
     profiles = profiles or [p for p in C.PROFILES if (C.PROC / f"model_{p}.json").exists()]
     out, fcs, metas = [], [], []
     asof_day, market_fresh, insider_fresh = None, False, False
@@ -239,7 +233,7 @@ def run(dry=False, profiles=None):
     if asof_day is None:  # no trained cross-sectional model yet: still publish insider-event signals for the last session
         spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet", columns=["date"])
         asof_day = pd.Timestamp(spy["date"].max())
-        market_fresh = int(np.busday_count(asof_day.date(), gen.astimezone(NY).date())) <= C.PRICE_MAX_STALENESS_SESSIONS
+        market_fresh = sessions_between(asof_day.date(), gen.astimezone(NY).date()) <= C.PRICE_MAX_STALENESS_SESSIONS
         insider_fresh = True
     if (C.PROC / "insider_model.json").exists():  # pre-registered insider-event model
         import insider_model

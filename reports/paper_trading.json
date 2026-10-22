@@ -1,8 +1,30 @@
 {
- "generated_at_utc": "2026-10-21T20:00:38+00:00",
+ "generated_at_utc": "2026-10-22T10:40:41+00:00",
  "forecast_dates_recorded": 2,
- "shadow_book": {},
- "shadow_status": {},
+ "shadow_book": {
+  "broad_h1": {
+   "scored_dates": 1,
+   "forward_ic_mean": -0.25296899211463425,
+   "forward_ic_t": null,
+   "forward_ic_se": null,
+   "top_quintile_net_mean": -0.0060014843232850616,
+   "top_quintile_net_t": null,
+   "non_overlapping_cohorts": 1
+  },
+  "large_h1": {
+   "scored_dates": 1,
+   "forward_ic_mean": -0.03754174132288179,
+   "forward_ic_t": null,
+   "forward_ic_se": null,
+   "top_quintile_net_mean": -0.004091604069496195,
+   "top_quintile_net_t": null,
+   "non_overlapping_cohorts": 1
+  }
+ },
+ "shadow_status": {
+  "broad_h1": "INSUFFICIENT_FORWARD_HISTORY",
+  "large_h1": "INSUFFICIENT_FORWARD_HISTORY"
+ },
  "executed_demo_book": {
   "closed_trades": 0,
   "open_signal_positions": [],

@@ -39,10 +39,31 @@ def get(client, url, tries=5):
     raise RuntimeError(url)
 
 
+def fred_csv(client, s, tries=4):
+    """FRED series as a two-column frame; retries when FRED returns an error page instead of CSV."""
+    for i in range(tries):
+        try:
+            d = pd.read_csv(io.StringIO(get(client, FRED.format(s)).text))
+            if d.shape[1] == 2 and len(d) > 10:
+                return d
+        except (pd.errors.ParserError, pd.errors.EmptyDataError, RuntimeError):
+            pass
+        time.sleep(5 * 2 ** i)
+    return None
+
+
 def market(client):
     rows = []
+    prev = pd.read_parquet(PROC / "macro_pit.parquet") if (PROC / "macro_pit.parquet").exists() else None
     for s in MARKET:
-        d = pd.read_csv(io.StringIO(get(client, FRED.format(s)).text))
+        d = fred_csv(client, s)
+        if d is None:  # keep yesterday's copy of this series rather than failing the whole nightly run
+            old = prev[(prev["series"] == s) & (prev["source"] == "fred")] if prev is not None else None
+            if old is None or old.empty:
+                raise RuntimeError(f"FRED {s}: no valid response and no cached copy")
+            print(f"WARNING FRED {s}: no valid CSV after retries, kept cached copy through {old['obs_date'].max().date()}", flush=True)
+            rows.append(old)
+            continue
         d.columns = ["obs_date", "value"]
         d["value"] = pd.to_numeric(d["value"], errors="coerce")
         d = d.dropna()

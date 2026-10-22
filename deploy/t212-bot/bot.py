@@ -137,17 +137,21 @@ def pretrade(sym, signal):
 
 
 def position_weight(sym):
-    """(weight, note): POSITION_PCT capped so that weight x 1-day 99% VaR <= VAR_LIMIT."""
+    """(weight, note): POSITION_PCT capped so that weight x 1-day 99% VaR <= VAR_LIMIT.
+    A missing, stale, unreadable or non-positive VaR forecast returns weight 0: the entry is skipped, never sized blind."""
     try:
         doc = json.loads(RISK_FILE.read_text())
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(doc["generated_at_utc"].replace("Z", "+00:00"))).days
         r = doc["names"].get(sym)
         if r is None or age > SIGNAL_MAX_AGE_DAYS:
-            return POSITION_PCT, "no fresh VaR forecast: default size"
-        w = min(POSITION_PCT, VAR_LIMIT / r["var99_1d"]) if r["var99_1d"] > 0 else POSITION_PCT
-        return w, f"1d VaR99 {r['var99_1d']:.2%} ({r['model']}) -> weight {w:.1%}"
-    except (OSError, ValueError, KeyError) as e:
-        return POSITION_PCT, f"risk file unavailable ({e.__class__.__name__}): default size"
+            return 0.0, "no fresh VaR forecast: entry blocked"
+        v = float(r["var99_1d"])
+        if not v > 0:
+            return 0.0, f"invalid VaR forecast {v}: entry blocked"
+        w = min(POSITION_PCT, VAR_LIMIT / v)
+        return w, f"1d VaR99 {v:.2%} ({r['model']}) -> weight {w:.1%}"
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return 0.0, f"risk file unavailable ({e.__class__.__name__}): entry blocked"
 
 
 def sma(xs, n):
@@ -314,6 +318,9 @@ def cycle(state):
                 state["sold_on"][ticker] = today  # do not retry the same name today after a failed check
                 continue
             weight, sizing = position_weight(sym)
+            if weight <= 0:
+                log.info("skip %s: %s", sym, sizing)
+                continue
             budget = min(total * weight, free * 0.98)
             qty = math.floor(budget * usd_per_account_ccy() / price * 100) / 100
             if qty < 0.01 or budget <= 50:

@@ -171,7 +171,11 @@ def run():
     ex = executed()
     gate = forward_gate(sh)
     tmp = C.PROC / "forward_gate.tmp"
+    from provenance import dataset_version
+    run_ids = {p: json.loads((C.PROC / f"model_{p}.json").read_text())["run_id"] for p in C.PROFILES if (C.PROC / f"model_{p}.json").exists()}
     tmp.write_text(json.dumps({"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                               "model_run_ids": run_ids, "dataset_version": dataset_version(),
+                               "last_forecast_date": str(pd.Timestamp(hist["as_of"].max()).date()),
                                "rule": f">= {MIN_SESSIONS} scored dates, forward IC > 0 with HAC t >= {MIN_T}, shadow top quintile net > 0",
                                "profiles": gate}, indent=1, default=float))
     tmp.replace(C.PROC / "forward_gate.json")

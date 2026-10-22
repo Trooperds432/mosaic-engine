@@ -28,6 +28,7 @@ import pandas as pd
 
 sys.path.insert(0, "/opt/mosaic-engine")
 import ls_rules as R  # noqa: E402
+from provenance import sessions_between  # noqa: E402  NYSE calendar
 
 HERE = Path(__file__).resolve().parent
 PAPER = "https://paper-api.alpaca.markets"
@@ -287,7 +288,7 @@ def main():
             opened = datetime.fromisoformat(clock["timestamp"]).astimezone(NY)
             after_open = opened.hour * 60 + opened.minute >= 9 * 60 + 45
             last = state.get("last_rebalanced_asof")
-            due = doc and (last is None or int(np.busday_count(last, asof)) >= REBALANCE_SESSIONS)
+            due = doc and (last is None or sessions_between(last, asof) >= REBALANCE_SESSIONS)
             if due and after_open:
                 rebalance(state, doc)
             save_state(state)

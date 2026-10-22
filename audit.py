@@ -155,7 +155,9 @@ def diagnostics(prof):
 
 def run(profile=None):
     prof = C.PROFILES[profile] if profile else C.PROFILE
-    A = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "profile": prof["name"]}
+    from provenance import dataset_version
+    A = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "profile": prof["name"],
+         "dataset_version": dataset_version()}  # signals.py only accepts an audit of the data it is about to use
     A["truncation_invariance"] = truncation_invariance(prof)
     print("truncation", A["truncation_invariance"]["passed"], A["truncation_invariance"]["worst"], flush=True)
     A["label_alignment"] = label_alignment(prof)
@@ -165,7 +167,9 @@ def run(profile=None):
     A["diagnostics"] = diagnostics(prof)
     A["blocking"] = {"truncation_invariance": A["truncation_invariance"]["passed"], "label_alignment": A["label_alignment"]["passed"],
                      "duplicates_timestamps": A["duplicates_timestamps"]["passed"]}
-    (C.REPORTS / "data_audit.json").write_text(json.dumps(A, indent=1, default=str))
+    tmp = C.REPORTS / "data_audit.json.tmp"
+    tmp.write_text(json.dumps(A, indent=1, default=str))
+    tmp.replace(C.REPORTS / "data_audit.json")
     print("blocking:", A["blocking"])
     return A
 
