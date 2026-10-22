@@ -70,10 +70,16 @@ def run(profile="broad"):
         mu = pd.Series({s["asset"]["ticker"].replace(".", "-"): s["forecast"]["expected_net_excess_return"] * 252 / s["forecast"]["horizon_sessions"] for s in longs})
         cost = pd.Series({s["asset"]["ticker"].replace(".", "-"): s["forecast"]["expected_cost_return"] / 2 for s in longs})
         w0 = pd.Series((h["qty"] * h["price"] / lim["account_total_usd"]).to_numpy(), index=h["symbol"]) if len(h) else pd.Series(dtype=float)
-        wopt = optimise(mu, rm, w0, lim, cost=cost)
+        beta = pd.Series({s["asset"]["ticker"].replace(".", "-"): s["risk"]["estimated_beta"] for s in longs}, dtype=float)
+        ap = C.PROC / f"asof_panel_{profile}.parquet"
+        adv = pd.read_parquet(ap, columns=["symbol", "adv_dollar"]).set_index("symbol")["adv_dollar"] if ap.exists() else None
+        wopt = optimise(mu, rm, w0, lim, cost=cost, beta=beta, adv_usd=adv)
+        from risk_model import resolve_limits
+        lv, ls = resolve_limits(lim)
         out["proposal"] = {"status": "RESEARCH_PROPOSAL_NOT_AN_ORDER", "weights": wopt.to_dict() if wopt is not None else None,
                            "risk": rm.decompose(wopt) if wopt is not None and len(wopt) else None,
-                           "objective": "max w'mu - 2.5 w'Sigma w - costs; long-only, per-name cap = bot position_pct, sector cap 30%, turnover cap 50%"}
+                           "objective": "max w'mu - lambda/2 w'Sigma w - costs; long-only, per-name cap = bot position_pct, sector cap, turnover cap, beta cap, ADV participation cap",
+                           "limits": lv, "limits_source": ls}
     (C.REPORTS / "portfolio_risk.json").write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k not in ("stress", "tail_liquidity")}, indent=1, default=float)[:3000])
     return out

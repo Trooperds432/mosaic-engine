@@ -130,6 +130,10 @@ FEATURES = {
     "est_rev_1m": ("estimates", +1, "1-month change in current-year consensus EPS"),
     "est_dispersion": ("estimates", -1, "(high - low) quarterly EPS estimate / |consensus| (Diether-Malloy-Scherbina)"),
 }
+# Features whose history cannot be reconstructed point-in-time: ClinicalTrials.gov keeps only each record's current phase
+# and primary-completion date, so past values may reflect later revisions. Kept for live description, excluded from
+# model fitting and historical claims from the next re-validation (research.py).
+NON_PIT_FEATURES = {"bio_ph3_trials"}
 SNAPSHOT_FEATURES = {"opt_iv_rv", "opt_term_slope", "opt_skew_rr", "opt_pc_ratio", "est_rev_1m", "est_dispersion"}
 SNAPSHOT_MIN_YEARS = 3  # a snapshot feature enters models only once its history spans this long
 FUND_FEATURES = ["earn_yield", "book_to_mkt", "fcf_yield", "gross_prof", "roa", "accruals", "asset_growth"]

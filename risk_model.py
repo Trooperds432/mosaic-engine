@@ -226,9 +226,25 @@ def tail_and_liquidity(w, P, order_usd):
             "max_drawdown_2y": float(((1 + port).cumprod() / (1 + port).cumprod().cummax() - 1).min()), "names": names}
 
 
-def optimise(mu, rm, w0, limits, lam=5.0, sector_cap=0.30, turnover_cap=0.5, cost=None):
-    """mu: Series of expected net excess returns (annualised) for validated names only."""
+# Used only when the bot's configuration does not define the limit; every proposal reports which source applied.
+ENGINE_DEFAULT_LIMITS = {"sector_cap": 0.30, "turnover_cap": 0.5, "risk_aversion": 5.0, "max_beta": 1.2, "max_adv_participation": 0.01}
+
+
+def resolve_limits(limits):
+    out, src = {}, {}
+    for k, v in ENGINE_DEFAULT_LIMITS.items():
+        bot = limits.get(k)
+        out[k], src[k] = (bot, "bot") if bot is not None else (v, "ENGINE_DEFAULT_NOT_BOT_SUPPLIED")
+    return out, src
+
+
+def optimise(mu, rm, w0, limits, cost=None, beta=None, adv_usd=None):
+    """mu: Series of expected net excess returns (annualised) for validated names only. Constraints: long-only, per-name
+    cap = bot position_pct, sector cap, turnover cap, portfolio beta <= max_beta, and each weight <= max_adv_participation
+    x ADV$ / account. Limit values come from the bot (risk_limits.py) or, if it defines none, ENGINE_DEFAULT_LIMITS."""
     import cvxpy as cp
+    L, _ = resolve_limits(limits)
+    lam, sector_cap, turnover_cap = L["risk_aversion"], L["sector_cap"], L["turnover_cap"]
     syms = list(mu.index)
     S, B = rm.sigma(syms)
     S = (S + S.T) / 2 + 1e-8 * np.eye(len(syms))
@@ -240,6 +256,10 @@ def optimise(mu, rm, w0, limits, lam=5.0, sector_cap=0.30, turnover_cap=0.5, cos
     sec = rm.X.reindex(syms)["sector"].fillna("Unknown").to_numpy()
     for s in set(sec):
         cons.append(cp.sum(w[sec == s]) <= sector_cap)
+    if beta is not None:
+        cons.append(beta.reindex(syms).fillna(1.0).to_numpy() @ w <= L["max_beta"])
+    if adv_usd is not None and limits.get("account_total_usd"):
+        cons.append(w <= L["max_adv_participation"] * adv_usd.reindex(syms).fillna(0).to_numpy() / limits["account_total_usd"])
     prob = cp.Problem(cp.Maximize(obj), cons)
     prob.solve(solver="CLARABEL")
     if w.value is None:

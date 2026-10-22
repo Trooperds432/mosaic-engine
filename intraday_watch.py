@@ -51,7 +51,7 @@ def fetch_xml(client, cik, acc):
 def refresh_insider_signals():
     import insider_model
     import regime
-    from signals import iso, session_close_utc, dataset_version
+    from signals import VALIDATOR, iso, session_close_utc, dataset_version
     f = C.SIGNALS / "latest.json"
     if not f.exists():
         return 0
@@ -63,6 +63,9 @@ def refresh_insider_signals():
     reg = regime.field()
     for s in sigs:
         s["regime"] = reg
+    bad = [s for s in sigs if next(VALIDATOR.iter_errors(s), None) is not None]
+    if bad:  # same schema check as the daily export: never publish a signal that violates the contract
+        raise ValueError(f"intraday insider signal {bad[0]['asset']['ticker']}: schema violation: {next(VALIDATOR.iter_errors(bad[0])).message}")
     keep = [s for s in doc["signals"] if s["model_id"] != "insider-event"]
     doc["signals"] = sorted(keep + sigs, key=lambda s: -(s["forecast"]["expected_net_excess_return"] or -9))
     doc["n_insider_event_signals"] = len(sigs)

@@ -524,6 +524,8 @@ def run(profile=None):
     from features import SNAPSHOT_FEATURES, SNAPSHOT_MIN_YEARS
     span = {f: (panel.loc[panel[f].notna(), "date"].max() - panel.loc[panel[f].notna(), "date"].min()).days / 365.25 for f in feats if f in SNAPSHOT_FEATURES}
     feats = [f for f in feats if f not in SNAPSHOT_FEATURES or span.get(f, 0) >= SNAPSHOT_MIN_YEARS]
+    from features import NON_PIT_FEATURES
+    feats = [f for f in feats if f not in NON_PIT_FEATURES]  # cannot be reconstructed point-in-time
     spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date")
     cal = spy.index
     panel["tpos"] = cal.get_indexer(panel["date"])

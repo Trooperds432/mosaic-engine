@@ -183,12 +183,13 @@ def run():
     for key, s in sh.items():
         ok_fwd = (s["forward_ic_mean"] or 0) > 0 and (s["forward_ic_t"] or 0) >= MIN_T
         promo[key] = "INSUFFICIENT_FORWARD_HISTORY" if s["scored_dates"] < MIN_SESSIONS else ("FORWARD_EVIDENCE_POSITIVE" if ok_fwd else "FORWARD_EVIDENCE_NEGATIVE")
-    ready = (ex.get("closed_trades", 0) >= MIN_TRADES and (ex.get("sessions_since_first") or 0) >= MIN_SESSIONS
-             and (ex.get("mean_net_excess") or 0) > 0 and (ex.get("t") or 0) >= MIN_T)
+    fwd_ok = any(v == "FORWARD_EVIDENCE_POSITIVE" for k, v in promo.items() if k.endswith(f"_h{C.PRIMARY_HORIZON}"))
+    ready = (fwd_ok and ex.get("closed_trades", 0) >= MIN_TRADES and (ex.get("sessions_since_first") or 0) >= MIN_SESSIONS
+             and (ex.get("mean_net_excess") or 0) > 0 and (ex.get("t") or 0) >= MIN_T)  # the forward-IC condition is part of the rule
     out = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "forecast_dates_recorded": n_dates,
            "shadow_book": sh, "shadow_status": promo, "executed_demo_book": ex,
            "live_review_recommendation": "READY_FOR_LIVE_REVIEW (human decision required)" if ready else "NOT_READY",
-           "rule": f">= {MIN_SESSIONS} sessions and >= {MIN_TRADES} closed demo trades with mean net excess > 0 and t >= {MIN_T}; forward IC > 0. Never automatic."}
+           "rule": f">= {MIN_SESSIONS} sessions and >= {MIN_TRADES} closed demo trades with mean net excess > 0 and t >= {MIN_T}; and forward IC > 0 with HAC t >= {MIN_T} at the {C.PRIMARY_HORIZON}d horizon. Never automatic."}
     (C.REPORTS / "paper_trading.json").write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k != "shadow_book"}, indent=1, default=float))
     return out

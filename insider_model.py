@@ -148,7 +148,8 @@ def daily_portfolio(m, ev, h):
 
 
 def matched_controls(m, ev, b, h):
-    """Same sector, liquid, no code-P filing within +/-90d; nearest on (log dollar volume, 12-1 momentum) ranks."""
+    """Same sector, liquid, no code-P filing within +/-90d; nearest on (log dollar volume, 12-1 momentum) ranks.
+    Returns the control's abnormal return and the control firm's own covariates on the same date."""
     bdates = {c: g["filing_date"].to_numpy() for c, g in b.groupby("issuercik")}
     cik_of = np.array([int(next(c for c, s in m.sym_of.items() if s == sym)) for sym in m.syms])
     out = []
@@ -164,21 +165,22 @@ def matched_controls(m, ev, b, h):
                 if k < len(d) and d[k] <= np.datetime64(r.fdate) + np.timedelta64(90, "D"):
                     cand[jj] = False
         if not cand.any() or np.isnan(m.mom[i, r.j]):
-            out.append(np.nan)
+            out.append((np.nan, np.nan, np.nan, np.nan, np.nan))
             continue
         live = ~np.isnan(m.mom[i]) & ~np.isnan(ldv)
         rk_m = pd.Series(m.mom[i]).rank(pct=True).to_numpy()
         rk_d = pd.Series(ldv).rank(pct=True).to_numpy()
         dist = np.where(cand & live, (rk_m - rk_m[r.j]) ** 2 + (rk_d - rk_d[r.j]) ** 2, np.inf)
         jj = int(np.argmin(dist))
-        out.append(m.ar(jj, r.e, h))
-    return np.array(out)
+        out.append((m.ar(jj, r.e, h), m.mom[i, jj], m.rev[i, jj], ldv[jj], m.beta[i, jj]))
+    return pd.DataFrame(out, columns=["ar", "mom", "rev", "ldv", "beta"], index=ev.index)
 
 
-def incremental_regression(ev, ctrl_ar):
+def incremental_regression(ev, ctrl):
+    """Event vs matched-control abnormal returns on each firm's OWN covariates (corrected 2026-10-22: the controls
+    previously reused the event firm's covariates)."""
     a = ev[["ar", "mom", "rev", "ldv", "beta", "sector", "entry_date"]].assign(event=1.0)
-    c = ev[["mom", "rev", "ldv", "beta", "sector", "entry_date"]].assign(ar=ctrl_ar, event=0.0)
-    # control covariates are approximated by the event's (matched on momentum and liquidity)
+    c = ctrl[["ar", "mom", "rev", "ldv", "beta"]].assign(sector=ev["sector"].to_numpy(), entry_date=ev["entry_date"].to_numpy(), event=0.0)
     d = pd.concat([a, c], ignore_index=True).dropna()
     X = pd.get_dummies(d[["event", "mom", "rev", "ldv", "beta", "sector"]], columns=["sector"], drop_first=True, dtype=float)
     X = sm.add_constant(X)
@@ -230,7 +232,8 @@ def run():
     ev, port = series[("primary", 5)]
     h = 5
     ev = ev.copy()
-    ev["ctrl_ar"] = matched_controls(m, ev, b, h)
+    ctrl = matched_controls(m, ev, b, h)
+    ev["ctrl_ar"] = ctrl["ar"].to_numpy()
     ev["diff"] = ev["ar"] - ev["ctrl_ar"]
     disc = ev[ev["sample"] == "discovery"]
     P = {"events": int(len(ev)), "discovery_n": int(len(disc)), "holdout_n": int((ev["sample"] == "holdout").sum())}
@@ -239,7 +242,7 @@ def run():
     P["holdout_net"] = clustered_mean(ev.loc[ev["sample"] == "holdout", "net"], ev.loc[ev["sample"] == "holdout", "entry_date"])
     P["discovery_control_car"] = clustered_mean(disc["ctrl_ar"], disc["entry_date"])
     P["discovery_event_minus_control"] = clustered_mean(disc["diff"], disc["entry_date"])
-    P["incremental_regression_discovery"] = incremental_regression(disc, disc["ctrl_ar"].to_numpy())
+    P["incremental_regression_discovery"] = incremental_regression(disc, ctrl.loc[disc.index])
     eo = earnings_overlap(m, ev, h)
     if eo is not None:
         ev["earn_in_window"] = eo
@@ -369,4 +372,5 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
 
 
 if __name__ == "__main__":
+    _lock = __import__("config").hold_lock()
     run()
