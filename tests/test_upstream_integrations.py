@@ -1,5 +1,10 @@
 import json
 import unittest
+import runpy
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+import joblib
 import numpy as np
 import pandas as pd
 from arch.bootstrap import SPA, RealityCheck
@@ -8,6 +13,30 @@ from sklearn.covariance import LedoitWolf
 from factor_persistence import summary, quantile_turnover
 from risk_model import ledoit_wolf_cov
 from validation_extensions import multiple_comparison, purged_combinations, cpcv_ridge
+
+
+class ResearchEntrypointTests(unittest.TestCase):
+    def test_cli_uses_importable_model_classes_and_saves_them(self):
+        import research
+        rng = np.random.default_rng(37)
+        X = pd.DataFrame(rng.normal(size=(120, len(research.GAM_FEATS))), columns=research.GAM_FEATS)
+        y = np.tile([-.02, .03], 60)
+        sectors = np.repeat('tech', len(X))
+        def evaluate(profile):
+            self.assertEqual(profile, 'large')
+            with tempfile.TemporaryDirectory() as directory:
+                for name in ['gam', 'hier', 'logit']:
+                    model, expected = research.fit_predict(name, X, y, X, sectors, sectors, cost=0.)
+                    target = Path(directory) / (name + '.joblib')
+                    joblib.dump(model, target)
+                    restored = joblib.load(target)
+                    values = X.to_numpy(dtype='float32')
+                    actual = restored.predict(X) if name == 'gam' else (restored.predict(values, sectors) if name == 'hier' else restored.predict(values))
+                    np.testing.assert_allclose(actual, expected)
+        with patch.object(research, 'run', side_effect=evaluate) as execute, \
+             patch.object(research.C, 'hold_lock', return_value=None), patch('sys.argv', ['research.py', 'large']):
+            runpy.run_path(str(Path(research.__file__)), run_name='__main__')
+        execute.assert_called_once_with('large')
 
 
 class MaintainedBootstrapTests(unittest.TestCase):

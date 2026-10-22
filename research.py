@@ -794,5 +794,8 @@ def run(profile=None):
 
 
 if __name__ == "__main__":
-    _lock = __import__("config").hold_lock()
-    run(sys.argv[1] if len(sys.argv) > 1 else None)
+    # Run the canonical module's factories: script-local classes labelled
+    # 'research' are different objects and cannot be pickled under that name.
+    import research as canonical
+    _lock = canonical.C.hold_lock()
+    canonical.run(sys.argv[1] if len(sys.argv) > 1 else None)
