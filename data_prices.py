@@ -51,7 +51,13 @@ def fetch(symbol: str, client: httpx.Client) -> pd.DataFrame | None:
 
 def run(symbols=None, resume=False):
     uni = pd.read_parquet(PROC / "universe.parquet")
-    symbols = symbols or (list(uni["yahoo"]) + [BENCHMARK] + REGIME_SERIES)
+    from historical_data import active_bundle
+    if active_bundle():
+        symbols = symbols or [BENCHMARK] + REGIME_SERIES
+        if set(symbols) & set(uni["yahoo"]):
+            raise ValueError("refresh vendor bundle to update historical security prices; Yahoo cannot overwrite permanent IDs")
+    else:
+        symbols = symbols or (list(uni["yahoo"]) + [BENCHMARK] + REGIME_SERIES)
     out = RAW / "prices"
     out.mkdir(parents=True, exist_ok=True)
     missing, ok = [], 0

@@ -257,7 +257,8 @@ def targets():
     try:
         doc = json.loads(TARGETS.read_text())
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(doc["generated_at_utc"])).total_seconds() / 86400
-        return doc if age <= MAX_AGE_DAYS else None
+        from deployment_policy import execution_target_allowed
+        return doc if 0 <= age <= MAX_AGE_DAYS and execution_target_allowed(doc) else None
     except Exception as e:
         log.warning("cannot read targets: %s", e)
         return None

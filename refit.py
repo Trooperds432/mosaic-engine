@@ -22,6 +22,10 @@ from research import MISSING_GROUPS, MODELS_DIR, StyleNeutraliser, fit_predict, 
 
 def refit(profile):
     model = json.loads((C.PROC / f"model_{profile}.json").read_text())
+    import recipe
+    frozen, why = recipe.check(model)
+    if not frozen:
+        raise ValueError(why)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     panel, meta = build_panel_chunked(profile=profile)
     panel.to_parquet(C.PROC / f"panel_{profile}.parquet", index=False)
@@ -52,6 +56,7 @@ def refit(profile):
             joblib.dump(m, dest)
             rows[f"h{h}_{n}"] = int(ok.sum())
         print(profile, "h", h, "refit", model["horizons"][str(h)]["names"], flush=True)
+    recipe.snapshot_weights(model)
     model["weights_refit_utc"] = stamp
     model["weights_trained_through"] = str(pd.Timestamp(panel["date"].max()).date())
     (C.PROC / f"model_{profile}.json").write_text(json.dumps(model, indent=1, default=float))

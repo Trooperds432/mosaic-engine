@@ -67,9 +67,16 @@ def forward_gate(pname, h):
         doc = json.loads((C.PROC / "forward_gate.json").read_text())
     except (OSError, ValueError):
         doc = None
-    run_id = json.loads((C.PROC / f"model_{pname}.json").read_text())["run_id"]
-    status, failed, st = gates.check_forward_gate(doc, pname, h, run_id)
-    return {"status": status, "failed_checks": failed}, {"oos_ic": st["forward_ic"], "oos_ic_se": st["forward_ic_se"], "net_sharpe": None}
+    from deployment_policy import cumulative
+    import recipe
+    model = json.loads((C.PROC / f"model_{pname}.json").read_text())
+    status, failed, st = gates.check_forward_gate(doc, pname, h, model["run_id"], recipe_id=model.get("recipe_id", "MISSING"))
+    frozen, why = recipe.check(model)
+    historical = model.get("horizons", {}).get(str(h), {}).get("gate")
+    combined = cumulative(historical, {"status": status, "failed_checks": failed}, data_ok=True, recipe_ok=frozen)
+    if why:
+        combined["failed_checks"].append(why)
+    return combined, {"oos_ic": st["forward_ic"], "oos_ic_se": st["forward_ic_se"], "net_sharpe": None}
 
 
 def profile_signals(pname, gen, dsv, reg, audit):
@@ -120,7 +127,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
         tab = pd.DataFrame(cal.get("table") or []).set_index("b").reindex(bucket) if cal.get("table") else None
         for i, sym in enumerate(panel["symbol"]):
             g = (lambda k: clean(tab[k].iat[i]) if ok_cal and tab is not None and k in tab else None)
-            fc_rows.append({"profile": pname, "model_run_id": model["run_id"], "symbol": sym, "horizon": hh, "ensemble_rank": float(ens_rank[hh][i]), "decile": int(bucket[i]),
+            fc_rows.append({"profile": pname, "model_run_id": model["run_id"], "recipe_id": model.get("recipe_id"), "weights_id": model.get("weights_id"), "forward_start_utc": model.get("forward_start_utc"), "symbol": sym, "horizon": hh, "ensemble_rank": float(ens_rank[hh][i]), "decile": int(bucket[i]),
                             "model_disagreement": clean(disagree[hh][i]), "calibrated": ok_cal, "exp_excess": g("mean"), "std": g("std"),
                             "q025": g("q025"), "q975": g("q975"), "q05": g("q05"), "p_pos": g("p_pos"), "es05": g("es05"),
                             "cost_round_trip": float(cost_rt[i]), "gate": forward_gate(pname, hh)[0]["status"]})
@@ -142,6 +149,9 @@ def profile_signals(pname, gen, dsv, reg, audit):
     out = []
     for i, r in panel.iterrows():
         sym, cik = r["symbol"], int(r["cik"])
+        from historical_data import active_bundle, ticker_for_security
+        ticker = ticker_for_security(sym, asof_day)
+        security_id = sym if active_bundle() else f"CIK{cik:010d}"
         p = prim.loc[sym]
         reasons = []
         if "bio_ph3_trials" in feats and model.get("feature_set_version") != C.FEATURE_SET_VERSION:
@@ -182,12 +192,12 @@ def profile_signals(pname, gen, dsv, reg, audit):
         else:
             ann = rm_vol.get(sym) or clean(r["vol_60"])
             vol_h = ann * math.sqrt(h / 252) if ann else None
-        sid = hashlib.sha256(f"{model['model_id']}|{C.MODEL_VERSION}|{model['run_id']}|{cik}|{asof_day.date()}|{h}".encode()).hexdigest()[:20]
+        sid = hashlib.sha256(f"{model['model_id']}|{C.MODEL_VERSION}|{model['run_id']}|{security_id}|{asof_day.date()}|{h}".encode()).hexdigest()[:20]
         ex = sic["exchanges"].get(cik) if cik in sic.index else None
         sig = {
             "schema_version": "2.0", "model_id": model["model_id"], "model_version": C.MODEL_VERSION, "signal_id": sid,
             "generated_at_utc": iso(gen), "as_of_utc": iso(asof),
-            "asset": {"ticker": sym.replace("-", "."), "security_id": f"CIK{cik:010d}", "exchange": str(ex) if ex else None, "asset_class": "Equity"},
+            "asset": {"ticker": ticker, "security_id": security_id, "exchange": str(ex) if ex else None, "asset_class": "Equity"},
             "forecast": {"horizon_sessions": h, "expected_excess_return": exp, "expected_net_excess_return": net, "predictive_std": clean(p["std"]),
                          "prediction_interval_95": [clean(p["q025"]), clean(p["q975"])] if clean(p["q025"]) is not None else None,
                          "probability_positive_excess_return": clean(p["p_pos"]), "expected_cost_return": cost},
@@ -202,7 +212,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
                        "reason": None if long_ok else "; ".join(reasons) or "not selected", "key_drivers": drivers, "contradictory_evidence": contra},
             "provenance": {"feature_set_version": C.FEATURE_SET_VERSION, "dataset_version": dsv,
                            "source_ids": ["yahoo_chart_v8_daily", "sec_xbrl_companyfacts", "sec_form345_datasets", "sec_edgar_form4_xml", "sec_form13f_datasets",
-                                          "finra_short_interest", "fred_alfred", "eia_wpsr", "cftc_cot", "clinicaltrials_gov", "openfda"],
+                                          "finra_short_interest", "fred_alfred", "eia_wpsr", "cftc_cot", "clinicaltrials_gov", "openfda", f"weights:{model.get('weights_id')}"],
                            "latest_required_data_utc": iso(asof), "research_run_id": model["run_id"]},
             "regime": reg,
         }
@@ -210,7 +220,7 @@ def profile_signals(pname, gen, dsv, reg, audit):
         if errs:
             raise ValueError(f"{sym}: schema violation: {errs[0].message} at {list(errs[0].path)}")
         out.append(sig)
-    meta = {"profile": pname, "as_of": str(asof_day.date()), "model_run_id": model["run_id"], "model_gate_primary": gate_h, "market_data_sessions_stale": sessions_stale,
+    meta = {"profile": pname, "as_of": str(asof_day.date()), "model_run_id": model["run_id"], "recipe_id": model.get("recipe_id"), "forward_start_utc": model.get("forward_start_utc"), "model_gate_primary": gate_h, "market_data_sessions_stale": sessions_stale,
             "insider_coverage_through": str(ins_cov.date()), "evaluated": len(out)}
     return out, fc, meta, asof_day, market_fresh, insider_fresh
 
@@ -254,7 +264,7 @@ def run(dry=False, profiles=None):
     vfp = C.PROC / "vol_forecasts.parquet"
     if vfp.exists():  # per-name 1-day risk for the bot's sizing (ticker -> sigma, 99% VaR, 97.5% ES)
         vfd = pd.read_parquet(vfp)
-        side = {r.symbol.replace("-", "."): {"sigma_1d": float(r.sigma_1d), "var99_1d": float(r.var99_1d), "es975_1d": float(r.es975_1d),
+        side = {__import__("historical_data").ticker_for_security(r.symbol): {"sigma_1d": float(r.sigma_1d), "var99_1d": float(r.var99_1d), "es975_1d": float(r.es975_1d),
                                              "model": r.model, "as_of": r.as_of} for r in vfd.itertuples()}
         tmp = C.SIGNALS / "risk_latest.json.tmp"
         tmp.write_text(json.dumps({"generated_at_utc": iso(gen), "source": "var_backtest.forecast_names", "names": side}))

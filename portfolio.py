@@ -28,7 +28,12 @@ def holdings(lim):
         t = p["ticker"]
         sym = t[:-len("_US_EQ")].replace("_", "-") if t.endswith("_US_EQ") else None  # T212 suffixes US shares with _US_EQ
         rows.append({"t212": t, "symbol": sym, "qty": float(p["quantity"]), "price": float(p["currentPrice"]), "avg": float(p["averagePrice"])})
-    return pd.DataFrame(rows)
+    frame = pd.DataFrame(rows)
+    if len(frame):
+        from historical_data import active_bundle, security_for_ticker
+        if active_bundle():
+            frame["symbol"] = frame["symbol"].map(lambda s: security_for_ticker(s.replace("-", ".")) if s else None)
+    return frame
 
 
 def run(profile="broad"):
@@ -74,7 +79,7 @@ def run(profile="broad"):
             # across alpha, horizon and costs (no duplicate-index dict accident).
             selected = {}
             for signal in longs:
-                sym = signal["asset"]["ticker"].replace(".", "-")
+                sym = __import__("historical_data").security_for_ticker(signal["asset"]["ticker"])
                 if sym not in selected or signal["forecast"]["expected_net_excess_return"] > selected[sym]["forecast"]["expected_net_excess_return"]:
                     selected[sym] = signal
             mu = pd.Series({sym: sig["forecast"]["expected_net_excess_return"] * 252 / sig["forecast"]["horizon_sessions"] for sym, sig in selected.items()})

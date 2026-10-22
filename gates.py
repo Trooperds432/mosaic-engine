@@ -8,7 +8,7 @@ import math
 
 AUDIT_MAX_AGE_HOURS = 12        # the audit runs in the same nightly job, minutes before signals.py
 GATE_MAX_AGE_HOURS = 4 * 24     # paper_trading.py runs after signals.py, so the gate is from the previous run (weekends)
-BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps")
+BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps", "historical_universe")
 
 
 def live_review_ready(executed, shadow, horizon=20, min_sessions=63, min_trades=20, min_t=2.0):
@@ -73,7 +73,7 @@ def check_audit(doc, dataset_version, now=None):
     return True, None
 
 
-def check_forward_gate(doc, profile, horizon, model_run_id, now=None):
+def check_forward_gate(doc, profile, horizon, model_run_id, now=None, recipe_id=None):
     """(status, failed_checks, stats). Anything but a fresh gate for this profile, horizon and model recipe is UNVALIDATED."""
     now = now or datetime.now(timezone.utc)
     none = {"forward_ic": None, "forward_ic_se": None}
@@ -88,6 +88,8 @@ def check_forward_gate(doc, profile, horizon, model_run_id, now=None):
     rid = (doc.get("model_run_ids") or {}).get(profile)
     if rid != model_run_id:
         return "UNVALIDATED", [f"forward gate is for model {rid}, current model is {model_run_id}"], none
+    if recipe_id is not None and (doc.get("recipe_ids") or {}).get(profile) != recipe_id:
+        return "UNVALIDATED", ["forward record belongs to another frozen recipe"], none
     g = (doc.get("profiles") or {}).get(profile, {}).get(str(horizon))
     if not g:
         return "UNVALIDATED", ["forward record not yet scored"], none

@@ -29,6 +29,7 @@ $PY -u audit.py large            >  $L/audit.log 2>&1 || true    # a failed audi
 $PY -u var_backtest.py --forecast >  $L/vol_forecast.log 2>&1   # GARCH-t (VaR backtest winner) per-name risk
 $PY -u signals.py                >> $L/signals.log 2>&1
 $PY -u paper_trading.py          >  $L/paper.log 2>&1 || true   # forward record, shadow book, demo fills
+$PY -u insider_forward.py       >  $L/insider_forward.log 2>&1 || true  # frozen-rule prospective events; missing recipe stays unvalidated
 $PY -u ls_signals.py             >  $L/ls_signals.log 2>&1 || true  # long/short inputs for the Alpaca paper bot
 $PY -u catalysts.py              >  $L/catalysts.log 2>&1 || true
 [ "$FRI" = "1" ] && { $PY -u biotech.py > $L/biotech.log 2>&1 || true; }

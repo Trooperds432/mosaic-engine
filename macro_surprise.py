@@ -2,11 +2,12 @@
 
 No free point-in-time consensus exists, so the "expected" value is a statistical forecast made only from data
 published before each release:
-  for each release of observation T (its first ALFRED vintage), y_T = the reported change (value(T) minus value(T-1),
-  both as published in that vintage; log-% changes for CPI, IP, claims), forecast by an ARIMA(p,d,q) chosen by AIC
+  y_T compares consecutive verified initial-release values (log-% changes for CPI, IP, claims),
+  forecast by an ARIMA(p,d,q) chosen by AIC
   (p, q <= 2; d from an ADF test) fitted on the first-release changes of all earlier observations.
   surprise = y_T - forecast;  z = surprise / std of the previous 36 surprises.
-Available on the ALFRED vintage date (conservative: real releases can be earlier).
+Available the day after the recorded initial-release date. This is a statistical
+innovation, not a consensus surprise or a same-vintage change.
 Output: processed/macro_surprises.parquet (+ reports/macro_surprise.json with forecast accuracy vs a random walk).
 """
 import json
@@ -26,21 +27,20 @@ MIN_OBS = 48
 
 
 def releases(series, how):
-    """One row per observation's first publication: change as reported in that vintage."""
-    v = pd.read_parquet(C.RAW / "macro" / f"alfred_{series}.parquet")
-    v["obs_date"] = pd.to_datetime(v["obs_date"])
-    v["vdate"] = pd.to_datetime(v["vintage"])
-    v = v.sort_values(["vdate", "obs_date"])
-    first = v.sort_values("vdate").drop_duplicates("obs_date", keep="first")[["obs_date", "vdate", "value"]]
-    rows = []
-    for r in first.itertuples():
-        same = v[(v["vdate"] == r.vdate) & (v["obs_date"] < r.obs_date)]
-        if same.empty:
-            continue
-        prev = same.sort_values("obs_date").iloc[-1]["value"]
-        y = (r.value - prev) if how == "diff" else 100 * np.log(r.value / prev)
-        rows.append({"obs_date": r.obs_date, "available_date": r.vdate, "value": r.value, "change": y})
-    return pd.DataFrame(rows).sort_values("obs_date").reset_index(drop=True)
+    """Change versus previous initial release, not a contemporaneous consensus surprise."""
+    path = C.RAW / "macro" / f"initial_{series}.parquet"
+    if not path.exists():
+        return pd.DataFrame(columns=["obs_date", "available_date", "value", "change"])
+    v = pd.read_parquet(path)
+    if not v["source"].eq("fred_initial_release_api").all():
+        raise ValueError("macro surprise requires verified initial-release observations")
+    v = v.sort_values("obs_date").copy()
+    previous = v["value"].shift(1)
+    v["change"] = v["value"] - previous if how == "diff" else 100 * np.log(v["value"] / previous)
+    # Both observations must have been available at this release; late/backdated
+    # observations cannot supply an expectation for an earlier release.
+    known = v["available_date"].shift(1) <= v["available_date"]
+    return v.loc[known, ["obs_date", "available_date", "value", "change"]].dropna().sort_values("available_date").reset_index(drop=True)
 
 
 def arima_forecast(hist):
@@ -69,6 +69,9 @@ def run():
             rel = releases(s, how)
         except FileNotFoundError:
             continue
+        if rel.empty:
+            summary[s] = {"status": "NOT_COMPUTED: verified initial releases unavailable"}
+            continue
         fc, orders = [], []
         for i in range(len(rel)):
             if i < MIN_OBS:
@@ -83,6 +86,7 @@ def run():
         rel["surprise"] = rel["change"] - rel["forecast"]
         rel["z"] = rel["surprise"] / rel["surprise"].rolling(36, min_periods=12).std().shift(1)
         rel["series"] = s
+        rel["source"] = "fred_initial_release_api"
         e_arima = rel["surprise"].dropna()
         e_rw = (rel["change"] - rel["change"].shift(1)).loc[e_arima.index]
         normal = ~rel.loc[e_arima.index, "obs_date"].between("2020-01-01", "2021-12-31")
@@ -92,7 +96,7 @@ def run():
                       "rmse_arima_ex_2020_21": float(np.sqrt((e_arima[normal] ** 2).mean())), "rmse_random_walk_ex_2020_21": float(np.sqrt((e_rw[normal] ** 2).mean())), "latest": {k: (str(v) if isinstance(v, pd.Timestamp) else v) for k, v in rel.iloc[-1][["obs_date", "available_date", "change", "forecast", "surprise", "z"]].items()}}
         print(s, {k: round(summary[s][k], 4) for k in ["releases", "mae_arima", "mae_random_walk", "rmse_arima_ex_2020_21", "rmse_random_walk_ex_2020_21"]}, "latest z", round(float(rel["z"].iloc[-1]), 2) if pd.notna(rel["z"].iloc[-1]) else None, flush=True)
         out.append(rel)
-    df = pd.concat(out, ignore_index=True)
+    df = pd.concat(out, ignore_index=True) if out else pd.DataFrame(columns=["series", "available_date", "z"])
     df.to_parquet(C.PROC / "macro_surprises.parquet", index=False)
     (C.REPORTS / "macro_surprise.json").write_text(json.dumps({"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "series": summary}, indent=1, default=float))
     return df
@@ -105,6 +109,8 @@ def daily_z(cal, max_age_days=31):
     if not f.exists():
         return out
     d = pd.read_parquet(f).dropna(subset=["z"])
+    if "source" not in d or not d["source"].eq("fred_initial_release_api").all():
+        return out  # legacy sampled-vintage surprises cannot enter historical models
     sign = {"PAYEMS": 1, "UNRATE": -1, "INDPRO": 1, "ICSA": -1, "IPG3344S": 1, "CPIAUCSL": 1}
     zs = {}
     for s, g in d.groupby("series"):

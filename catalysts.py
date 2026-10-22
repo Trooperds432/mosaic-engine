@@ -37,13 +37,8 @@ MONTHS = {m: i for i, m in enumerate(["January", "February", "March", "April", "
 
 
 def _key(name):
-    v = os.environ.get(name)
-    if v:
-        return v
-    for line in open("/root/.hermes/.env"):
-        if line.startswith(name + "="):
-            return line.split("=", 1)[1].strip()
-    return None
+    from provider_access import key
+    return key(name)
 
 
 def fomc_dates(client):

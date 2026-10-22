@@ -327,25 +327,20 @@ def stat_features(r, rs, beta_252):
 
 
 def labels(P, dec_idx):
-    """Forward excess returns: open(t+1) -> open(t+1+h). A series that ends inside the window
-    (delisting/acquisition) is closed at its last available adjusted close (0% delisting return
-    assumption)."""
-    op = P["adj_open"].to_numpy()
-    last = P["adjclose"].ffill().to_numpy()
+    """Next-open labels; missing exit prices require a verified settled terminal payout."""
+    from historical_data import active_bundle, forward_returns
+    bundle = active_bundle()
+    terminal = pd.read_parquet(bundle / "terminal.parquet") if bundle else pd.DataFrame()
     spy = P["spy_open"].to_numpy()
-    n = len(op)
+    n = len(spy)
     out = {}
     for h in HORIZONS:
-        e, x = dec_idx + 1, dec_idx + 1 + h
-        ok = x < n
-        ent = np.full((len(dec_idx), op.shape[1]), np.nan, dtype="float32")
-        ext = ent.copy()
-        bench = np.full(len(dec_idx), np.nan, dtype="float32")
-        ent[ok] = op[e[ok]]
-        ext_open = op[x[ok]]
-        ext[ok] = np.where(np.isnan(ext_open), last[x[ok]], ext_open)
-        bench[ok] = spy[x[ok]] / spy[e[ok]] - 1
-        out[h] = (ext / ent - 1) - bench[:, None]
+        entries, exits = dec_idx + 1, dec_idx + 1 + h
+        result = forward_returns(P["adj_open"], terminal, entries, exits)
+        ok = exits < n
+        bench = np.full(len(dec_idx), np.nan)
+        bench[ok] = spy[exits[ok]] / spy[entries[ok]] - 1
+        out[h] = result - bench[:, None]
     return out
 
 
@@ -912,27 +907,28 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     for k in ["high", "low", "volume", "adj_open"]:
         del P[k]
 
-    fdf = load_facts(ciks)
+    issuer_ciks = list(dict.fromkeys(ciks))
+    fdf = load_facts(issuer_ciks)
     # foreign private issuers (20-F/40-F): XBRL counts ordinary shares while US prices are ADR prices with unknown
     # ratios, so market cap (and every per-share/market-cap feature) is unreliable -> excluded from eligibility
     last_annual = fdf[fdf["form"].str.match(r"^(10-K|20-F|40-F)")].sort_values("filed").drop_duplicates("cik", keep="last")
     foreign = set(last_annual.loc[last_annual["form"].str.startswith(("20-F", "40-F")), "cik"].astype(int))
-    fund = fundamentals_asof(dec_dates, ciks, fdf)
-    sue, eps_g = eps_surprise(dec_dates, ciks, fdf)
+    fund = fundamentals_asof(dec_dates, issuer_ciks, fdf)
+    sue, eps_g = eps_surprise(dec_dates, issuer_ciks, fdf)
     del fdf
-    ins = insider_features(load_insider(ciks), dec_dates, ciks)
+    ins = insider_features(load_insider(issuer_ciks), dec_dates, issuer_ciks)
 
-    def S(df):  # cik-columned -> symbol-columned (relabels in place: the cik-keyed frames are not reused)
-        df.columns = syms
-        return df.astype("float32") if df.dtypes.iloc[0] == "float64" else df
+    def S(df):
+        expanded = df.reindex(columns=ciks).set_axis(syms, axis=1)
+        return expanded.astype("float32") if len(expanded.columns) and expanded.dtypes.iloc[0] == "float64" else expanded
 
     # cover-page shares go stale for some multi-class issuers (dimensioned facts are not in companyfacts): fall back to
     # annual diluted weighted shares when the cover-page count is more than 400 days old
-    now = np.repeat(dec_dates.values[:, None], len(ciks), axis=1)
-    stale = (pd.DataFrame(now - fund["shares_end"].to_numpy(), index=dec_dates, columns=ciks) > pd.Timedelta(days=400)) | fund["shares"].isna()
+    now = np.repeat(dec_dates.values[:, None], len(issuer_ciks), axis=1)
+    stale = (pd.DataFrame(now - fund["shares_end"].to_numpy(), index=dec_dates, columns=issuer_ciks) > pd.Timedelta(days=400)) | fund["shares"].isna()
     fund["shares"] = fund["shares"].where(~stale | fund["shares_dil"].isna(), fund["shares_dil"])
     fund["shares"] = fund["shares"].where(~(stale & fund["shares_dil"].isna()))  # stale with no fallback -> unknown, not wrong
-    fund["shares_end"] = fund["shares_end"].where(~stale | fund["shares_dil"].isna(), pd.DataFrame(now - np.timedelta64(1, "D"), index=dec_dates, columns=ciks))
+    fund["shares_end"] = fund["shares_end"].where(~stale | fund["shares_dil"].isna(), pd.DataFrame(now - np.timedelta64(1, "D"), index=dec_dates, columns=issuer_ciks))
     shares = S(fund["shares"])
     sh_end = S(fund["shares_end"])
     mcap = pd.DataFrame(np.nan, index=dec_dates, columns=syms)
@@ -943,6 +939,12 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
             continue
         pos = np.clip(cal.searchsorted(pd.DatetimeIndex(e[okm]), side="right") - 1, 0, len(cal) - 1)
         mcap.loc[okm, s] = shares[s][okm].to_numpy() * close_full[pos, j] * (ac[s][okm].to_numpy() / adj_full[pos, j])
+    from historical_data import active_bundle
+    historical = active_bundle()
+    if historical:
+        for sym in syms:
+            security_prices = pd.read_parquet(RAW / "prices" / f"{sym}.parquet", columns=["date", "market_cap"]).set_index("date")
+            mcap[sym] = security_prices["market_cap"].reindex(dec_dates)
     del close_full, adj_full
     F = {k: S(v) for k, v in fund.items() if not k.endswith("_end") or k == "ni_end"}
     gp = F["gp"].fillna(F["rev"] - F["cogs"])
@@ -970,7 +972,7 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["gm_change"] = gp / rev - gp_prev / rev_p
     feats["op_margin_change"] = F["opinc"] / rev - F["opinc_prev"] / rev_p
     feats["inv_to_sales_chg"] = F["inv"] / rev - F["inv_prev"] / rev_p
-    feats["earn_recent"] = S(earnings_recent(dec_idx, cal, ciks))
+    feats["earn_recent"] = S(earnings_recent(dec_idx, cal, issuer_ciks))
 
     I = {k: S(v) for k, v in ins.items()}
     feats["ins_net_90"] = (I["buy_usd_90"] - I["sell_usd_90"]) / mcap
@@ -988,7 +990,7 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["ins_buy_x_drawdown"] = I["ins_buyers_90"] * pf["drawdown_252"]
     feats["ins_plan_sale_share"] = (I["plan_sell_usd_180"] / I["all_sell_usd_180"].where(I["all_sell_usd_180"] > 0))
 
-    io = inst_features(dec_dates, ciks, fund["shares"].set_axis(ciks, axis=1))  # cik-keyed for the 13F join
+    io = inst_features(dec_dates, issuer_ciks, fund["shares"])  # cik-keyed for the 13F join
     for k, v in io.items():
         feats[k] = S(v)
     for k, v in short_features(dec_dates, syms, shares).items():
@@ -1013,7 +1015,7 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     burn = (-cfo).where(cfo < 0)
     feats["bio_cash_runway"] = only((F["cash"] / burn).clip(upper=10).where(cfo < 0, 10.0), "pharma")
     feats["bio_rnd_intensity"] = only(F["rnd"] / rev, "pharma")
-    hf = health_features(dec_dates, ciks, flags)
+    hf = health_features(dec_dates, issuer_ciks, flags)
     for k, v in hf.items():
         feats[k] = S(v)
     feats["energy_oil_tilt"] = only(pf["beta_wti"] * ms["wti_ret63"].to_numpy()[:, None], "energy") if "wti_ret63" in ms else None
@@ -1040,6 +1042,10 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     fund_age = pd.DataFrame(dec_dates.values[:, None] - fund_end.to_numpy(), index=dec_dates, columns=syms) / np.timedelta64(1, "D")
     is_dom = pd.Series({s: sym2cik[s] not in foreign for s in syms})
     elig = is_dom.to_numpy()[None, :] & (mcap >= prof["min_mcap"]) & (pf["adv_shares"] >= prof["min_adv_shares"]) & (pf["adv_dollar"] >= prof["min_dollar_adv"]) & ac.notna()
+    if historical:
+        from historical_data import membership_mask
+        memberships = pd.read_parquet(historical / "membership.parquet")
+        elig &= membership_mask(memberships, dec_dates, syms)
     sector = {s: sic_sector(sic.get(c)) for s, c in sym2cik.items()}
 
     long = []

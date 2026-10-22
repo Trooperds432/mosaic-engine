@@ -27,7 +27,7 @@ def truncation_invariance(prof, n_dates=3, n_syms=150):
     cal = P["adjclose"].index
     rng = np.random.default_rng(1)
     syms = list(rng.choice(P["adjclose"].columns, size=min(n_syms, P["adjclose"].shape[1]), replace=False))
-    ciks = [sym2cik[s] for s in syms]
+    ciks = list(dict.fromkeys(sym2cik[s] for s in syms))
     idx = np.sort(rng.choice(np.arange(600, len(cal) - 300), size=n_dates, replace=False))
     res, worst = [], 0.0
     Psub = {k: (v[syms] if isinstance(v, pd.DataFrame) else v) for k, v in P.items()}
@@ -65,14 +65,21 @@ def label_alignment(prof):
     errs = []
     for sym, g in s.groupby("symbol"):
         px = pd.read_parquet(C.RAW / "prices" / f"{sym}.parquet").drop_duplicates("date").set_index("date").reindex(cal)
-        last = px["adjclose"].ffill()
+        from historical_data import active_bundle
+        bundle = active_bundle()
+        terminal = pd.read_parquet(bundle / "terminal.parquet").set_index("security_id") if bundle else pd.DataFrame()
         for r in g.itertuples():
             i = cal.get_loc(r.date)
             for h, y in [(1, r.y_1), (20, r.y_20)]:
                 if i + 1 + h >= len(cal) or pd.isna(y):
                     continue
                 ex = px["adj_open"].iat[i + 1 + h]
-                ex = last.iat[i + 1 + h] if pd.isna(ex) else ex
+                if pd.isna(ex) and sym in terminal.index:
+                    event = terminal.loc[sym]
+                    if cal[i + 1] <= event["last_trade_date"] and event["settlement_date"] <= cal[i + 1 + h]:
+                        ex = event["terminal_adjclose"]
+                if pd.isna(ex):
+                    return {"passed": False, "checked": len(errs), "max_abs_error": None, "reason": "non-null panel label has no observed/verified terminal exit"}
                 exp = ex / px["adj_open"].iat[i + 1] - 1 - (so.iat[i + 1 + h] / so.iat[i + 1] - 1)
                 errs.append(abs(float(exp) - float(y)))
     e = np.array(errs)
@@ -118,7 +125,7 @@ def diagnostics(prof):
     ua = json.loads((C.PROC / "universe_audit.json").read_text())
     out["survivorship"] = {"candidates": ua.get("candidates"), "removed_sp500_without_current_ticker_excluded": ua.get("removed_without_current_sec_ticker"),
                            "price_series_available": have, "series_ending_before_last_session": ended,
-                           "note": "Yahoo has no prices for most delisted tickers; delisting returns assumed 0% (vendor survivorship bias)"}
+                           "note": "Current-listing histories remain survivorship-biased unless verified historical coverage passes. Missing terminal outcomes are excluded, never assigned zero returns."}
     f = pd.read_parquet(C.RAW / "facts" / "companyfacts.parquet", columns=["cik", "tag", "start", "end", "val", "filed"], filters=[("tag", "in", ["NetIncomeLoss", "Assets"])])
     g = f.sort_values("filed").groupby(["cik", "tag", "start", "end"], dropna=False)["val"]
     first, last, nrep = g.first(), g.last(), g.size()
@@ -165,7 +172,10 @@ def run(profile=None):
     A["duplicates_timestamps"] = duplicates_and_timestamps(prof)
     print("dups/timestamps", A["duplicates_timestamps"], flush=True)
     A["diagnostics"] = diagnostics(prof)
-    A["blocking"] = {"truncation_invariance": A["truncation_invariance"]["passed"], "label_alignment": A["label_alignment"]["passed"],
+    from historical_data import coverage_check
+    panel_dates = pd.read_parquet(C.PROC / f"panel_{prof['name']}.parquet", columns=["date"])["date"]
+    A["historical_universe"] = coverage_check(panel_dates.min(), panel_dates.max())
+    A["blocking"] = {"historical_universe": A["historical_universe"]["passed"], "truncation_invariance": A["truncation_invariance"]["passed"], "label_alignment": A["label_alignment"]["passed"],
                      "duplicates_timestamps": A["duplicates_timestamps"]["passed"]}
     tmp = C.REPORTS / "data_audit.json.tmp"
     tmp.write_text(json.dumps(A, indent=1, default=str))

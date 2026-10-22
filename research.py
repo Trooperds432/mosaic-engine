@@ -549,6 +549,8 @@ def run(profile=None):
          "costs": {"model": "FX fee + max(half Corwin-Schultz spread, config half-spread) + 0.7*daily vol*sqrt(order/ADV$)", "order_size_usd": order_usd,
                    "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST}}
     print("panel", R["sample"], flush=True)
+    from historical_data import coverage_check
+    R["historical_integrity"] = coverage_check(R["sample"]["first_date"], R["sample"]["last_date"])
 
     # ---- multicollinearity (discovery)
     corr = X.loc[pre, feats].corr()
@@ -750,6 +752,8 @@ def run(profile=None):
     for hh, res in R["models"].items():
         m = res["models"]["ensemble"]
         reasons = []
+        if not R["historical_integrity"]["passed"]:
+            reasons.extend(R["historical_integrity"]["failed_checks"])
         ho, wf = m["holdout"], m["walk_forward"]
         if ho["mean"] is None or ho["n_dates"] < 20:
             status = "INSUFFICIENT_DATA"

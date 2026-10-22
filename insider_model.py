@@ -21,7 +21,7 @@ from research import deflated_sr, psr, sharpe_stats
 PREREG = C.ROOT / "prereg" / "insider_event_v1.json"
 REG = json.loads(PREREG.read_text())
 REG_HASH = hashlib.sha256(PREREG.read_bytes()).hexdigest()
-MODEL_ID, MODEL_VERSION = "insider-event", "1.1.0"
+MODEL_ID, MODEL_VERSION = "insider-event", "1.2.0"
 COST = REG["primary"]["cost_round_trip"]
 DEDUP = 20
 MIN_DV, MIN_PX = 20e6, 5.0
@@ -34,6 +34,11 @@ class Market:
     def __init__(self):
         P, sym2cik = load_prices()
         self.P, self.cal = P, P["adjclose"].index
+        from historical_data import active_bundle
+        bundle = active_bundle()
+        self.terminal = pd.read_parquet(bundle / "terminal.parquet") if bundle else pd.DataFrame()
+        if len(set(sym2cik.values())) != len(sym2cik):
+            raise ValueError("multiple share classes in insider universe: supply an explicit primary-security event mapping before this issuer-level study")
         self.sym_of = {c: s for s, c in sym2cik.items()}
         self.syms = list(P["adjclose"].columns)
         op = P["adj_open"]
@@ -63,9 +68,11 @@ class Market:
     def ar(self, j, e, h):
         """beta-adjusted open-to-open abnormal return from entry session e to e+h (NaN if unavailable)"""
         x = e + h
-        if x >= len(self.cal) or np.isnan(self.op[e, j]) or np.isnan(self.op[x, j]) or np.isnan(self.beta[e - 1, j]):
+        if x >= len(self.cal) or np.isnan(self.op[e, j]) or np.isnan(self.beta[e - 1, j]):
             return np.nan
-        return (self.op[x, j] / self.op[e, j] - 1) - self.beta[e - 1, j] * (self.spy_op[x] / self.spy_op[e] - 1)
+        from historical_data import forward_returns
+        ret = forward_returns(self.P["adj_open"][[self.syms[j]]], self.terminal, [e], [x])[0, 0]
+        return ret - self.beta[e - 1, j] * (self.spy_op[x] / self.spy_op[e] - 1)
 
 
 def buys(ins):
@@ -179,20 +186,23 @@ def matched_controls(m, ev, b, h, details=False):
 
 
 def incremental_regression(ev, controls):
-    cols = ["ar", "mom", "rev", "ldv", "beta", "sector", "entry_date"]
+    extra = ["earn_yield", "book_to_mkt", "roa", "earnings_revision"]
+    cols = ["ar", "mom", "rev", "ldv", "beta", "sector", "entry_date", *extra]
+    if not set(extra) <= set(ev) or not set(extra) <= set(controls):
+        return {"event_coef": None, "t": None, "n": 0, "status": "NOT_COMPUTED: value, quality and PIT earnings-revision controls required"}
     a = ev[cols]
     c = controls.reindex(ev.index)[cols]
     paired = a.notna().all(axis=1) & c.notna().all(axis=1)
     d = pd.concat([a[paired].assign(event=1.0), c[paired].assign(event=0.0)], ignore_index=True)
     if len(d) < 20 or pd.to_datetime(d["entry_date"]).dt.to_period("M").nunique() < 2:
         return {"event_coef": None, "t": None, "n": int(len(d)), "status": "NOT_COMPUTED: insufficient matched observations/month clusters"}
-    X = pd.get_dummies(d[["event", "mom", "rev", "ldv", "beta", "sector"]], columns=["sector"], drop_first=True, dtype=float)
+    X = pd.get_dummies(d[["event", "mom", "rev", "ldv", "beta", "sector", *extra]], columns=["sector"], drop_first=True, dtype=float)
     X = sm.add_constant(X)
     g = pd.factorize(pd.DatetimeIndex(d["entry_date"]).to_period("M").astype(str))[0]
     res = sm.OLS(d["ar"].to_numpy(), X.to_numpy()).fit(cov_type="cluster", cov_kwds={"groups": g})
     k = list(X.columns).index("event")
     return {"event_coef": float(res.params[k]), "t": float(res.tvalues[k]), "n": int(len(d)),
-            "covariates": "12-1 momentum, 1m reversal, log $ADV, beta, sector FE", "note": "earnings-revision control NOT_COMPUTED (no PIT estimates data)"}
+            "covariates": "12-1 momentum, 1m reversal, log $ADV, beta, sector FE, earnings yield, book/market, ROA, PIT earnings revision", "status": "COMPUTED"}
 
 
 def earnings_overlap(m, ev, h):
@@ -237,6 +247,8 @@ def run():
     h = 5
     ev = ev.copy()
     controls = matched_controls(m, ev, b, h, details=True)
+    from insider_controls import attach
+    ev, controls = attach(m, ev, controls)
     ev["ctrl_ar"] = controls["ar"]
     ev["diff"] = ev["ar"] - ev["ctrl_ar"]
     disc = ev[ev["sample"] == "discovery"]
@@ -278,12 +290,12 @@ def run():
     R["gate"] = {"status": status, "checks": {n: bool(ok) for n, ok in checks}, "failed_checks": failed}
 
     # historical conditional distribution of the primary rule's net abnormal return (all events)
-    x = ev["net"].dropna()
+    x = ev.loc[ev["sample"] == "discovery", "net"].dropna()
     dist = {"n": int(len(x)), "mean": float(x.mean()), "std": float(x.std()), "q025": float(x.quantile(0.025)),
-            "q05": float(x.quantile(0.05)), "q975": float(x.quantile(0.975)), "p_pos_gross_excess": float((ev["ar"].dropna() > 0).mean()),
+            "q05": float(x.quantile(0.05)), "q975": float(x.quantile(0.975)), "p_pos_gross_excess": float((ev.loc[ev["sample"] == "discovery", "ar"].dropna() > 0).mean()),
             "es05": float(x[x <= x.quantile(0.05)].mean())}
     R["primary_distribution_net"] = dist
-    model = {"model_id": MODEL_ID, "model_version": MODEL_VERSION, "prereg_sha256": REG_HASH, "horizon": h, "cost": COST,
+    model = {"model_id": MODEL_ID, "run_id": f"{MODEL_ID}-{R['run_at_utc']}", "model_version": MODEL_VERSION, "prereg_sha256": REG_HASH, "horizon": h, "cost": COST,
              "gate": R["gate"], "distribution_net": dist, "run_at_utc": R["run_at_utc"],
              "validation": {"oos_mean_net": P["holdout_net"]["mean"], "oos_se": P["holdout_net"]["se"],
                             "net_sharpe": P["discovery_daily_portfolio"]["sharpe_ann"], "dsr": dsr, "trials": len(trial_srs)}}
@@ -303,6 +315,19 @@ def run():
 def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
     """Schema-v2 signals for primary-rule triggers filed on/after the last completed session (entry at the next open)."""
     model = json.loads((C.PROC / "insider_model.json").read_text())
+    import recipe
+    import gates
+    from deployment_policy import cumulative
+    frozen, frozen_reason = recipe.check(model)
+    try:
+        forward_doc = json.loads((C.PROC / "insider_forward_gate.json").read_text())
+        forward = forward_doc["gate"]
+        age = gates._age_hours(forward_doc["generated_at_utc"], gen)
+        if (not 0 <= age <= gates.GATE_MAX_AGE_HOURS or forward_doc.get("recipe_id") != model.get("recipe_id")
+                or forward_doc.get("model_run_id") != model.get("run_id")):
+            forward = None
+    except (OSError, ValueError, KeyError, TypeError):
+        forward = None
     if model["prereg_sha256"] != REG_HASH:
         raise RuntimeError("pre-registration changed since the model was evaluated; register a new version")
     m = Market()
@@ -326,7 +351,7 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
         liq = bool(m.ok_liquid(j, i_last))
         data_ok = market_fresh and insider_cov
         reasons = []
-        gate = model["gate"]
+        gate = cumulative(model["gate"], forward, data_ok=data_ok, recipe_ok=frozen)
         if model.get("model_version") != MODEL_VERSION:
             reasons.append("control methodology changed: model revalidation required")
         if gate["status"] not in ("PAPER_TEST_ELIGIBLE", "LIVE_REVIEW_ELIGIBLE"):
@@ -348,12 +373,12 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
         drivers = [why, f"filed {pd.Timestamp(r['fdate']).date()}; ${filings['value'].sum():,.0f} purchased by {filings['rptownercik'].nunique()} insider(s)"]
         vol = None
         b_ = m.beta[i_last, j]
-        sid = hashlib.sha256(f"{MODEL_ID}|{MODEL_VERSION}|{REG_HASH[:12]}|{cik}|{pd.Timestamp(r['fdate']).date()}".encode()).hexdigest()[:20]
+        sid = hashlib.sha256(f"{MODEL_ID}|{MODEL_VERSION}|{model.get('recipe_id')}|{REG_HASH[:12]}|{cik}|{pd.Timestamp(r['fdate']).date()}".encode()).hexdigest()[:20]
         sic = pd.read_parquet(C.PROC / "sic.parquet").set_index("cik")
         sig = {
             "schema_version": "2.0", "model_id": MODEL_ID, "model_version": MODEL_VERSION, "signal_id": sid,
             "generated_at_utc": iso(gen), "as_of_utc": iso(session_close_utc(asof_day)),
-            "asset": {"ticker": s.replace("-", "."), "security_id": f"CIK{int(cik):010d}",
+            "asset": {"ticker": __import__("historical_data").ticker_for_security(s, asof_day), "security_id": s if __import__("historical_data").active_bundle() else f"CIK{int(cik):010d}",
                       "exchange": str(sic["exchanges"].get(int(cik))) if int(cik) in sic.index else None, "asset_class": "Equity"},
             "forecast": {"horizon_sessions": model["horizon"], "expected_excess_return": d["mean"] + COST, "expected_net_excess_return": d["mean"],
                          "predictive_std": d["std"], "prediction_interval_95": [d["q025"] + COST, d["q975"] + COST],
@@ -368,7 +393,7 @@ def live_signals(asof_day, gen, dataset_version, market_fresh, insider_cov):
                        "key_drivers": drivers, "contradictory_evidence": []},
             "provenance": {"feature_set_version": f"prereg-{REG_HASH[:12]}", "dataset_version": dataset_version,
                            "source_ids": ["sec_form345_datasets", "sec_edgar_form4_xml", "yahoo_chart_v8_daily"],
-                           "latest_required_data_utc": iso(session_close_utc(asof_day)), "research_run_id": f"{MODEL_ID}-{model['run_at_utc']}"},
+                           "latest_required_data_utc": iso(session_close_utc(asof_day)), "research_run_id": model.get("run_id", f"{MODEL_ID}-{model['run_at_utc']}")},
         }
         r60 = m.P["adjclose"][s].pct_change(fill_method=None).iloc[-60:].std()
         if pd.notna(r60):

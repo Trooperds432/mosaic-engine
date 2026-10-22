@@ -3,8 +3,8 @@
 Per name of the chosen profile: sector, ensemble score, Blume beta, short interest, borrow-fee tier. The bot applies
 ls_rules.select() with its own holdings (turnover buffer) and Alpaca's shortable / easy-to-borrow flags.
 Score = mean of the 5- and 20-session ensemble ranks (LS_SCORE), chosen on walk-forward results only.
-This is a paper forward test: the file carries the research verdict but the paper bot trades it regardless, so the
-executed Alpaca record becomes the out-of-sample evidence. It never feeds the Trading 212 bot.
+Broker targets require cumulative research and forward validation. Research-only
+output contains no executable names. It never feeds the Trading 212 bot.
 """
 import json
 import sys
@@ -35,16 +35,34 @@ def run(profile=LS_PROFILE):
     asof = str(pd.Timestamp(panel["date"].max()).date())
     research = C.REPORTS / f"ls_research_{profile}.json"
     verdict = json.loads(research.read_text())["results"].get(f"ls_rank_{LS_SCORE}") if research.exists() else None
-    doc = {"schema": "ls-1.0", "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "as_of": asof, "profile": profile,
-           "score": LS_SCORE, "mode": "PAPER_FORWARD_TEST", "params": {"q": R.LS_Q, "buffer": R.LS_BUFFER, "gross": R.LS_GROSS, "si_max_short": R.SI_MAX_SHORT,
+    import recipe
+    from signals import forward_gate, audit_ok, dataset_version
+    from deployment_policy import cumulative
+    model = json.loads((C.PROC / f"model_{profile}.json").read_text())
+    frozen, reason = recipe.check(model)
+    cross_gate = forward_gate(profile, C.PRIMARY_HORIZON)[0]
+    audit = audit_ok(dataset_version())
+    # The L/S construction has a different payoff/cost structure. A validated
+    # cross-sectional ranking alone cannot authorise this strategy.
+    ls_artifact = json.loads(research.read_text()) if research.exists() else {}
+    ls_gate = ls_artifact.get("gates", {}).get(f"ls_rank_{LS_SCORE}") if ls_artifact.get("recipe_run_id") == model["run_id"] else None
+    # Historical weekly simulations cannot validate the bot's 20-session book.
+    # A cross-sectional IC record also does not validate a constructed L/S book.
+    if ls_artifact.get("params", {}).get("rebalance_sessions") != 20 or not ls_artifact.get("strategy_forward_validated", False):
+        ls_gate = None
+    deployment = cumulative(ls_gate, cross_gate, data_ok=audit[0], recipe_ok=frozen)
+    doc = {"deployment": deployment, "recipe_id": model.get("recipe_id"), "schema": "ls-1.0", "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "as_of": asof, "profile": profile,
+           "score": LS_SCORE, "mode": "VALIDATED_PAPER" if not deployment["failed_checks"] else "RESEARCH_ONLY", "params": {"q": R.LS_Q, "buffer": R.LS_BUFFER, "gross": R.LS_GROSS, "si_max_short": R.SI_MAX_SHORT,
                                                                        "max_name_weight": R.MAX_NAME_WEIGHT},
            "research": verdict,
-           "names": [{"ticker": s.replace("-", "."), "sector": r.sector, "score": float(r.score), "sector_rank": float(r.sector_rank),
+           "names": [{"ticker": __import__("historical_data").ticker_for_security(s, asof), "security_id": s, "sector": r.sector, "score": float(r.score), "sector_rank": float(r.sector_rank),
                       "beta": None if pd.isna(r.beta) else float(r.beta), "si": None if pd.isna(r.si) else float(r.si), "borrow_fee_ann": float(r.borrow_fee_ann)}
                      for s, r in df.iterrows()]}
     preview = R.select(df.reset_index().rename(columns={"index": "symbol"}))
     doc["preview_without_holdings"] = {"n_long": sum(w > 0 for w in preview.values()), "n_short": sum(w < 0 for w in preview.values()),
                                        "gross": float(sum(abs(w) for w in preview.values())), "net": float(sum(preview.values()))}
+    if deployment["failed_checks"]:
+        doc["names"] = []  # no broker targets; offline L/S backtests remain diagnostics
     C.SIGNALS.mkdir(exist_ok=True)
     tmp = C.SIGNALS / "ls_latest.json.tmp"
     tmp.write_text(json.dumps(doc, indent=1))

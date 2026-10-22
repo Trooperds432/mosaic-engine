@@ -39,13 +39,8 @@ def _atomic(df, dest):
 
 
 def _key(name):
-    v = os.environ.get(name)
-    if v:
-        return v
-    for line in open("/root/.hermes/.env"):
-        if line.startswith(name + "="):
-            return line.split("=", 1)[1].strip()
-    return None
+    from provider_access import key
+    return key(name)
 
 
 def universe_by_size():
@@ -60,6 +55,8 @@ def av_earnings():
     d = OUT / "av_earnings"
     d.mkdir(parents=True, exist_ok=True)
     key = _key("ALPHA_VANTAGE_API_KEY")
+    if not key:
+        raise ValueError("Alpha Vantage credential missing; no request sent")
     calls_f = OUT / "av_calls.json"
     calls = json.loads(calls_f.read_text()) if calls_f.exists() else {}
     today = datetime.now(timezone.utc).date().isoformat()
@@ -70,8 +67,13 @@ def av_earnings():
         for s in todo:
             if used >= AV_DAILY:
                 break
-            r = c.get("https://www.alphavantage.co/query", params={"function": "EARNINGS", "symbol": s.replace("-", "."), "apikey": key})
-            used += 1
+            from provider_access import reserve_alpha_request
+            try:
+                used = reserve_alpha_request(AV_DAILY)
+            except ValueError as exc:
+                print(str(exc), flush=True)
+                break
+            r = c.get("https://www.alphavantage.co/query", params={"function": "EARNINGS", "symbol": __import__("historical_data").ticker_for_security(s), "apikey": key})
             j = r.json() if r.status_code == 200 else {}
             if "quarterlyEarnings" in j:
                 (d / f"{s}.json").write_text(json.dumps(j["quarterlyEarnings"]))
@@ -82,8 +84,6 @@ def av_earnings():
             else:
                 (d / f"{s}.json").write_text("[]")  # no coverage for this symbol
             time.sleep(1.5)
-    calls[today] = used
-    calls_f.write_text(json.dumps(calls))
     rows = []
     for f in d.glob("*.json"):
         for q in json.loads(f.read_text()):
@@ -153,7 +153,7 @@ def options(symbols):
         def one(s):
             for i in range(3):
                 try:
-                    r = c.get(f"https://cdn.cboe.com/api/global/delayed_quotes/options/{s.replace('-', '.')}.json")
+                    r = c.get(f"https://cdn.cboe.com/api/global/delayed_quotes/options/{__import__("historical_data").ticker_for_security(s)}.json")
                     if r.status_code == 200:
                         return option_metrics(s, r.json()["data"])
                     if r.status_code in (403, 404):
@@ -191,19 +191,19 @@ def estimates(symbols):
         def one(s):
             rec = {"symbol": s}
             try:
-                m = c.get(f"https://api.nasdaq.com/api/analyst/{s.replace('-', '.')}/estimate-momentum").json().get("data") or {}
+                m = c.get(f"https://api.nasdaq.com/api/analyst/{__import__("historical_data").ticker_for_security(s)}/estimate-momentum").json().get("data") or {}
                 ch = m.get("changeInConsensus") or {}
                 for k, lab in [("currentData", "now"), ("weekData", "1w"), ("monthData", "1m")]:
                     v = ch.get(k) or {}
                     rec[f"qtr_mean_{lab}"], rec[f"yr_mean_{lab}"] = _num(v.get("qtrMean")), _num(v.get("yrMean"))
                 time.sleep(0.2)
-                f = c.get(f"https://api.nasdaq.com/api/analyst/{s.replace('-', '.')}/earnings-forecast").json().get("data") or {}
+                f = c.get(f"https://api.nasdaq.com/api/analyst/{__import__("historical_data").ticker_for_security(s)}/earnings-forecast").json().get("data") or {}
                 rows = ((f.get("quarterlyForecast") or {}).get("rows") or [])
                 if rows:
                     rec["qtr_estimates_n"] = _num(rows[0].get("noOfEstimates"))
                     rec["qtr_eps_high"], rec["qtr_eps_low"] = _num(rows[0].get("highEPSForecast")), _num(rows[0].get("lowEPSForecast"))
                 time.sleep(0.2)
-                r = c.get(f"https://api.nasdaq.com/api/analyst/{s.replace('-', '.')}/ratings").json().get("data") or {}
+                r = c.get(f"https://api.nasdaq.com/api/analyst/{__import__("historical_data").ticker_for_security(s)}/ratings").json().get("data") or {}
                 rec["mean_rating"] = r.get("meanRatingType")
                 rec["upgrades_downgrades"] = len(r.get("upgradesDowngrades") or [])
             except Exception as e:
@@ -228,7 +228,7 @@ def recs(symbols):
     rows = []
     with httpx.Client(timeout=30) as c:
         for s in symbols:
-            r = c.get("https://finnhub.io/api/v1/stock/recommendation", params={"symbol": s.replace("-", "."), "token": key})
+            r = c.get("https://finnhub.io/api/v1/stock/recommendation", params={"symbol": __import__("historical_data").ticker_for_security(s), "token": key})
             if r.status_code == 429:
                 time.sleep(30)
                 continue

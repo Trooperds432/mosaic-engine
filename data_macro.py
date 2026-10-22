@@ -1,12 +1,12 @@
 """Macro, rates, credit and energy fundamentals with point-in-time availability dates.
 
-  market series (FRED, never revised): available the session after the observation date
-  revised series (ALFRED): value as published in twice-monthly vintages since 2005; an observation is
-      available from the first vintage that contains it (conservative: real release can be earlier)
-  EIA weekly petroleum status (week ending Friday, released Wednesday): available week end + 5 days
+  revised series: FRED initial-release API observations, available the next day
+  NFCI, mortgage and EIA snapshots: available only after their actual ingestion
+  legacy sampled vintages are excluded from historical claims
 Output: processed/macro_pit.parquet (series, obs_date, value, available_date, vintage, source).
 """
 import io
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -71,43 +71,36 @@ def market(client):
         lag = 6 if s in ("NFCI", "MORTGAGE30US") else 1  # weekly series are published days after the reference date
         d["available_date"] = d["obs_date"] + pd.Timedelta(days=lag)
         d["series"], d["vintage"], d["source"] = s, "latest", "fred"
+        if s in ("NFCI", "MORTGAGE30US"):
+            d["available_date"] = d["available_date"].clip(lower=pd.Timestamp(date.today()) + pd.Timedelta(days=1))
+            d["source"] = "fred_observed_snapshot"
         rows.append(d)
         time.sleep(0.3)
     return pd.concat(rows)
 
 
 def revised(client, start="2005-01-01"):
-    vint = [d for d in pd.date_range(start, date.today(), freq="SMS")]
+    """True initial releases only; sampled legacy caches are never relabelled."""
+    from macro_vintages import initial_releases
+    key = __import__("provider_access").key("FRED_API_KEY")
     rows = []
-    for s in REVISED:
-        cache = OUT / f"alfred_{s}.parquet"
-        have = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
-        done = set(have["vintage"]) if len(have) else set()
-        def one(vs):
-            try:
-                d = pd.read_csv(io.StringIO(get(client, ALFRED.format(s, vs)).text))
-            except Exception:
-                return None
-            if d.shape[1] < 2:
-                return None
-            d.columns = ["obs_date", "value"]
-            d["value"] = pd.to_numeric(d["value"], errors="coerce")
-            d = d.dropna().tail(24)  # recent observations as known at this vintage
-            d["vintage"] = vs
-            return d
-        todo = [v.strftime("%Y-%m-%d") for v in vint if v.strftime("%Y-%m-%d") not in done]
-        with ThreadPoolExecutor(6) as ex:  # ALFRED answers slowly (~4s); a few concurrent requests
-            new = [d for d in ex.map(one, todo) if d is not None]
-        allv = pd.concat([have] + new, ignore_index=True) if new else have
-        allv.to_parquet(cache, index=False)
-        allv["obs_date"] = pd.to_datetime(allv["obs_date"])
-        allv["vdate"] = pd.to_datetime(allv["vintage"])
-        # first-release value: the earliest vintage that contains each observation
-        first = allv.sort_values("vdate").drop_duplicates("obs_date", keep="first")
-        first = first.assign(available_date=first["vdate"], series=s, source="alfred_first_release")
-        rows.append(first[["obs_date", "value", "available_date", "series", "vintage", "source"]])
-        print(s, len(first), "observations", flush=True)
-    return pd.concat(rows)
+    for series in REVISED:
+        cache = OUT / f"initial_{series}.parquet"
+        if key:
+            frame = initial_releases(client, series, key, start)
+            temporary = cache.with_suffix(".tmp")
+            frame.to_parquet(temporary, index=False)
+            temporary.replace(cache)
+        elif cache.exists():
+            frame = pd.read_parquet(cache)
+            if not frame["source"].eq("fred_initial_release_api").all():
+                raise ValueError("unverified initial-release cache")
+        else:
+            # No history is preferable to silently including a revised value.
+            print(f"NOT_COMPUTED {series}: FRED_API_KEY or verified initial-release cache required", flush=True)
+            continue
+        rows.append(frame)
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["series", "obs_date", "value", "available_date", "vintage", "source", "pit_eligible"])
 
 
 def eia(client):
@@ -122,6 +115,8 @@ def eia(client):
         x = x.dropna()
         x["available_date"] = x["obs_date"] + pd.Timedelta(days=5)
         x["series"], x["vintage"], x["source"] = name, "latest", "eia_wpsr"
+        x["available_date"] = x["available_date"].clip(lower=pd.Timestamp(date.today()) + pd.Timedelta(days=1))
+        x["source"] = "eia_observed_snapshot"
         rows.append(x)
         time.sleep(0.5)
     return pd.concat(rows)
@@ -132,6 +127,10 @@ def run():
     with httpx.Client(timeout=60, headers={"User-Agent": "Mozilla/5.0"}, follow_redirects=True) as c:
         parts = [market(c), eia(c), revised(c)]
     df = pd.concat(parts, ignore_index=True)
+    if (PROC / "macro_pit.parquet").exists():
+        old = pd.read_parquet(PROC / "macro_pit.parquet")
+        old = old[old["source"].isin(["fred_observed_snapshot", "eia_observed_snapshot"])]
+        df = pd.concat([old, df], ignore_index=True).drop_duplicates(["series", "obs_date", "available_date", "source"], keep="first")
     df.to_parquet(PROC / "macro_pit.parquet", index=False)
     print(df.groupby("series").agg(n=("value", "size"), first=("obs_date", "min"), last=("obs_date", "max")).to_string())
 
@@ -139,12 +138,15 @@ def run():
 def daily(calendar):
     """Wide frame on the trading calendar: latest value whose available_date <= session date."""
     m = pd.read_parquet(PROC / "macro_pit.parquet")
+    # Old sampled ALFRED values are not guaranteed initial releases.
+    m = m[~m["source"].eq("alfred_first_release")]
+    m = m[~m["source"].eq("eia_wpsr") & ~(m["source"].eq("fred") & m["series"].isin(["NFCI", "MORTGAGE30US"]))]
     out = {}
     for s, g in m.groupby("series"):
         g = g.sort_values("available_date").drop_duplicates("available_date", keep="last")
         idx = g.set_index("available_date")["value"]
         out[s] = idx.reindex(idx.index.union(calendar)).ffill().reindex(calendar)
-    return pd.DataFrame(out, index=calendar)
+    return pd.DataFrame(out, index=calendar).reindex(columns=list(dict.fromkeys(MARKET + REVISED + list(EIA_SERIES.values()))))
 
 
 if __name__ == "__main__":

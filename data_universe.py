@@ -22,6 +22,9 @@ def _tables(url):
 
 
 def build():
+    from historical_data import active_bundle
+    if active_bundle():
+        raise ValueError("historical bundle is active: update it with historical_data.py, not the current-listing collector")
     sp = _tables(WIKI["sp500"])
     cur = sp[0][["Symbol", "Security", "GICS Sector"]].rename(columns={"Symbol": "ticker", "Security": "name", "GICS Sector": "sector"})
     cur["source"] = "sp500_current"

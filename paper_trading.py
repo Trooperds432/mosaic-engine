@@ -28,12 +28,24 @@ BOT_TRADES = __import__("pathlib").Path("/opt/t212-bot/trades.jsonl")
 MIN_SESSIONS, MIN_TRADES, MIN_T = 63, 20, 2.0
 
 
-def current_history(history, run_ids):
+def current_history(history, run_ids, models=None):
     """Never stamp old/unattributed observations as evidence for a new recipe."""
     if "model_run_id" not in history:
         return history.iloc[:0].copy()
     expected = history["profile"].map(run_ids)
-    return history[expected.notna() & history["model_run_id"].eq(expected)].copy()
+    valid = expected.notna() & history["model_run_id"].eq(expected)
+    if models is not None:
+        if not {"recipe_id", "recorded_utc"} <= set(history):
+            return history.iloc[:0].copy()
+        expected_recipe = history["profile"].map({p: m.get("recipe_id") for p, m in models.items()})
+        start = pd.to_datetime(history["profile"].map({p: m.get("forward_start_utc") for p, m in models.items()}), utc=True, errors="coerce")
+        recorded = pd.to_datetime(history["recorded_utc"], utc=True, errors="coerce")
+        valid &= expected_recipe.notna() & history["recipe_id"].eq(expected_recipe) & (recorded >= start)
+        asof = pd.to_datetime(history["as_of"], errors="coerce")
+        freeze_day = start.dt.tz_convert("America/New_York").dt.tz_localize(None).dt.normalize()
+        recorded_day = recorded.dt.tz_convert("America/New_York").dt.tz_localize(None).dt.normalize()
+        valid &= (asof >= freeze_day) & (asof <= recorded_day)
+    return history[valid].copy()
 
 
 def record():
@@ -49,13 +61,19 @@ def record():
         raise ValueError("forecast artifact lacks matching model recipe identity; regenerate signals")
     fc["as_of"] = pd.to_datetime(fc["profile"].map(asof))
     fc["recorded_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    keep = ["as_of", "profile", "horizon", "symbol", "ensemble_rank", "decile", "exp_excess", "cost_round_trip", "gate", "recorded_utc", "model_run_id"]
+    if "recipe_id" not in fc:
+        fc["recipe_id"] = None  # legacy artifacts remain diagnostic only
+    if "weights_id" not in fc:
+        fc["weights_id"] = None
+    keep = ["as_of", "profile", "horizon", "symbol", "ensemble_rank", "decile", "exp_excess", "cost_round_trip", "gate", "recorded_utc", "model_run_id", "recipe_id", "weights_id"]
     fc = fc[keep]
     if HIST.exists():
         old = pd.read_parquet(HIST)
         if "model_run_id" not in old:
             old["model_run_id"] = None  # preserve legacy history without inventing provenance
-        keys = ["as_of", "profile", "horizon", "symbol", "model_run_id"]
+        if "recipe_id" not in old:
+            old["recipe_id"] = None
+        keys = ["as_of", "profile", "horizon", "symbol", "model_run_id", "recipe_id"]
         fc = pd.concat([old, fc[~fc.set_index(keys).index.isin(old.set_index(keys).index)]], ignore_index=True)
     fc.to_parquet(HIST, index=False)
     return int(fc["as_of"].nunique())
@@ -195,7 +213,8 @@ def executed(run_ids=None):
 def run():
     n_dates = record()
     run_ids = {p: json.loads((C.PROC / f"model_{p}.json").read_text())["run_id"] for p in C.PROFILES if (C.PROC / f"model_{p}.json").exists()}
-    hist = current_history(pd.read_parquet(HIST), run_ids) if HIST.exists() else pd.DataFrame(columns=["profile", "horizon", "as_of", "symbol", "ensemble_rank", "y", "cost_round_trip"])
+    models = {p: json.loads((C.PROC / f"model_{p}.json").read_text()) for p in run_ids}
+    hist = current_history(pd.read_parquet(HIST), run_ids, models) if HIST.exists() else pd.DataFrame(columns=["profile", "horizon", "as_of", "symbol", "ensemble_rank", "y", "cost_round_trip"])
     hist["y"] = realised(hist)
     sh = shadow(hist)
     ex = executed(run_ids)
@@ -203,7 +222,7 @@ def run():
     tmp = C.PROC / "forward_gate.tmp"
     from provenance import dataset_version
     tmp.write_text(json.dumps({"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                               "model_run_ids": run_ids, "dataset_version": dataset_version(),
+                               "model_run_ids": run_ids, "recipe_ids": {p: m.get("recipe_id") for p, m in models.items()}, "dataset_version": dataset_version(),
                                "last_forecast_date": str(pd.Timestamp(hist["as_of"].max()).date()) if len(hist) else None,
                                "rule": f">= {MIN_SESSIONS} scored dates, forward IC > 0 with HAC t >= {MIN_T}, shadow top quintile net > 0",
                                "profiles": gate}, indent=1, default=float))
@@ -213,6 +232,18 @@ def run():
         ok_fwd = (s["forward_ic_mean"] or 0) > 0 and (s["forward_ic_t"] or 0) >= MIN_T
         promo[key] = "INSUFFICIENT_FORWARD_HISTORY" if s["scored_dates"] < MIN_SESSIONS else ("FORWARD_EVIDENCE_POSITIVE" if ok_fwd else "FORWARD_EVIDENCE_NEGATIVE")
     ready, review_failures = gates.live_review_ready(ex, sh, C.PRIMARY_HORIZON, MIN_SESSIONS, MIN_TRADES, MIN_T)
+    import recipe
+    from deployment_policy import cumulative
+    from signals import audit_ok
+    audit = audit_ok(dataset_version())
+    for profile, model in models.items():
+        frozen, reason = recipe.check(model)
+        historical = model.get("horizons", {}).get(str(C.PRIMARY_HORIZON), {}).get("gate")
+        forward = gate.get(profile, {}).get(str(C.PRIMARY_HORIZON))
+        combined = cumulative(historical, forward, data_ok=audit[0], recipe_ok=frozen)
+        if combined["failed_checks"]:
+            ready = False
+            review_failures.extend(f"{profile}: {x}" for x in combined["failed_checks"])
     out = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "forecast_dates_recorded": n_dates,
            "shadow_book": sh, "shadow_status": promo, "executed_demo_book": ex,
            "live_review_recommendation": "READY_FOR_LIVE_REVIEW (human decision required)" if ready else "NOT_READY",

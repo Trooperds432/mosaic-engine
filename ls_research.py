@@ -195,6 +195,18 @@ def run(profile="broad"):
                            "short_leg_excess_ann": float(part["short_excess"].mean() * PERIODS_PER_YEAR)})
             res[lab] = st
         out["results"][f"ls_rank_{key}"] = res
+        from research import hac_mean
+        wf_stats = hac_mean(bt.loc[bt.index < hold_start, "net"], max(1, int(20 / C.DECISION_STEP)))
+        ho_stats = hac_mean(bt.loc[bt.index >= hold_start, "net"], max(1, int(20 / C.DECISION_STEP)))
+        failed = []
+        for sample, stat in [("walk_forward", wf_stats), ("historical_holdout", ho_stats)]:
+            if not ((stat.get("mean") or 0) > 0 and (stat.get("t") or 0) >= 2):
+                failed.append(f"{sample} cost-adjusted mean not > 0 with HAC t >= 2")
+        from historical_data import coverage_check
+        coverage = coverage_check(panel["date"].min(), panel["date"].max())
+        failed.extend(coverage["failed_checks"])
+        out.setdefault("gates", {})[f"ls_rank_{key}"] = {"status": "PAPER_TEST_ELIGIBLE" if not failed else "UNVALIDATED",
+                         "failed_checks": failed, "walk_forward_net": wf_stats, "historical_holdout_net": ho_stats}
         series.append(bt.assign(score=str(key)))
         print(profile, "L/S", key, {k: {m: round(v, 3) for m, v in (r or {}).items() if m in ("cagr", "sharpe_ann", "max_drawdown", "beta_to_spy")} for k, r in res.items()}, flush=True)
     # current long-only strategy, absolute

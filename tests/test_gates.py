@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import gates  # noqa: E402
 
 NOW = datetime(2026, 10, 22, 22, 0, tzinfo=timezone.utc)
-OK_BLOCKING = {"truncation_invariance": True, "label_alignment": True, "duplicates_timestamps": True}
+OK_BLOCKING = {"truncation_invariance": True, "label_alignment": True, "duplicates_timestamps": True, "historical_universe": True}
 
 
 def audit(**kw):
