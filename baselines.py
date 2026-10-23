@@ -23,10 +23,13 @@ from research import name_costs
 N_PATHS = 2000
 
 
-def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0):
+def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebalance_dates=None):
     """Mean net excess return per rebalance period for N_PATHS random portfolios matched to the model."""
     d = panel.loc[period_mask, ["date", "symbol", f"y_{h}"]].assign(c=cost[period_mask]).dropna(subset=[f"y_{h}"])
-    ud = np.sort(d["date"].unique())[:: max(1, h // C.DECISION_STEP)]
+    from research import rebalance_calendar
+    # Share the model's actual schedule; filtering labels must not shift dates.
+    ud = rebalance_calendar(panel['date'], h) if rebalance_dates is None else pd.DatetimeIndex(rebalance_dates)
+    ud = ud[ud.isin(pd.DatetimeIndex(pd.unique(panel.loc[period_mask, 'date'])))]
     syms = {s: i for i, s in enumerate(d["symbol"].unique())}
     S = len(syms)
     rng = np.random.default_rng(seed)
@@ -97,13 +100,18 @@ def run(profile="large"):
     hold_start = pd.Timestamp(R["sample"]["holdout_start"])
     out = {"profile": profile, "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "paths": N_PATHS, "results": {}}
     for h in (5, 20):
+        periods = pd.read_parquet(C.REPORTS / f'ensemble_backtest_{profile}_h{h}.parquet')
         e = R["models"][str(h)]["models"]["ensemble"]
         first_wf = min(int(y) for y in e["wf_years"]) if e["wf_years"] else None
         for label, bt, mask in [("walk_forward", e["backtest_wf"], (panel["date"] < hold_start) & (panel["date"].dt.year >= (first_wf or 0))),
                                 ("holdout", e["backtest_holdout"], panel["date"] >= hold_start)]:
             if not bt:
                 continue
-            Rr = random_matched(panel, h, mask.to_numpy(), C.SIGNAL_TOP_QUANTILE, bt["mean_turnover"], cost, seed=h)
+            schedule = pd.DatetimeIndex(periods.loc[periods['sample'] == label, 'd'])
+            Rr = random_matched(panel, h, mask.to_numpy(), C.SIGNAL_TOP_QUANTILE, bt["mean_turnover"], cost, seed=h,
+                                rebalance_dates=schedule)
+            if len(Rr) != len(schedule):
+                raise ValueError('matched-random periods do not match the saved model calendar')
             path_mean = Rr.mean(axis=0)
             path_sr = Rr.mean(axis=0) / Rr.std(axis=0)
             m = bt["mean_net_excess"]

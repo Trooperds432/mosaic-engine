@@ -4,6 +4,10 @@ Local integrity/validation implementation: see [IMPLEMENTATION.md](IMPLEMENTATIO
 tests, migration requirements and remaining specification gaps. Model/data changes require revalidation;
 existing reports are historical artifacts, not results from the updated implementation.
 
+The [institutional research comparison](docs/INSTITUTIONAL_RESEARCH.md) adds a fixed
+value–quality–momentum benchmark, shared backtest calendars, saved stock selections
+and a separate audit of observed execution costs.
+
 Research, forecasting and validation only. It never places orders, changes bot limits or enables live trading.
 
 ## Bot interface

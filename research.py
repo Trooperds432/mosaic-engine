@@ -259,29 +259,53 @@ def name_costs(panel, order_usd):
     return (C.FX_FEE + hs + imp).astype("float64")
 
 
-def long_only_backtest(score, y, dates, syms, cost, h, top=C.SIGNAL_TOP_QUANTILE, cost_mult=1.0, bench=None):
+def rebalance_calendar(dates, h):
+    """Anchor the schedule to input decision dates, before filtering any strategy's scores."""
+    if h < 1:
+        raise ValueError("backtest horizon must be positive")
+    return pd.DatetimeIndex(pd.unique(dates)).sort_values()[::max(1, h // C.DECISION_STEP)]
+
+
+def long_only_backtest(score, y, dates, syms, cost, h, top=C.SIGNAL_TOP_QUANTILE, cost_mult=1.0, bench=None,
+                       rebalance_dates=None, holdings=None):
     """Equal-weight top-quantile long-only, rebalanced every h sessions (non-overlapping), excess vs SPY (or vs
     `bench`), net of per-name one-way costs on every name bought or sold."""
     df = pd.DataFrame({"s": np.asarray(score, dtype="float64"), "y": np.asarray(y, dtype="float64"), "d": dates, "sym": syms,
                        "c": np.asarray(cost, dtype="float64")})
     if bench is not None:
         df["y"] = df["y"] - np.asarray(bench, dtype="float64")
-    df = df.dropna(subset=["s", "y"])
-    ud = np.sort(df["d"].unique())
-    keep = set(ud[::max(1, h // C.DECISION_STEP)])
+    if not 0 < top <= 1 or cost_mult < 0:
+        raise ValueError("invalid portfolio fraction or cost multiplier")
+    df['d'] = pd.to_datetime(df['d'])
+    if df.duplicated(['d', 'sym']).any():
+        raise ValueError("duplicate security/decision-date rows")
+    keep = rebalance_calendar(dates, h) if rebalance_dates is None else pd.DatetimeIndex(rebalance_dates)
+    if not keep.is_unique or not keep.is_monotonic_increasing:
+        raise ValueError("rebalance dates must be unique and ordered")
+    # Select without consulting future outcomes. Never replace a missing outcome
+    # with a lower-ranked security whose return happens to be available.
+    df = df[np.isfinite(df['s']) & np.isfinite(df['c']) & (df['c'] >= 0)]
     df = df[df["d"].isin(keep)]
-    rows, prev = [], {}
+    rows, prev, missing = [], {}, []
     for d, g in df.groupby("d"):
         k = max(1, int(round(len(g) * top)))
-        pick = g.nlargest(k, "s")
+        pick = g.sort_values(['s', 'sym'], ascending=[False, True]).head(k)
+        if not np.isfinite(pick['y']).all():
+            missing.append(str(pd.Timestamp(d).date()))
+            continue
         names = dict(zip(pick["sym"], pick["c"]))
         w = 1 / len(names)
         traded = set(names) ^ set(prev)
         c = sum(names.get(s, prev.get(s, 0)) for s in traded) * w * cost_mult if prev else sum(names.values()) * w * cost_mult
         gross = pick["y"].mean()
         rows.append({"d": d, "gross": gross, "net": gross - c, "turnover": 1.0 if not prev else len(traded) / (2 * len(names)), "n": k, "cost": c})
+        if holdings is not None:
+            holdings.extend({"d": d, "symbol": r.sym, "weight": w, "score": float(r.s),
+                             "realized_excess": float(r.y), "one_way_cost": float(r.c)} for r in pick.itertuples())
         prev = names
-    return pd.DataFrame(rows).set_index("d") if rows else pd.DataFrame(columns=["gross", "net", "turnover", "n", "cost"])
+    result = pd.DataFrame(rows).set_index("d") if rows else pd.DataFrame(columns=["gross", "net", "turnover", "n", "cost"])
+    result.attrs['missing_selected_outcome_dates'] = missing
+    return result
 
 
 def bt_summary(bt, h):
@@ -644,6 +668,16 @@ def run(profile=None):
         if h == C.PRIMARY_HORIZON:
             from validation_extensions import cpcv_ridge
             from factor_persistence import summary as persistence_summary
+            from institutional_research import write_comparison
+            comparison = write_comparison(panel, ens, cost, h, cal[hpos], pname, C.REPORTS,
+                                          {'run_id': run_id, 'historical_integrity': R['historical_integrity'],
+                                           'order_size_usd': order_usd}, top=C.SIGNAL_TOP_QUANTILE)
+            res['fixed_vqm_comparison'] = comparison
+            # Preserve genuine OOS scores for reproducible comparisons. Final
+            # production weights trained on all labels cannot reconstruct these.
+            pd.DataFrame({'date': dates, 'symbol': syms, 'ensemble_score': ens,
+                          'sample': np.where(pre, 'walk_forward', 'holdout')}).to_parquet(
+                C.REPORTS / f'oos_scores_{pname}_h{h}.parquet', index=False)
             res["ridge_cpcv"] = cpcv_ridge(Xm, y, dates, tpos, h, hpos, embargo=EMBARGO)
             e["factor_persistence_wf"] = persistence_summary(ens[pre], y[pre], dates[pre], syms[pre])
         tab_wf = calibration(np.where(pre, ens, np.nan), y, dates)
