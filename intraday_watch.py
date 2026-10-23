@@ -75,6 +75,9 @@ def refresh_insider_signals():
     doc["n_insider_event_signals"] = len(sigs)
     doc["n_long"] = sum(s["signal"]["direction"] == "LONG" for s in doc["signals"])
     doc["insider_refreshed_at_utc"] = iso(gen)
+    import overlay  # analyst vetoes apply to intraday updates too
+    doc["analyst_vetoes_applied"] = overlay.apply_to_signals(doc["signals"], overlay.active_vetoes(gen.astimezone(NY).date()))
+    doc["n_long"] = sum(s["signal"]["direction"] == "LONG" for s in doc["signals"])
     publish(doc, C.SIGNALS, f"intraday_{gen.strftime('%Y%m%dT%H%M%S%f')}")
     return len(sigs)
 

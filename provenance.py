@@ -16,7 +16,7 @@ def dataset_version():
               C.PROC / "short_interest.parquet", C.PROC / "universe.parquet", C.PROC / "sic.parquet",
               C.PROC / "8k_items.parquet", C.PROC / "fda_approvals.parquet", C.PROC / "cusip_cik.parquet",
               C.PROC / "av_earnings.parquet", C.PROC / "finnhub_recommendations.parquet", C.PROC / "estimate_vintages.parquet",
-              C.PROC / "historical_bundle.json", *sorted((C.RAW / "historical").rglob("*.parquet")), *sorted((C.RAW / "historical").rglob("coverage.json")),
+              C.PROC / "historical_bundle.json", C.PROC / "text_similarity.parquet", C.PROC / "wiki_views.parquet", *sorted((C.RAW / "historical").rglob("*.parquet")), *sorted((C.RAW / "historical").rglob("coverage.json")),
               *sorted((C.RAW / "prices").glob("*.parquet")), *sorted((C.RAW / "insider").glob("*.parquet")),
               *sorted((C.RAW / "alt").rglob("*.parquet")), *sorted((C.RAW / "collect").rglob("*.parquet"))]
     for p in sorted(set(paths)):

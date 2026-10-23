@@ -8,7 +8,7 @@ import config as C
 from features import build_panel_chunked
 import feature_test
 
-TEXT = ["text_sim_cos", "text_sim_jac", "text_sim_rf", "text_len_chg"]
+TEXT = ["text_sim_cos", "text_sim_jac", "text_sim_rf", "text_len_chg", "wiki_attn_abn", "wiki_attn_level"]
 
 if __name__ == "__main__":
     _lock = C.hold_lock()
