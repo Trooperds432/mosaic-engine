@@ -68,6 +68,11 @@ FEATURES = {
     "op_margin_change": ("earnings", +1, "annual operating-margin change"),
     "inv_to_sales_chg": ("earnings", -1, "change in inventory / revenue (inventory build-up)"),
     "earn_recent": ("event", 0, "earnings 8-K (item 2.02) in the last 5 sessions (0/1)"),
+    # filing text (Cohen, Malloy & Nguyen 2020, "Lazy Prices"): firms that change their 10-K/10-Q wording underperform
+    "text_sim_cos": ("text", +1, "cosine similarity of the latest 10-K/10-Q to the same filing a year earlier (low = changer)"),
+    "text_sim_jac": ("text", +1, "Jaccard word-set similarity of the latest 10-K/10-Q to the year-ago filing"),
+    "text_sim_rf": ("text", +1, "cosine similarity of the latest 10-K Item 1A risk factors to the prior 10-K's"),
+    "text_len_chg": ("text", 0, "log change in filing length vs the year-ago filing (control for document growth)"),
     # insider (section 3.2)
     "ins_net_90": ("insider", +1, "(open-mkt buy $ - discretionary sell $) / mcap, last 90d"),
     "ins_net_180": ("insider", +1, "same, last 180d"),
@@ -712,6 +717,34 @@ def short_features(dec_dates, syms, shares):
     return out
 
 
+def text_features(dec_idx, cal, ciks):
+    """Latest filing-text similarity known at each decision date (data_text.py). A filing counts from the first session
+    on/after its available_date (day after EDGAR acceptance); 10-K/10-Q measures expire after 200 days, the 10-K
+    risk-factor measure after 400 days."""
+    f = PROC / "text_similarity.parquet"
+    keys = {"text_sim_cos": ("sim_cos", 200), "text_sim_jac": ("sim_jac", 200), "text_len_chg": ("len_chg", 200), "text_sim_rf": ("sim_rf_cos", 400)}
+    out = {k: np.full((len(dec_idx), len(ciks)), np.nan, dtype="float32") for k in keys}
+    if f.exists():
+        t = pd.read_parquet(f, columns=["cik", "available_date", "sim_cos", "sim_jac", "sim_rf_cos", "len_chg"])
+        col = {c: j for j, c in enumerate(ciks)}
+        for cik, g in t.groupby("cik"):
+            j = col.get(cik)
+            if j is None:
+                continue
+            for k, (src, max_days) in keys.items():
+                gg = g.dropna(subset=[src]).sort_values("available_date")
+                if gg.empty:
+                    continue
+                s = cal.searchsorted(gg["available_date"].to_numpy(), side="left")
+                k_ = np.searchsorted(s, dec_idx, side="right") - 1  # latest filing usable at t
+                ok = k_ >= 0
+                age = np.full(len(dec_idx), np.inf)
+                age[ok] = (cal[dec_idx[ok]] - gg["available_date"].to_numpy()[k_[ok]]).days
+                use = ok & (age <= max_days)
+                out[k][use, j] = gg[src].to_numpy()[k_[use]]
+    return {k: pd.DataFrame(v, index=cal[dec_idx], columns=ciks) for k, v in out.items()}
+
+
 def earnings_recent(dec_idx, cal, ciks):
     f = PROC / "8k_items.parquet"
     out = np.zeros((len(dec_idx), len(ciks)), dtype="float32")
@@ -973,6 +1006,8 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["op_margin_change"] = F["opinc"] / rev - F["opinc_prev"] / rev_p
     feats["inv_to_sales_chg"] = F["inv"] / rev - F["inv_prev"] / rev_p
     feats["earn_recent"] = S(earnings_recent(dec_idx, cal, issuer_ciks))
+    for k, v in text_features(dec_idx, cal, issuer_ciks).items():
+        feats[k] = S(v)
 
     I = {k: S(v) for k, v in ins.items()}
     feats["ins_net_90"] = (I["buy_usd_90"] - I["sell_usd_90"]) / mcap

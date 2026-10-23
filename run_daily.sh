@@ -24,6 +24,7 @@ if [ "$FRI" = "1" ]; then
 else
   $PY -u data_fundamentals.py     > $L/ingest_facts.log 2>&1      # only new CIKs
   $PY -u data_updates.py 5        > $L/ingest_updates.log 2>&1    # companies that filed a 10-Q/10-K/8-K in the last 5 days
+  $PY -u data_text.py --queue     > $L/ingest_text.log 2>&1 || true  # filing-text similarity for those filers (skips while a backfill runs)
 fi
 $PY -u audit.py large            >  $L/audit.log 2>&1 || true    # a failed audit blocks LONG signals inside signals.py
 $PY -u var_backtest.py --forecast >  $L/vol_forecast.log 2>&1   # GARCH-t (VaR backtest winner) per-name risk

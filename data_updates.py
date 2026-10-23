@@ -72,6 +72,10 @@ def run(days=5):
             except Exception as e:
                 print("ERR 8-K", cik, e, flush=True)
             time.sleep(0.15)
+    if facts:  # data_text.py --queue refreshes these issuers' filing-text similarity
+        q = LEDGER / "text_queue.txt"
+        old = set(q.read_text().split()) if q.exists() else set()
+        q.write_text("\n".join(sorted(old | {str(c) for c in facts})) + "\n")
     if facts:
         DF.merge(RAW / "facts" / "by_cik")
     if eights or facts:
