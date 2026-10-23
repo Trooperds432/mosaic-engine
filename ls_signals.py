@@ -56,7 +56,12 @@ def run(profile=LS_PROFILE):
     ls_gate = ls_artifact.get("gates", {}).get(f"ls_rank_{LS_SCORE}") if ls_artifact.get("recipe_run_id") == model["run_id"] else None
     # Historical weekly simulations cannot validate the bot's 20-session book.
     # A cross-sectional IC record also does not validate a constructed L/S book.
-    if ls_artifact.get("params", {}).get("rebalance_sessions") != 20 or not ls_artifact.get("strategy_forward_validated", False):
+    # The constructed book needs its own prospective record (ls_forward.py) under the same frozen recipe.
+    fwd_f = C.REPORTS / "ls_forward.json"
+    fwd = json.loads(fwd_f.read_text()) if fwd_f.exists() else {}
+    fwd_ok = (fwd.get("strategy_forward_validated") is True and fwd.get("rebalance_sessions") == 20
+              and fwd.get("recipe_id") == model.get("recipe_id") and fwd.get("model_run_id") == model["run_id"])
+    if ls_artifact.get("params", {}).get("rebalance_sessions") != 20 or not fwd_ok:
         ls_gate = None
     deployment = cumulative(ls_gate, cross_gate, data_ok=audit[0], recipe_ok=frozen)
     import overlay  # analyst vetoes remove a name from the vetoed side of the book, never add one
@@ -70,6 +75,8 @@ def run(profile=LS_PROFILE):
                       "beta": None if pd.isna(r.beta) else float(r.beta), "si": None if pd.isna(r.si) else float(r.si), "borrow_fee_ann": float(r.borrow_fee_ann),
                       "veto_long": bool(r.veto_long), "veto_short": bool(r.veto_short)}
                      for s, r in df.iterrows()]}
+    cand = df.reset_index().rename(columns={"index": "symbol"}).assign(as_of=asof)  # research-only: ls_forward.py shadow book
+    cand.to_parquet(C.PROC / f"ls_candidates_{profile}.parquet", index=False)
     preview = R.select(df.reset_index().rename(columns={"index": "symbol"}))
     doc["preview_without_holdings"] = strategy_preview(preview)
     if deployment["failed_checks"]:

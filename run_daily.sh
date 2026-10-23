@@ -35,6 +35,7 @@ $PY -u signals.py                >> $L/signals.log 2>&1
 $PY -u paper_trading.py          >  $L/paper.log 2>&1 || true   # forward record, shadow book, demo fills
 $PY -u insider_forward.py       >  $L/insider_forward.log 2>&1 || true  # frozen-rule prospective events; missing recipe stays unvalidated
 $PY -u ls_signals.py             >  $L/ls_signals.log 2>&1 || true  # long/short inputs for the Alpaca paper bot
+$PY -u ls_forward.py             >  $L/ls_forward.log 2>&1 || true  # prospective record of the long/short book (sets strategy_forward_validated)
 $PY -u overlay.py review         >  $L/overlay.log 2>&1 || true    # analyst review sheet (reports/overlay_review_latest.md)
 $PY -u overlay.py score          >> $L/overlay.log 2>&1 || true    # do analyst vetoes add value?
 $PY -u catalysts.py              >  $L/catalysts.log 2>&1 || true
