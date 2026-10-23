@@ -24,8 +24,10 @@ DEPENDENCIES = {
     'estimates': {'proc': ['av_earnings.parquet', 'finnhub_recommendations.parquet', 'estimate_vintages.parquet'],
                   'raw': ['collect/**/*.parquet', 'estimate_vintages/*.csv'],
                   'sources': ['data_collect.py', 'pit_estimates.py', 'provider_history.py']},
-    'filing_text': {'proc': ['text_similarity.parquet'], 'raw': ['text/**/*.parquet', 'text/**/*.txt.gz'],
+    'filing_text': {'proc': ['text_similarity.parquet'], 'raw': ['text/**/*.parquet', 'text/**/*.txt.gz', 'lm/*.csv'],
                     'sources': ['data_text.py']},
+    'attention': {'proc': ['wiki_views.parquet', 'wiki_map.parquet'], 'raw': ['wiki/*.parquet'],
+                  'sources': ['data_wiki.py']},
     'feature_transform': {'sources': ['features.py', 'config.py', 'provenance.py', 'feature_dependencies.py']},
 }
 

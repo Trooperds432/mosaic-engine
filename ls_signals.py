@@ -59,12 +59,16 @@ def run(profile=LS_PROFILE):
     if ls_artifact.get("params", {}).get("rebalance_sessions") != 20 or not ls_artifact.get("strategy_forward_validated", False):
         ls_gate = None
     deployment = cumulative(ls_gate, cross_gate, data_ok=audit[0], recipe_ok=frozen)
+    import overlay  # analyst vetoes remove a name from the vetoed side of the book, never add one
+    _tk = [__import__("historical_data").ticker_for_security(x, asof) for x in df.index]
+    df["veto_long"], df["veto_short"] = overlay.veto_flags(_tk, overlay.active_vetoes())
     doc = {"deployment": deployment, "recipe_id": model.get("recipe_id"), "schema": "ls-1.0", "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "as_of": asof, "profile": profile,
            "score": LS_SCORE, "mode": "VALIDATED_PAPER" if not deployment["failed_checks"] else "RESEARCH_ONLY", "params": {"q": R.LS_Q, "buffer": R.LS_BUFFER, "gross": R.LS_GROSS, "si_max_short": R.SI_MAX_SHORT,
                                                                        "max_name_weight": R.MAX_NAME_WEIGHT},
            "research": verdict,
            "names": [{"ticker": __import__("historical_data").ticker_for_security(s, asof), "security_id": s, "sector": r.sector, "score": float(r.score), "sector_rank": float(r.sector_rank),
-                      "beta": None if pd.isna(r.beta) else float(r.beta), "si": None if pd.isna(r.si) else float(r.si), "borrow_fee_ann": float(r.borrow_fee_ann)}
+                      "beta": None if pd.isna(r.beta) else float(r.beta), "si": None if pd.isna(r.si) else float(r.si), "borrow_fee_ann": float(r.borrow_fee_ann),
+                      "veto_long": bool(r.veto_long), "veto_short": bool(r.veto_short)}
                      for s, r in df.iterrows()]}
     preview = R.select(df.reset_index().rename(columns={"index": "symbol"}))
     doc["preview_without_holdings"] = strategy_preview(preview)

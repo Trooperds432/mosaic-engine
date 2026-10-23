@@ -31,9 +31,13 @@ def select(g, held_long=(), held_short=(), can_short=None, gross=LS_GROSS):
     r = g.groupby(g["sector"].fillna("Unknown"))["score"].rank(pct=True).to_numpy()
     sym = g["symbol"].to_numpy()
     long_m = (r >= 1 - LS_Q) | (np.isin(sym, list(held_long)) & (r >= 1 - LS_BUFFER))
+    if "veto_long" in g:  # analyst overlay (overlay.py): a vetoed side is excluded, including current holdings
+        long_m &= ~g["veto_long"].fillna(False).to_numpy(dtype=bool)
     short_ok = np.nan_to_num(g["si"].to_numpy(dtype="float64"), nan=0.0) <= SI_MAX_SHORT
     if can_short is not None:
         short_ok &= np.array([can_short(s) for s in sym], dtype=bool)
+    if "veto_short" in g:
+        short_ok &= ~g["veto_short"].fillna(False).to_numpy(dtype=bool)
     short_m = ((r <= LS_Q) | (np.isin(sym, list(held_short)) & (r <= LS_BUFFER))) & short_ok & ~long_m
     L, S = g[long_m], g[short_m]
     if len(L) < 5 or len(S) < 5:

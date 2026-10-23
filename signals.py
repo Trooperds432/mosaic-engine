@@ -268,6 +268,9 @@ def run(dry=False, profiles=None):
     if dry:
         print(json.dumps(doc["signals"][0], indent=1))
         return doc
+    import overlay  # analyst vetoes can only turn a LONG into NO_SIGNAL, never create one
+    doc["analyst_vetoes_applied"] = overlay.apply_to_signals(doc["signals"], overlay.active_vetoes(gen.astimezone(NY).date()))
+    doc["n_long"] = sum(s["signal"]["direction"] == "LONG" for s in doc["signals"])
     publish(doc, C.SIGNALS, f"{asof_day.date()}_{gen.strftime('%H%M%S%f')}")
     vfp = C.PROC / "vol_forecasts.parquet"
     if vfp.exists():  # per-name 1-day risk for the bot's sizing (ticker -> sigma, 99% VaR, 97.5% ES)

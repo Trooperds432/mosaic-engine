@@ -74,6 +74,14 @@ FEATURES = {
     "text_sim_jac": ("text", +1, "Jaccard word-set similarity of the latest 10-K/10-Q to the year-ago filing"),
     "text_sim_rf": ("text", +1, "cosine similarity of the latest 10-K Item 1A risk factors to the prior 10-K's"),
     "text_len_chg": ("text", 0, "log change in filing length vs the year-ago filing (control for document growth)"),
+    # filing tone (Loughran & McDonald 2011 word lists; non-commercial research licence)
+    "text_neg": ("text", -1, "share of Loughran-McDonald negative words in the latest 10-K/10-Q"),
+    "text_d_neg": ("text", -1, "change in negative-word share vs the year-ago filing"),
+    "text_d_unc": ("text", -1, "change in uncertainty-word share vs the year-ago filing"),
+    "text_d_lit": ("text", -1, "change in litigious-word share vs the year-ago filing"),
+    # investor attention (Wikipedia page views; cf. Da, Engelberg & Gao 2011 on search attention): sign not pre-specified
+    "wiki_attn_abn": ("attention", 0, "log(mean daily Wikipedia views over the last 5 days / median of the prior 60 days)"),
+    "wiki_attn_level": ("attention", 0, "log median daily Wikipedia views over the prior 60 days (investor recognition)"),
     # insider (section 3.2)
     "ins_net_90": ("insider", +1, "(open-mkt buy $ - discretionary sell $) / mcap, last 90d"),
     "ins_net_180": ("insider", +1, "same, last 180d"),
@@ -723,10 +731,14 @@ def text_features(dec_idx, cal, ciks):
     on/after its available_date (day after EDGAR acceptance); 10-K/10-Q measures expire after 200 days, the 10-K
     risk-factor measure after 400 days."""
     f = PROC / "text_similarity.parquet"
-    keys = {"text_sim_cos": ("sim_cos", 200), "text_sim_jac": ("sim_jac", 200), "text_len_chg": ("len_chg", 200), "text_sim_rf": ("sim_rf_cos", 400)}
+    keys = {"text_sim_cos": ("sim_cos", 200), "text_sim_jac": ("sim_jac", 200), "text_len_chg": ("len_chg", 200), "text_sim_rf": ("sim_rf_cos", 400),
+            "text_neg": ("neg", 200), "text_d_neg": ("d_neg", 200), "text_d_unc": ("d_unc", 200), "text_d_lit": ("d_lit", 200)}
     out = {k: np.full((len(dec_idx), len(ciks)), np.nan, dtype="float32") for k in keys}
     if f.exists():
-        t = pd.read_parquet(f, columns=["cik", "available_date", "sim_cos", "sim_jac", "sim_rf_cos", "len_chg"])
+        t = pd.read_parquet(f)
+        for src, _ in keys.values():  # files written before the tone measures existed lack those columns
+            if src not in t:
+                t[src] = np.nan
         col = {c: j for j, c in enumerate(ciks)}
         for cik, g in t.groupby("cik"):
             j = col.get(cik)
@@ -743,6 +755,27 @@ def text_features(dec_idx, cal, ciks):
                 age[ok] = (cal[dec_idx[ok]] - gg["available_date"].to_numpy()[k_[ok]]).days
                 use = ok & (age <= max_days)
                 out[k][use, j] = gg[src].to_numpy()[k_[use]]
+    return {k: pd.DataFrame(v, index=cal[dec_idx], columns=ciks) for k, v in out.items()}
+
+
+def wiki_features(dec_idx, cal, ciks):
+    """Attention from daily Wikipedia views (data_wiki.py), using UTC days <= t-1 only (a day's count is published after
+    it ends). Abnormal = log(mean of the last 5 days + 1) - log(median of the 60 days before those + 1)."""
+    f = PROC / "wiki_views.parquet"
+    out = {k: np.full((len(dec_idx), len(ciks)), np.nan, dtype="float32") for k in ("wiki_attn_abn", "wiki_attn_level")}
+    if f.exists():
+        v = pd.read_parquet(f, columns=["cik", "date", "views"])
+        col = {c: j for j, c in enumerate(ciks)}
+        days = pd.DatetimeIndex(cal[dec_idx]) - pd.Timedelta(days=1)
+        for cik, g in v.groupby("cik"):
+            j = col.get(cik)
+            if j is None:
+                continue
+            s = g.set_index("date")["views"].astype("float64").asfreq("D")
+            recent = s.rolling(5, min_periods=4).mean()
+            base = s.shift(5).rolling(60, min_periods=45).median()
+            out["wiki_attn_abn"][:, j] = (np.log1p(recent) - np.log1p(base)).reindex(days).to_numpy()
+            out["wiki_attn_level"][:, j] = np.log1p(base).reindex(days).to_numpy()
     return {k: pd.DataFrame(v, index=cal[dec_idx], columns=ciks) for k, v in out.items()}
 
 
@@ -1013,6 +1046,8 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["inv_to_sales_chg"] = F["inv"] / rev - F["inv_prev"] / rev_p
     feats["earn_recent"] = S(earnings_recent(dec_idx, cal, issuer_ciks))
     for k, v in text_features(dec_idx, cal, issuer_ciks).items():
+        feats[k] = S(v)
+    for k, v in wiki_features(dec_idx, cal, issuer_ciks).items():
         feats[k] = S(v)
 
     I = {k: S(v) for k, v in ins.items()}

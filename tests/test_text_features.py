@@ -48,5 +48,26 @@ class FeatureTests(unittest.TestCase):
         self.assertTrue(np.isnan(out["text_sim_rf"][7].to_numpy()).all())
 
 
+class WikiTests(unittest.TestCase):
+    def test_uses_only_days_before_decision(self):
+        try:
+            import features as F
+        except ImportError as e:
+            self.skipTest(str(e))
+        cal = pd.bdate_range("2024-01-01", "2024-06-28")
+        days = pd.date_range("2023-10-01", "2024-06-30")
+        views = pd.Series(100.0, index=days)
+        views[pd.Timestamp("2024-05-01")] = 100000.0  # spike on the decision day itself
+        df = pd.DataFrame({"cik": 7, "date": days, "views": views.to_numpy()})
+        with tempfile.TemporaryDirectory() as d, patch.object(F, "PROC", Path(d)):
+            df.to_parquet(Path(d) / "wiki_views.parquet", index=False)
+            dec_idx = cal.get_indexer(pd.to_datetime(["2024-05-01", "2024-05-02"]))
+            out = F.wiki_features(dec_idx, cal, [7])
+        a = out["wiki_attn_abn"][7].to_numpy()
+        self.assertAlmostEqual(float(a[0]), 0.0, places=5)  # same-day spike is not yet known
+        self.assertGreater(float(a[1]), 1.0)               # visible the next day
+        self.assertAlmostEqual(float(out["wiki_attn_level"][7].to_numpy()[0]), float(np.log1p(100)), places=4)
+
+
 if __name__ == "__main__":
     unittest.main()

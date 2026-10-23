@@ -15,6 +15,7 @@ $PY -u data_form4_recent.py      >  $L/ingest_form4.log 2>&1
 $PY -u data_macro.py             >  $L/ingest_macro.log 2>&1     # FRED/EIA refetch; ALFRED only new vintages
 $PY -u macro_surprise.py         >  $L/macro_surprise.log 2>&1   # ARIMA "expected" vs first release (spec 4D)
 $PY -u data_alt.py futures cot   >  $L/ingest_alt.log 2>&1
+$PY -u data_wiki.py --days 5     >  $L/ingest_wiki.log 2>&1 || true   # Wikipedia attention (alternative data)
 if [ "$FRI" = "1" ]; then
   $PY -u data_fundamentals.py --refresh > $L/ingest_facts.log 2>&1
   $PY -u data_8k.py --refresh           > $L/ingest_8k.log 2>&1
@@ -34,6 +35,8 @@ $PY -u signals.py                >> $L/signals.log 2>&1
 $PY -u paper_trading.py          >  $L/paper.log 2>&1 || true   # forward record, shadow book, demo fills
 $PY -u insider_forward.py       >  $L/insider_forward.log 2>&1 || true  # frozen-rule prospective events; missing recipe stays unvalidated
 $PY -u ls_signals.py             >  $L/ls_signals.log 2>&1 || true  # long/short inputs for the Alpaca paper bot
+$PY -u overlay.py review         >  $L/overlay.log 2>&1 || true    # analyst review sheet (reports/overlay_review_latest.md)
+$PY -u overlay.py score          >> $L/overlay.log 2>&1 || true    # do analyst vetoes add value?
 $PY -u catalysts.py              >  $L/catalysts.log 2>&1 || true
 [ "$FRI" = "1" ] && { $PY -u biotech.py > $L/biotech.log 2>&1 || true; }
 $PY -u portfolio.py              >  $L/portfolio.log 2>&1 || true

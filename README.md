@@ -167,3 +167,18 @@ Fixes made in response to the review:
 | Trading 212 demo bot (long-only) | Forward-record gate only (`gates.py`); the historical research gate is no longer cumulative because its holdout is reused | Spec 9: only untouched evidence may validate |
 | Live-review recommendation | Forward IC condition **and** >= 63 sessions and >= 20 closed demo trades with positive net and t >= 2; human decision | Never automatic |
 | Alpaca paper long/short bot | None: deliberately trades the research book regardless of verdict (`mode: PAPER_FORWARD_TEST`) | Paper-only execution test approved by the owner; not evidence of validation and never feeds a live account |
+
+## Hedge-fund practice additions (2026-10-23)
+What institutional quantamental desks add on top of a cross-sectional factor model, and what is implemented here:
+
+| Practice | Implementation | Status |
+|---|---|---|
+| Analyst gatekeeper: humans may veto model picks (never add), overrides logged and scored | `overlay.py` (review sheet, `veto`/`lift`/`note`, scorecard); enforced in `signals.py`, `intraday_watch.py`, `ls_rules.select` | live; nightly review sheet `reports/overlay_review_latest.md` |
+| Documented research mosaic (CFA Standard II(A)) | `overlay.py note` -> `ledger/research_notes.jsonl`; every overlay action -> `ledger/overlay_actions.jsonl` | live |
+| Reading filings systematically ("Lazy Prices", Cohen-Malloy-Nguyen 2020) | `data_text.py`: 10-K/10-Q text since 2011, year-on-year cosine/Jaccard similarity, 10-K risk-factor similarity, length change; features `text_*` | backfill + discovery test |
+| Alternative data (attention) | `data_wiki.py`: Wikipedia page views via Wikidata CIK links; features `wiki_attn_abn`, `wiki_attn_level` | backfill + discovery test |
+| Dictionary tone (Loughran-McDonald 2011) | `data_text.py`: negative/positive/uncertainty/litigious word shares and year-on-year changes; features `text_neg`, `text_d_neg`, `text_d_unc`, `text_d_lit`. Word lists from the `pysentiment2` 0.1.1 bundle (2014 edition) in `data/raw/lm/` | used under the owner's non-commercial research use; **a commercial licence (loughranmcdonald@gmail.com) is required before any real-money use** |
+| Paid alternative data (card spend, web traffic, app data), expert networks, transcripts at scale | not available on free sources | not implemented |
+
+New features enter a model only through a full re-validation with a newly frozen recipe; `text_eval.py` runs their
+discovery-only test (pre-holdout dates, joint BH-FDR with every earlier test).
