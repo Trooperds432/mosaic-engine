@@ -49,7 +49,7 @@ def run(profile=LS_PROFILE):
     model = json.loads((C.PROC / f"model_{profile}.json").read_text())
     frozen, reason = recipe.check(model)
     cross_gate = forward_gate(profile, C.PRIMARY_HORIZON)[0]
-    audit = audit_ok(dataset_version())
+    audit = audit_ok(dataset_version(), profile)
     # The L/S construction has a different payoff/cost structure. A validated
     # cross-sectional ranking alone cannot authorise this strategy.
     ls_artifact = json.loads(research.read_text()) if research.exists() else {}

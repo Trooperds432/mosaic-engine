@@ -13,6 +13,7 @@ winsorisation unnecessary. Model-specific fitting (label clipping, calibration) 
 fold only; hyper-parameters are fixed in config/this file, not tuned on the holdout.
 """
 import hashlib
+from functools import partial
 import itertools
 import json
 import math
@@ -266,12 +267,41 @@ def rebalance_calendar(dates, h):
     return pd.DatetimeIndex(pd.unique(dates)).sort_values()[::max(1, h // C.DECISION_STEP)]
 
 
+def benchmark_label_returns(spy, dates, h):
+    """Same adjusted t+1-open to t+1+h-open benchmark as features.labels."""
+    positions = spy.index.get_indexer(pd.to_datetime(dates))
+    if (positions < 0).any():
+        raise ValueError('decision date not present in benchmark calendar')
+    prices = (spy['open'] * spy['adjclose'] / spy['close']).to_numpy(dtype=float)
+    result = np.full(len(positions), np.nan)
+    valid = positions + 1 + h < len(prices)
+    result[valid] = prices[positions[valid] + 1 + h] / prices[positions[valid] + 1] - 1
+    return result
+
+
 def long_only_backtest(score, y, dates, syms, cost, h, top=C.SIGNAL_TOP_QUANTILE, cost_mult=1.0, bench=None,
-                       rebalance_dates=None, holdings=None):
+                       rebalance_dates=None, holdings=None, *, benchmark_returns=None, session_positions=None,
+                       entry_prices=None, trades=None, buffer_top=None):
     """Equal-weight top-quantile long-only, rebalanced every h sessions (non-overlapping), excess vs SPY (or vs
     `bench`), net of per-name one-way costs on every name bought or sold."""
     df = pd.DataFrame({"s": np.asarray(score, dtype="float64"), "y": np.asarray(y, dtype="float64"), "d": dates, "sym": syms,
                        "c": np.asarray(cost, dtype="float64")})
+    if benchmark_returns is not None:
+        from holdings_simulation import simulate
+        df['d'] = pd.to_datetime(df['d'])
+        df['b'] = np.asarray(benchmark_returns, dtype=float)
+        df['relative_benchmark'] = 0. if bench is None else np.asarray(bench, dtype=float)
+        df['entry_price'] = np.nan if entry_prices is None else np.asarray(entry_prices, dtype=float)
+        if session_positions is None:
+            ordinal = {d: i * C.DECISION_STEP for i, d in enumerate(sorted(df.d.unique()))}
+            df['position'] = df.d.map(ordinal)
+        else:
+            df['position'] = np.asarray(session_positions)
+        df['exit_position'] = df.position + h
+        schedule = rebalance_calendar(dates, h) if rebalance_dates is None else pd.DatetimeIndex(rebalance_dates)
+        return simulate(df, schedule, top, cost_mult=cost_mult, buffer_top=buffer_top, holdings=holdings, trades=trades)
+    if buffer_top is not None or trades is not None:
+        raise ValueError('drift/buffer/fill ledger requires actual benchmark returns')
     if bench is not None:
         df["y"] = df["y"] - np.asarray(bench, dtype="float64")
     if not 0 < top <= 1 or cost_mult < 0:
@@ -305,6 +335,7 @@ def long_only_backtest(score, y, dates, syms, cost, h, top=C.SIGNAL_TOP_QUANTILE
         prev = names
     result = pd.DataFrame(rows).set_index("d") if rows else pd.DataFrame(columns=["gross", "net", "turnover", "n", "cost"])
     result.attrs['missing_selected_outcome_dates'] = missing
+    result.attrs['accounting'] = 'legacy_excess_return_approximation'
     return result
 
 
@@ -312,10 +343,18 @@ def bt_summary(bt, h):
     if len(bt) < 4:
         return None
     st = sharpe_stats(bt["net"])
-    return {"periods": int(len(bt)), "mean_gross_excess": float(bt["gross"].mean()), "mean_net_excess": float(bt["net"].mean()),
+    result = {"periods": int(len(bt)), "mean_gross_excess": float(bt["gross"].mean()), "mean_net_excess": float(bt["net"].mean()),
             "mean_cost": float(bt["cost"].mean()), "mean_turnover": float(bt["turnover"].mean()), "avg_names": float(bt["n"].mean()),
             "net_sharpe_ann": float(st["sr"] * math.sqrt(252 / max(h, 1))) if st else None, "net_t_hac": hac_mean(bt["net"], 2)["t"],
-            "hit_rate": float((bt["net"] > 0).mean()), "max_drawdown_excess": float((bt["net"].cumsum() - bt["net"].cumsum().cummax()).min())}
+            "hit_rate": float((bt["net"] > 0).mean()), "max_drawdown_excess": float((bt["net"].cumsum() - bt["net"].cumsum().cummax()).min()),
+            'accounting': bt.attrs.get('accounting', 'unknown'),
+            'missing_selected_outcome_dates': bt.attrs.get('missing_selected_outcome_dates', [])}
+    if 'nav_end' in bt:
+        nav = np.r_[float(bt.nav_start.iloc[0]), bt.nav_end.to_numpy()]
+        result.update(portfolio_total_return=float(nav[-1] / nav[0] - 1),
+                      max_drawdown_portfolio=float(np.min(nav / np.maximum.accumulate(nav) - 1)),
+                      mean_transaction_cost=float(bt.transaction_cost.mean()))
+    return {k: None if isinstance(v, float) and not np.isfinite(v) else v for k, v in result.items()}
 
 
 # ------------------------------------------------------------- models
@@ -557,7 +596,9 @@ def run(profile=None):
                                        "holdout_start": str(cal[hpos].date()), "rows": int(len(panel)), "symbols": int(panel["symbol"].nunique()),
                                        "decision_dates": int(panel["date"].nunique()), "avg_names_per_date": float(panel.groupby("date").size().mean())},
          "costs": {"model": "FX fee + max(half Corwin-Schultz spread, config half-spread) + 0.7*daily vol*sqrt(order/ADV$)", "order_size_usd": order_usd,
-                   "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST}}
+                   "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST,
+                   'accounting': 'self-financing adjusted-return holdings; all dollar rebalances and liquidation charged',
+                   'cost_column': 'gross minus net return drag; transaction_cost separately records paid fees / starting NAV'}}
     print("panel", R["sample"], flush=True)
     from historical_data import coverage_check
     R["historical_integrity"] = coverage_check(R["sample"]["first_date"], R["sample"]["last_date"])
@@ -621,6 +662,9 @@ def run(profile=None):
     years = pd.DatetimeIndex(dates).year
     for h in C.HORIZONS:
         y = panel[f"y_{h}"].to_numpy().astype("float64")
+        benchmark_returns = benchmark_label_returns(spy, dates, h)
+        backtest = partial(long_only_backtest, benchmark_returns=benchmark_returns, session_positions=tpos,
+                           entry_prices=panel['entry_adj_open'].to_numpy() if 'entry_adj_open' in panel else None)
         names = ["ridge", "enet", "huber", "lgbm", "gam", "hier", "logit", "factor_resid"] if h in FULL_SUITE_H else ["ridge"]
         y_res = None
         if "factor_resid" in names:  # residual return after style + sector exposures, per date
@@ -652,14 +696,23 @@ def run(profile=None):
             wfm, hpm = np.where(pre, p, np.nan), np.where(hm, p, np.nan)
             icw, ich = ic_series(wfm, y, dates), ic_series(hpm, y, dates)
             yr_ic = icw.groupby(pd.DatetimeIndex(icw.index).year).mean()
-            bt_w = long_only_backtest(wfm, y, dates, syms, cost, h)
+            bt_w = backtest(wfm, y, dates, syms, cost, h)
             res["models"][n] = {"walk_forward": ic_summary(icw, h, boot=True), "holdout": ic_summary(ich, h, boot=True),
                                 "wf_years": {int(k): float(v) for k, v in yr_ic.items()}, "wf_positive_year_frac": float((yr_ic > 0).mean()) if len(yr_ic) else None,
-                                "backtest_wf": bt_summary(bt_w, h), "backtest_holdout": bt_summary(long_only_backtest(hpm, y, dates, syms, cost, h), h)}
+                                "backtest_wf": bt_summary(bt_w, h), "backtest_holdout": bt_summary(backtest(hpm, y, dates, syms, cost, h), h)}
             if h == C.PRIMARY_HORIZON and len(bt_w):
                 strategy_returns[f"model:{n}"] = bt_w["net"]
             if n == "ensemble" and h in FULL_SUITE_H:  # saved for baselines.py (matched random paths, block bootstrap)
-                bt_h = long_only_backtest(hpm, y, dates, syms, cost, h)
+                ledger, fills = [], []
+                bt_w = backtest(wfm, y, dates, syms, cost, h, holdings=ledger, trades=fills)
+                for r in ledger + fills:
+                    r['sample'] = 'walk_forward'
+                hold_ledger, hold_fills = [], []
+                bt_h = backtest(hpm, y, dates, syms, cost, h, holdings=hold_ledger, trades=hold_fills)
+                for r in hold_ledger + hold_fills:
+                    r['sample'] = 'holdout'
+                pd.DataFrame(ledger + hold_ledger).to_parquet(C.REPORTS / f'ensemble_holdings_{pname}_h{h}.parquet', index=False)
+                pd.DataFrame(fills + hold_fills).to_parquet(C.REPORTS / f'ensemble_fills_{pname}_h{h}.parquet', index=False)
                 pd.concat([bt_w.assign(sample="walk_forward"), bt_h.assign(sample="holdout")]).reset_index().to_parquet(
                     C.REPORTS / f"ensemble_backtest_{pname}_h{h}.parquet", index=False)
         if len(names) > 1:
@@ -671,7 +724,8 @@ def run(profile=None):
             from institutional_research import write_comparison
             comparison = write_comparison(panel, ens, cost, h, cal[hpos], pname, C.REPORTS,
                                           {'run_id': run_id, 'historical_integrity': R['historical_integrity'],
-                                           'order_size_usd': order_usd}, top=C.SIGNAL_TOP_QUANTILE)
+                                           'order_size_usd': order_usd}, top=C.SIGNAL_TOP_QUANTILE,
+                                          benchmark_returns=benchmark_returns, session_positions=tpos)
             res['fixed_vqm_comparison'] = comparison
             # Preserve genuine OOS scores for reproducible comparisons. Final
             # production weights trained on all labels cannot reconstruct these.
@@ -728,9 +782,9 @@ def run(profile=None):
                         if len(icx) >= 20:
                             out[str(k)] = {"mean_ic": float(icx.mean()), "t": hac_mean(icx, math.ceil(h / C.DECISION_STEP))["t"], "n_dates": int(len(icx))}
                     rob[label] = out
-                rob["cost_sensitivity_wf_net_per_period"] = {f"x{m}": (bt_summary(long_only_backtest(wfe, y, dates, syms, cost, h, cost_mult=m), h) or {}).get("mean_net_excess") for m in [0, 0.5, 1, 2, 3]}
-                rob["top_quantile_sensitivity_wf_net"] = {str(q): (bt_summary(long_only_backtest(wfe, y, dates, syms, cost, h, top=q), h) or {}).get("mean_net_excess") for q in [0.1, 0.2, 0.3]}
-                rob["benchmark_equal_weight_universe_wf"] = bt_summary(long_only_backtest(wfe, y, dates, syms, cost, h, bench=panel.groupby("date")[f"y_{h}"].transform("mean").to_numpy()), h)
+                rob["cost_sensitivity_wf_net_per_period"] = {f"x{m}": (bt_summary(backtest(wfe, y, dates, syms, cost, h, cost_mult=m), h) or {}).get("mean_net_excess") for m in [0, 0.5, 1, 2, 3]}
+                rob["top_quantile_sensitivity_wf_net"] = {str(q): (bt_summary(backtest(wfe, y, dates, syms, cost, h, top=q), h) or {}).get("mean_net_excess") for q in [0.1, 0.2, 0.3]}
+                rob["benchmark_equal_weight_universe_wf"] = bt_summary(backtest(wfe, y, dates, syms, cost, h, bench=panel.groupby("date")[f"y_{h}"].transform("mean").to_numpy()), h)
                 sens = {str(C.RIDGE_ALPHA): float(ics["ridge"].mean())}
                 for a in [1.0, 100.0]:
                     old, C.RIDGE_ALPHA = C.RIDGE_ALPHA, a
@@ -739,13 +793,13 @@ def run(profile=None):
                     sens[str(a)] = float(ic_series(wf_a, y, dates).mean())
                 rob["ridge_alpha_sensitivity_wf_ic"] = sens
                 res["robustness"] = rob
-                e["factor_adjusted_alpha_wf"] = factor_alpha(long_only_backtest(wfe, y, dates, syms, cost, h), h, pname)
-                e["factor_adjusted_alpha_holdout"] = factor_alpha(long_only_backtest(np.where(hm, ens, np.nan), y, dates, syms, cost, h), h, pname)
+                e["factor_adjusted_alpha_wf"] = factor_alpha(backtest(wfe, y, dates, syms, cost, h), h, pname)
+                e["factor_adjusted_alpha_holdout"] = factor_alpha(backtest(np.where(hm, ens, np.nan), y, dates, syms, cost, h), h, pname)
             except Exception as ex:
                 res.setdefault("diagnostic_errors", []).append(repr(ex)[:300])
                 print("diagnostic error", repr(ex)[:300], flush=True)
             for f in feats:  # signed single-feature strategies join the model strategies for RC/SPA/DSR/PBO
-                bt = long_only_backtest(np.where(pre, (FEATURES[f][1] or 1) * Xm[f].to_numpy(), np.nan), y, dates, syms, cost, h)
+                bt = backtest(np.where(pre, (FEATURES[f][1] or 1) * Xm[f].to_numpy(), np.nan), y, dates, syms, cost, h)
                 if len(bt):
                     strategy_returns[f"feat:{f}"] = bt["net"]
         R["models"][h] = res
@@ -777,6 +831,9 @@ def run(profile=None):
     for hh, res in R["models"].items():
         m = res["models"]["ensemble"]
         reasons = []
+        for sample in ['backtest_wf', 'backtest_holdout']:
+            if (m.get(sample) or {}).get('missing_selected_outcome_dates'):
+                reasons.append(f'{sample}: selected outcomes missing; ledger incomplete')
         if not R["historical_integrity"]["passed"]:
             reasons.extend(R["historical_integrity"]["failed_checks"])
         ho, wf = m["holdout"], m["walk_forward"]
@@ -794,10 +851,8 @@ def run(profile=None):
                 if dsr is None or dsr < C.GATE_MIN_DSR:
                     reasons.append(f"deflated Sharpe {dsr if dsr is None else round(dsr, 3)} < {C.GATE_MIN_DSR}")
                 spa = R["overfitting"]["reality_check_spa"]
-                if not spa or "error" in spa:
-                    reasons.append("Hansen SPA not computed")
-                elif spa["spa_p"] > 0.10:
-                    reasons.append(f"Hansen SPA p={spa['spa_p']:.2f} > 0.10")
+                from gates import joint_test_failures
+                reasons.extend(joint_test_failures(spa))
             if m["calibration"]["status"] != "HISTORICAL_DECILE_CALIBRATED":
                 reasons.append("forecast deciles not monotonic out-of-sample")
             wf_sig = wf["t"] is not None and wf["t"] >= 2 and wf["mean"] > 0

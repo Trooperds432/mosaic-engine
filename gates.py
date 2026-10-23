@@ -11,6 +11,22 @@ GATE_MAX_AGE_HOURS = 4 * 24     # paper_trading.py runs after signals.py, so the
 BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps", "historical_universe")
 
 
+def joint_test_failures(result):
+    """Both joint tests must have actual common-sample results; SPA retains its existing threshold."""
+    if not isinstance(result, dict) or result.get('error'):
+        return ['Hansen SPA / White Reality Check not computed']
+    failures = []
+    for key in ['spa_p', 'reality_check_p']:
+        value = result.get(key)
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or not 0 <= value <= 1:
+            failures.append(f'{key} not computed or invalid')
+    if not isinstance(result.get('periods'), int) or result['periods'] < 20:
+        failures.append('joint-test common sample has fewer than 20 periods')
+    if not failures and result['spa_p'] > .10:
+        failures.append(f"Hansen SPA p={result['spa_p']:.2f} > 0.10")
+    return failures
+
+
 def live_review_ready(executed, shadow, horizon=20, min_sessions=63, min_trades=20, min_t=2.0):
     """Human-review recommendation only, requiring executed AND matching forward evidence.
 
@@ -50,11 +66,13 @@ def _age_hours(stamp, now):
     return (now - t).total_seconds() / 3600
 
 
-def check_audit(doc, dataset_version, now=None):
+def check_audit(doc, dataset_version, now=None, profile=None):
     """(ok, reason). doc is the parsed reports/data_audit.json or None."""
     now = now or datetime.now(timezone.utc)
-    if not doc:
+    if not isinstance(doc, dict) or not doc:
         return False, "data audit not run or unreadable"
+    if profile is not None and doc.get('profile') != profile:
+        return False, f"data audit profile {doc.get('profile')} does not match {profile}"
     try:
         age = _age_hours(doc["generated_at_utc"], now)
     except (KeyError, ValueError, TypeError):
@@ -64,6 +82,8 @@ def check_audit(doc, dataset_version, now=None):
     if doc.get("dataset_version") != dataset_version:
         return False, f"data audit was run on {doc.get('dataset_version')}, current data is {dataset_version}"
     blocking = doc.get("blocking") or {}
+    if not isinstance(blocking, dict):
+        return False, 'data audit blocking checks are invalid'
     missing = [k for k in BLOCKING_TESTS if k not in blocking]
     if missing:
         return False, "data audit incomplete: " + ", ".join(missing)

@@ -67,10 +67,14 @@ def refresh_insider_signals():
     for s in sigs:
         s["regime"] = reg
     keep = [s for s in doc["signals"] if s["model_id"] != "insider-event"]
-    if not audit[0]:
-        for s in keep:
+    for s in keep:
+        profile = s['model_id'].rsplit('-', 1)[-1]
+        profile_audit = audit_ok(dsv, profile)
+        if profile_audit[0] and s.get('provenance', {}).get('dataset_version') != dsv:
+            profile_audit = (False, 'existing signal belongs to an older dataset: nightly regeneration required')
+        if not profile_audit[0]:
             s["risk"]["data_quality_approved"] = False
-            s["signal"].update(direction="NO_SIGNAL", deployment_eligibility="INSUFFICIENT_DATA", reason=audit[1])
+            s["signal"].update(direction="NO_SIGNAL", deployment_eligibility="INSUFFICIENT_DATA", reason=profile_audit[1])
     doc["signals"] = sorted(keep + sigs, key=lambda s: -(s["forecast"]["expected_net_excess_return"] or -9))
     doc["n_insider_event_signals"] = len(sigs)
     doc["n_long"] = sum(s["signal"]["direction"] == "LONG" for s in doc["signals"])

@@ -1,5 +1,8 @@
 # Specification implementation — integrity and validation tranche
 
+For the subsequent provenance, profile-audit, risk-freshness and holdings-ledger
+changes, see [the 23 October engineering fixes](docs/REVIEW_FIXES_2026-10-23.md).
+
 Baseline: 7548fd77e5c0c2297d67fd9b6da2c48b95e73c27. Scope: local implementation;
 no publication, deployment, broker requests, model fitting or production data migration performed.
 

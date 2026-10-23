@@ -39,24 +39,40 @@ Outputs in `reports/`:
 - `institutional_periods_<profile>.parquet`: each strategy's period returns/costs.
 - `institutional_holdings_<profile>.parquet`: actual simulated selections,
   scores, target weights and outcomes for each assessed period.
+- `institutional_fills_<profile>.parquet`: modeled cash flows and fees for
+  rebalances and liquidation under drift accounting.
 - `oos_scores_<profile>_h20.parquet`: genuine OOS ensemble scores for replay.
 
 The comparison subset requires complete VQM features; it can differ from the
 original full-model universe. A full-model advantage does not isolate which
 extra signal caused it. Selected names are simulated decisions, not broker fills.
-Missing selected outcomes exclude the entire period from BOTH portfolios and
-mark the comparison `INCOMPLETE_OUTCOMES`; no lower-ranked survivor is substituted.
+Missing selected outcomes stop the measurable NAV chain. Both strategies are
+compared on the common assessed prefix, and the report is marked
+`INCOMPLETE_OUTCOMES`; no lower-ranked survivor or zero return is substituted.
 
-The simulator remains a fixed-notional equal-weight approximation: membership
-changes incur costs, but price-driven weight drift, changing-name-count weight
-adjustments and terminal liquidation are not modeled precisely. This comparison
-is not an Alpaca long/short execution backtest or account-level P&L simulation.
+Full research runs use self-financing drift accounting: adjusted next-open total
+returns mark holdings between decisions, costs apply to every dollar adjustment,
+including continuing names, and target amounts are solved after fees. Cash gaps
+and sample ends incur modeled liquidation fees. `cost` is gross-minus-net return
+drag; `transaction_cost` is paid fees divided by starting NAV. Records use initial
+NAV units and adjusted-price units, not raw broker share quantities. Estimated
+rates remain assumptions, including last-known rates used at liquidation. Dividend
+effects are implicit in adjusted total returns. This is not an Alpaca long/short
+execution backtest or a reconstruction of actual broker fills.
+
+A fixed lower-turnover diagnostic retains existing names within the top 40%, up
+to the original name count. It is reported separately and never chooses production
+rules using holdout results. Cost scenarios rerun the fee/NAV accounting, rather
+than subtracting a scaled fee from an unchanged path.
 
 All research model/single-feature strategies now anchor rebalance dates BEFORE
 filtering scores/labels. Different first-score dates no longer shift calendar
 phase. SPA/Reality Check still require complete common periods with no zero
 imputation. Matched random baselines use saved ensemble dates and fail if their
-period count differs.
+period count differs. New random paths use the same drift/fee/liquidation engine;
+membership retention targets approximate the model's average turnover. Realized
+dollar turnover remains path-dependent. Unknown eligible outcomes produce
+`INSUFFICIENT_DATA`, not a survivor-only random comparison.
 
 Replay genuine saved OOS predictions, never predictions from final weights fitted
 on the holdout:
@@ -65,12 +81,15 @@ on the holdout:
 python institutional_research.py --profile large \
   --panel data/processed/panel_large.parquet \
   --scores reports/oos_scores_large_h20.parquet \
+  --benchmark-prices data/raw/prices/SPY.parquet \
   --holdout-start 2024-10-21 --order-usd 600 --output-dir reports/replay
 ```
 
 Use the ORIGINAL run's holdout boundary, horizon, top fraction and order size.
 Replay records input hashes and checks sample labels against the boundary. The
 caller must supply the original panel and genuine OOS predictions.
+Omitting `--benchmark-prices` explicitly produces the legacy approximation; that
+compatibility mode is not comparable to the new self-financing research results.
 
 ## Execution-cost evidence
 

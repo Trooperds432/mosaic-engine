@@ -235,8 +235,9 @@ def run():
     import recipe
     from deployment_policy import cumulative
     from signals import audit_ok
-    audit = audit_ok(dataset_version())
+    current_dataset = dataset_version()
     for profile, model in models.items():
+        audit = audit_ok(current_dataset, profile)
         frozen, reason = recipe.check(model)
         historical = model.get("horizons", {}).get(str(C.PRIMARY_HORIZON), {}).get("gate")
         forward = gate.get(profile, {}).get(str(C.PRIMARY_HORIZON))

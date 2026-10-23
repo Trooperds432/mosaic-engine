@@ -23,9 +23,16 @@ from research import name_costs
 N_PATHS = 2000
 
 
-def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebalance_dates=None):
+def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebalance_dates=None,
+                   benchmark_returns=None, session_positions=None):
     """Mean net excess return per rebalance period for N_PATHS random portfolios matched to the model."""
-    d = panel.loc[period_mask, ["date", "symbol", f"y_{h}"]].assign(c=cost[period_mask]).dropna(subset=[f"y_{h}"])
+    d = panel.loc[period_mask, ["date", "symbol", f"y_{h}"]].assign(c=cost[period_mask])
+    modern = benchmark_returns is not None
+    if modern:
+        d['benchmark'] = np.asarray(benchmark_returns)[period_mask]
+        d['position'] = np.asarray(session_positions)[period_mask]
+    else:
+        d = d.dropna(subset=[f'y_{h}'])
     from research import rebalance_calendar
     # Share the model's actual schedule; filtering labels must not shift dates.
     ud = rebalance_calendar(panel['date'], h) if rebalance_dates is None else pd.DatetimeIndex(rebalance_dates)
@@ -35,8 +42,10 @@ def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebal
     rng = np.random.default_rng(seed)
     prev = np.zeros((N_PATHS, S), bool)
     prev_cost = np.zeros(S)
+    values = np.zeros((N_PATHS, S))
+    cash = np.ones(N_PATHS)
     rets = []
-    for dt in ud:
+    for step, dt in enumerate(ud):
         g = d[d["date"] == dt]
         if len(g) < 10:
             continue
@@ -46,7 +55,7 @@ def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebal
         elig = np.zeros(S, bool)
         elig[idx] = True
         sel = np.zeros((N_PATHS, S), bool)
-        keep_n = int(round((1 - turnover) * k)) if prev.any() else 0
+        keep_n = int(round((1 - np.clip(turnover, 0, 1)) * k)) if prev.any() else 0
         noise = rng.random((N_PATHS, S))
         if keep_n:
             kept_score = np.where(prev & elig, noise, -1.0)  # keep a random subset of still-eligible holdings
@@ -64,7 +73,30 @@ def random_matched(panel, h, period_mask, k_share, turnover, cost, seed=0, rebal
         gross = (sel * yv).sum(axis=1) / k
         traded = sel ^ prev
         cost_now = np.where(elig, cv, prev_cost)
-        net = gross - (traded * cost_now).sum(axis=1) / k
+        if modern:
+            from holdings_simulation import post_fee_nav
+            if not np.isfinite(y).all() or not np.isfinite(c).all() or (c < 0).any() or (c >= 1).any():
+                raise ValueError('random baseline has unknown eligible outcomes or invalid costs; no survivor substitution')
+            b = float(g.benchmark.iloc[0])
+            if not np.isfinite(b) or g.benchmark.nunique() != 1 or (y + b < -1 - 1e-6).any():
+                raise ValueError('invalid random baseline total-return inputs')
+            before = cash + values.sum(axis=1)
+            target_weights = sel / k
+            invested = post_fee_nav(values, target_weights, cost_now, before)
+            target_values = target_weights * invested[:, None]
+            fees = (np.abs(target_values - values) * cost_now).sum(axis=1)
+            cash = np.maximum(0, before - fees - target_values.sum(axis=1))
+            total_return = np.zeros(S)
+            total_return[idx] = np.maximum(y + b, -1.)
+            values = target_values * (1 + total_return)
+            if step == len(ud) - 1 or int(g.position.iloc[0]) + h != int(d.loc[d.date == ud[step + 1], 'position'].iloc[0]):
+                exit_fees = (values * cost_now).sum(axis=1)
+                cash += values.sum(axis=1) - exit_fees
+                values[:] = 0
+            ending = cash + values.sum(axis=1)
+            net = ending / before - 1 - b
+        else:
+            net = gross - (traded * cost_now).sum(axis=1) / k
         rets.append(net)
         prev, prev_cost = sel, np.where(elig, cv, prev_cost)
     R = np.array(rets)  # periods x paths
@@ -108,8 +140,16 @@ def run(profile="large"):
             if not bt:
                 continue
             schedule = pd.DatetimeIndex(periods.loc[periods['sample'] == label, 'd'])
-            Rr = random_matched(panel, h, mask.to_numpy(), C.SIGNAL_TOP_QUANTILE, bt["mean_turnover"], cost, seed=h,
-                                rebalance_dates=schedule)
+            from research import benchmark_label_returns
+            modern = bt.get('accounting') == 'self_financing_adjusted_return_drift'
+            try:
+                Rr = random_matched(panel, h, mask.to_numpy(), C.SIGNAL_TOP_QUANTILE, bt["mean_turnover"], cost, seed=h,
+                                    rebalance_dates=schedule,
+                                    benchmark_returns=benchmark_label_returns(spy, panel.date, h) if modern else None,
+                                    session_positions=spy.index.get_indexer(panel.date) if modern else None)
+            except ValueError as exc:
+                out['results'][f'h{h}_{label}'] = {'status': 'INSUFFICIENT_DATA', 'reason': str(exc)}
+                continue
             if len(Rr) != len(schedule):
                 raise ValueError('matched-random periods do not match the saved model calendar')
             path_mean = Rr.mean(axis=0)
@@ -120,7 +160,8 @@ def run(profile="large"):
                 "random_mean_net_median": float(np.median(path_mean)), "random_mean_net_q05": float(np.quantile(path_mean, 0.05)),
                 "random_mean_net_q95": float(np.quantile(path_mean, 0.95)),
                 "model_percentile": float((path_mean < m).mean()), "share_random_beating_model": float((path_mean > m).mean()),
-                "random_sharpe_median_per_period": float(np.median(path_sr)), "matched": {"names_share": C.SIGNAL_TOP_QUANTILE, "turnover": bt["mean_turnover"], "costs": "per-name model costs"}}
+                "random_sharpe_median_per_period": float(np.median(path_sr)), "matched": {"names_share": C.SIGNAL_TOP_QUANTILE, "turnover": bt["mean_turnover"], "costs": "per-name model costs", 'accounting': bt.get('accounting', 'legacy'),
+                                                                                                      'turnover_match': 'target mean membership retention; realized dollar turnover is path-dependent'}}
             print(profile, h, label, {k: round(v, 4) if isinstance(v, float) else v for k, v in out["results"][f"h{h}_{label}"].items() if k != "matched"}, flush=True)
     # block bootstrap of the saved ensemble backtest series (written by research.py from the next re-validation on)
     for h in (5, 20):

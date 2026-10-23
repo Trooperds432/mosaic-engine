@@ -16,6 +16,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 import config as C
+from feature_dependencies import REGISTRY_VERSION
 from config import ADV_WINDOW, BENCHMARK, DECISION_STEP, HORIZONS, PROC, RAW
 
 # name -> (family, hypothesised sign (+1/-1, 0 = no directional prior, tested two-sided), description)
@@ -933,6 +934,11 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
         dec_idx = dec_idx[-last_n_dates:]
     dec_dates = cal[dec_idx]
     lab = labels(P, dec_idx) if include_labels else {}
+    # Future entry prices are simulation metadata ONLY, never registered features.
+    entry_prices = np.full((len(dec_idx), len(syms)), np.nan, dtype='float32')
+    if include_labels:
+        valid_entry = dec_idx + 1 < len(cal)
+        entry_prices[valid_entry] = P['adj_open'].to_numpy()[dec_idx[valid_entry] + 1]
     mret = _macro_returns(cal)
     pf = price_features(P, dec_idx, mret)
     ac = P["adjclose"].iloc[dec_idx]
@@ -1097,6 +1103,8 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
         row["fund_age_days"] = fund_age.iloc[i].to_numpy()[m].astype("float32")
         for h in lab:
             row[f"y_{h}"] = lab[h][i][m]
+        if include_labels:
+            row['entry_adj_open'] = entry_prices[i][m]
         long.append(pd.DataFrame(row))
     panel = pd.concat(long, ignore_index=True)
     panel["sector"] = panel["symbol"].map(sector)
@@ -1104,7 +1112,7 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     # observation quality: share of the core features that are present (missing-data status, spec 2.2)
     core = [k for k in FEATURES if k in panel and FEATURES[k][0] not in ("sector_tech", "sector_health", "sector_energy", "sector_fin", "sector_materials", "positioning", "institutional")]
     panel["quality_score"] = panel[core].notna().mean(axis=1).astype("float32")
-    meta = {"profile": prof["name"], "feature_set_version": C.FEATURE_SET_VERSION, "decision_dates": len(dec_dates), "first": str(dec_dates[0].date()),
+    meta = {"profile": prof["name"], "feature_set_version": C.FEATURE_SET_VERSION, 'dependency_registry_version': REGISTRY_VERSION, "decision_dates": len(dec_dates), "first": str(dec_dates[0].date()),
             "last": str(dec_dates[-1].date()), "symbols_with_prices": len(syms), "rows": len(panel),
             "features": [k for k in FEATURES if k in panel]}
     return panel, meta

@@ -27,6 +27,7 @@ import json
 import logging
 import math
 import os
+import sys
 import threading
 import time
 from datetime import date, datetime, timedelta, timezone, time as dtime
@@ -44,6 +45,7 @@ NY = ZoneInfo("America/New_York")
 
 STRATEGY = os.environ.get("BOT_STRATEGY", "signals")  # "signals" (research engine) or "sma" (legacy trend rule)
 SIGNALS = Path(os.environ.get("BOT_SIGNALS_FILE", "/opt/mosaic-engine/signals/latest.json"))
+sys.path.insert(0, str(SIGNALS.parent.parent))
 SIGNAL_MAX_AGE_DAYS = float(os.environ.get("BOT_SIGNAL_MAX_AGE_DAYS", "4"))
 ELIGIBLE = {"PAPER_TEST_ELIGIBLE", "LIVE_REVIEW_ELIGIBLE"}
 UNIVERSE = os.environ.get("BOT_UNIVERSE", "AAPL,MSFT,NVDA,AMZN,GOOGL,META,JPM,V,LLY,COST").split(",")
@@ -136,20 +138,14 @@ def pretrade(sym, signal):
     return True, price, f"gap {gap:+.2%} vs as-of close {ref:.2f}"
 
 
-def position_weight(sym):
+def position_weight(sym, signal_asof=None):
     """(weight, note): POSITION_PCT capped so that weight x 1-day 99% VaR <= VAR_LIMIT.
     A missing, stale, unreadable or non-positive VaR forecast returns weight 0: the entry is skipped, never sized blind."""
     try:
         doc = json.loads(RISK_FILE.read_text())
-        age = (datetime.now(timezone.utc) - datetime.fromisoformat(doc["generated_at_utc"].replace("Z", "+00:00"))).days
-        r = doc["names"].get(sym)
-        if r is None or age > SIGNAL_MAX_AGE_DAYS:
-            return 0.0, "no fresh VaR forecast: entry blocked"
-        v = float(r["var99_1d"])
-        if not v > 0:
-            return 0.0, f"invalid VaR forecast {v}: entry blocked"
-        w = min(POSITION_PCT, VAR_LIMIT / v)
-        return w, f"1d VaR99 {v:.2%} ({r['model']}) -> weight {w:.1%}"
+        from risk_freshness import position_weight as checked_weight
+        return checked_weight(doc, sym, POSITION_PCT, VAR_LIMIT, max_age_days=SIGNAL_MAX_AGE_DAYS,
+                              signal_asof=signal_asof)
     except (OSError, ValueError, KeyError, TypeError) as e:
         return 0.0, f"risk file unavailable ({e.__class__.__name__}): entry blocked"
 
@@ -317,7 +313,7 @@ def cycle(state):
                 record("SKIP", ticker, 0, reason=why, signal_id=s["signal_id"], model_id=s["model_id"], price=price)
                 state["sold_on"][ticker] = today  # do not retry the same name today after a failed check
                 continue
-            weight, sizing = position_weight(sym)
+            weight, sizing = position_weight(sym, s['as_of_utc'])
             if weight <= 0:
                 log.info("skip %s: %s", sym, sizing)
                 continue

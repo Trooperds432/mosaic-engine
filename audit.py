@@ -177,9 +177,14 @@ def run(profile=None):
     A["historical_universe"] = coverage_check(panel_dates.min(), panel_dates.max())
     A["blocking"] = {"historical_universe": A["historical_universe"]["passed"], "truncation_invariance": A["truncation_invariance"]["passed"], "label_alignment": A["label_alignment"]["passed"],
                      "duplicates_timestamps": A["duplicates_timestamps"]["passed"]}
-    tmp = C.REPORTS / "data_audit.json.tmp"
+    target = C.REPORTS / f"data_audit_{prof['name']}.json"
+    tmp = target.with_suffix('.json.tmp')
     tmp.write_text(json.dumps(A, indent=1, default=str))
-    tmp.replace(C.REPORTS / "data_audit.json")
+    tmp.replace(target)
+    if prof['name'] == 'large':  # legacy display artifact, never used to approve another profile
+        legacy = C.REPORTS / 'data_audit.json.tmp'
+        legacy.write_text(json.dumps(A, indent=1, default=str))
+        legacy.replace(C.REPORTS / 'data_audit.json')
     print("blocking:", A["blocking"])
     return A
 

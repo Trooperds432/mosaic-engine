@@ -26,7 +26,9 @@ else
   $PY -u data_updates.py 5        > $L/ingest_updates.log 2>&1    # companies that filed a 10-Q/10-K/8-K in the last 5 days
   $PY -u data_text.py --queue     > $L/ingest_text.log 2>&1 || true  # filing-text similarity for those filers (skips while a backfill runs)
 fi
-$PY -u audit.py large            >  $L/audit.log 2>&1 || true    # a failed audit blocks LONG signals inside signals.py
+for P in large broad; do
+  $PY -u audit.py "$P" > "$L/audit_$P.log" 2>&1 || true  # each profile needs its own passing evidence
+done
 $PY -u var_backtest.py --forecast >  $L/vol_forecast.log 2>&1   # GARCH-t (VaR backtest winner) per-name risk
 $PY -u signals.py                >> $L/signals.log 2>&1
 $PY -u paper_trading.py          >  $L/paper.log 2>&1 || true   # forward record, shadow book, demo fills

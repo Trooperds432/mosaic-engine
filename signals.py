@@ -50,13 +50,19 @@ def clean(x):
     return x if math.isfinite(x) else None
 
 
-def audit_ok(dsv):
-    f = C.REPORTS / "data_audit.json"
+def audit_ok(dsv, profile=None):
+    if profile is None:
+        checks = {p: audit_ok(dsv, p) for p in C.PROFILES}
+        failed = [f'{p}: {reason}' for p, (ok, reason) in checks.items() if not ok]
+        return (not failed, '; '.join(failed) or None)
+    if profile not in C.PROFILES:
+        return False, 'unknown audit profile'
+    f = C.REPORTS / f"data_audit_{profile}.json"
     try:
         doc = json.loads(f.read_text())
     except (OSError, ValueError):
         doc = None
-    return gates.check_audit(doc, dsv)
+    return gates.check_audit(doc, dsv, profile=profile)
 
 
 @lru_cache(maxsize=None)
@@ -234,7 +240,9 @@ def run(dry=False, profiles=None):
     out, fcs, metas = [], [], []
     asof_day, market_fresh, insider_fresh = None, False, False
     for p in profiles:
-        o, fc, meta, asof_day, market_fresh, insider_fresh = profile_signals(p, gen, dsv, reg, audit)
+        profile_audit = audit_ok(dsv, p)
+        o, fc, meta, asof_day, market_fresh, insider_fresh = profile_signals(p, gen, dsv, reg, profile_audit)
+        meta['data_audit'] = {'passed': profile_audit[0], 'reason': profile_audit[1]}
         out += o
         fcs.append(fc)
         metas.append(meta)
@@ -267,7 +275,7 @@ def run(dry=False, profiles=None):
         side = {__import__("historical_data").ticker_for_security(r.symbol): {"sigma_1d": float(r.sigma_1d), "var99_1d": float(r.var99_1d), "es975_1d": float(r.es975_1d),
                                              "model": r.model, "as_of": r.as_of} for r in vfd.itertuples()}
         tmp = C.SIGNALS / "risk_latest.json.tmp"
-        tmp.write_text(json.dumps({"generated_at_utc": iso(gen), "source": "var_backtest.forecast_names", "names": side}))
+        tmp.write_text(json.dumps({"generated_at_utc": iso(gen), "dataset_version": dsv, "source": "var_backtest.forecast_names", "names": side}))
         tmp.replace(C.SIGNALS / "risk_latest.json")
     (pd.concat(fcs, ignore_index=True) if fcs else pd.DataFrame()).to_parquet(C.REPORTS / "forecast_latest.parquet", index=False)
     print(f"total evaluated={len(out)} insider_events={len(out) - n_xs} LONG={len(longs)} audit={'pass' if audit[0] else audit[1]}")

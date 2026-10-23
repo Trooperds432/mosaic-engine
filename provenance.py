@@ -1,5 +1,6 @@
 """Dataset fingerprint and the NYSE trading calendar, shared by audit.py, signals.py, paper_trading.py and the bots."""
 import hashlib
+import json
 from datetime import date, timedelta
 from functools import lru_cache
 
@@ -8,23 +9,30 @@ import numpy as np
 import config as C
 
 
+def _content_hash(path):
+    """Hash bytes, including same-size/restored-mtime edits (ctime is creation time on Windows)."""
+    digest = hashlib.sha256()
+    with open(path, 'rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def dataset_version():
-    """Hash of the size and mtime of the inputs every signal depends on: changes whenever any of them is rewritten."""
-    parts = []
-    paths = [C.RAW / "facts" / "companyfacts.parquet",
-              C.RAW / "insider_recent" / "form4_recent.parquet", C.PROC / "inst_ownership_cusip.parquet", C.PROC / "macro_pit.parquet",
-              C.PROC / "short_interest.parquet", C.PROC / "universe.parquet", C.PROC / "sic.parquet",
-              C.PROC / "8k_items.parquet", C.PROC / "fda_approvals.parquet", C.PROC / "cusip_cik.parquet",
-              C.PROC / "av_earnings.parquet", C.PROC / "finnhub_recommendations.parquet", C.PROC / "estimate_vintages.parquet",
-              C.PROC / "historical_bundle.json", *sorted((C.RAW / "historical").rglob("*.parquet")), *sorted((C.RAW / "historical").rglob("coverage.json")),
-              *sorted((C.RAW / "prices").glob("*.parquet")), *sorted((C.RAW / "insider").glob("*.parquet")),
-              *sorted((C.RAW / "alt").rglob("*.parquet")), *sorted((C.RAW / "collect").rglob("*.parquet"))]
-    for p in sorted(set(paths)):
-        if p.exists():
-            st = p.stat()
-            parts.append(f"{p.relative_to(C.ROOT).as_posix()}:{st.st_size}:{st.st_mtime_ns}")
-    for name in ("features.py", "pit_clinical.py", "config.py"):
-        parts.append(f"{name}:" + hashlib.sha256((C.ROOT / name).read_bytes()).hexdigest())
+    """Content identity of the authoritative feature-input registry and its sources."""
+    from feature_dependencies import DEPENDENCIES, REGISTRY_VERSION, input_paths
+    parts = [json.dumps({'version': REGISTRY_VERSION, 'dependencies': DEPENDENCIES}, sort_keys=True)]
+    for p in input_paths():
+        name = p.relative_to(C.ROOT).as_posix()
+        if not p.exists():
+            parts.append(f'{name}:MISSING')
+            continue
+        before = p.stat()
+        digest = _content_hash(str(p))
+        after = p.stat()
+        if (before.st_size, before.st_mtime_ns, before.st_ctime_ns, before.st_ino) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns, after.st_ino):
+            raise ValueError(f'input changed while fingerprinting: {name}')
+        parts.append(f'{name}:{digest}')
     return "ds-" + hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 
 

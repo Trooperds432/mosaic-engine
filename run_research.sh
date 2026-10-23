@@ -10,6 +10,7 @@ PY=/opt/mosaic-engine/venv/bin/python
 export MOSAIC_LOCK_HELD=1  # this wrapper holds .lock
 for P in ${PROFILES:-large broad}; do
   $PY -u features.py $P        2>&1 | tee ledger/panel_$P.log
+  $PY -u audit.py $P           2>&1 | tee ledger/audit_$P.log
   $PY -u risk_model.py $P      2>&1 | tee ledger/risk_model_$P.log
   $PY -u research.py $P        2>&1 | tee ledger/research_$P.log
   $PY -u regimes.py $P         2>&1 | tee ledger/regimes_$P.log   # Markov-switching, change points, regime factor returns
