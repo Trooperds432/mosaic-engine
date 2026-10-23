@@ -1,0 +1,25 @@
+{
+ "generated_at_utc": "2026-10-23T10:31:58+00:00",
+ "profile": "broad",
+ "recipe_id": null,
+ "model_run_id": "20261020T085623Z-broad-3faa10e07a3c",
+ "rebalance_sessions": 20,
+ "as_of": "2026-10-22",
+ "equity": 1.0,
+ "positions": 0,
+ "rule": "Validated when, under a frozen recipe: >= MIN_SESSIONS scored sessions, mean daily net return > 0 with HAC t >= MIN_T,\nand at least MIN_REBALANCES rebalances executed. Output: reports/ls_forward.json (+ data/processed/ls_forward_state.json).",
+ "sessions_scored": 0,
+ "rebalances": 0,
+ "mean_daily_net": null,
+ "hac_t": null,
+ "cumulative_return": null,
+ "sharpe_ann": null,
+ "max_drawdown": null,
+ "failed_checks": [
+  "recipe not frozen: the forward record does not count yet",
+  "forward record 0/63 sessions",
+  "0/3 rebalances executed",
+  "mean daily net not > 0 with HAC t >= 2.0"
+ ],
+ "strategy_forward_validated": false
+}

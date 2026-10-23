@@ -1,1 +1,6 @@
-vol forecasts: 2288 symbols, models {'garch_t': 2212, 'ewma_fallback': 76}
+/opt/mosaic-engine/var_backtest.py:252: ConvergenceWarning: The optimizer returned code 8. The message is:
+Positive directional derivative for linesearch
+See scipy.optimize.fmin_slsqp for code meaning.
+
+  res = arch_model(r * 100, vol="GARCH", p=1, q=1, dist="t", mean="Constant", rescale=False).fit(disp="off")
+vol forecasts: 2294 symbols, models {'garch_t': 2218, 'ewma_fallback': 76}

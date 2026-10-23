@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/insider_forward.py", line 84, in <module>
+    print(json.dumps(run(), indent=2))
+                     ~~~^^
+  File "/opt/mosaic-engine/insider_forward.py", line 68, in run
+    raise ValueError(why)
+ValueError: frozen recipe or weights manifest missing/invalid

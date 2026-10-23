@@ -1,30 +1,8 @@
 {
- "generated_at_utc": "2026-10-22T10:40:41+00:00",
- "forecast_dates_recorded": 2,
- "shadow_book": {
-  "broad_h1": {
-   "scored_dates": 1,
-   "forward_ic_mean": -0.25296899211463425,
-   "forward_ic_t": null,
-   "forward_ic_se": null,
-   "top_quintile_net_mean": -0.0060014843232850616,
-   "top_quintile_net_t": null,
-   "non_overlapping_cohorts": 1
-  },
-  "large_h1": {
-   "scored_dates": 1,
-   "forward_ic_mean": -0.03754174132288179,
-   "forward_ic_t": null,
-   "forward_ic_se": null,
-   "top_quintile_net_mean": -0.004091604069496195,
-   "top_quintile_net_t": null,
-   "non_overlapping_cohorts": 1
-  }
- },
- "shadow_status": {
-  "broad_h1": "INSUFFICIENT_FORWARD_HISTORY",
-  "large_h1": "INSUFFICIENT_FORWARD_HISTORY"
- },
+ "generated_at_utc": "2026-10-22T22:47:22+00:00",
+ "forecast_dates_recorded": 3,
+ "shadow_book": {},
+ "shadow_status": {},
  "executed_demo_book": {
   "closed_trades": 0,
   "open_signal_positions": [],
@@ -32,5 +10,26 @@
   "skip_reasons": {}
  },
  "live_review_recommendation": "NOT_READY",
- "rule": ">= 63 sessions and >= 20 closed demo trades with mean net excess > 0 and t >= 2.0; forward IC > 0. Never automatic."
+ "live_review_failed_checks": [
+  "executed trades lack model attribution",
+  "large: current point-in-time/universe audit failed",
+  "large: recipe not frozen or changed",
+  "large: historical validation has not passed",
+  "large: historical: holdout IC t=0.43 < 2.0",
+  "large: historical: walk-forward positive-IC years 55% < 60%",
+  "large: historical: holdout long-only net excess <= 0 after per-name costs",
+  "large: historical: deflated Sharpe 0.0 < 0.9",
+  "large: historical: Hansen SPA p=0.96 > 0.10",
+  "large: historical: forecast deciles not monotonic out-of-sample",
+  "large: forward validation has not passed",
+  "broad: current point-in-time/universe audit failed",
+  "broad: recipe not frozen or changed",
+  "broad: historical validation has not passed",
+  "broad: historical: holdout long-only net excess <= 0 after per-name costs",
+  "broad: historical: deflated Sharpe 0.0 < 0.9",
+  "broad: historical: Hansen SPA p=0.64 > 0.10",
+  "broad: historical: forecast deciles not monotonic out-of-sample",
+  "broad: forward validation has not passed"
+ ],
+ "rule": "Per current recipe/model: >= 63 sessions and >= 20 closed demo trades with mean net excess > 0 and t >= 2.0; matching 20d forward IC > 0 with HAC t >= 2.0, >= 63 scored dates and >= 3 positive-net shadow cohorts. Never automatic."
 }

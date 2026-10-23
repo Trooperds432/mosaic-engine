@@ -1,6 +1,7 @@
 {
- "generated_at_utc": "2026-10-20T23:52:20+00:00",
+ "generated_at_utc": "2026-10-22T22:39:47+00:00",
  "profile": "large",
+ "dataset_version": "ds-cbd7da8bb095",
  "truncation_invariance": {
   "passed": true,
   "worst": 0.0,
@@ -67,7 +68,7 @@
     }
    },
    {
-    "date": "2010-02-05",
+    "date": "2010-02-08",
     "diffs": {
      "price:mom_12_1": {
       "max_rel_diff": 0.0,
@@ -128,7 +129,7 @@
     }
    },
    {
-    "date": "2024-12-17",
+    "date": "2024-12-19",
     "diffs": {
      "price:mom_12_1": {
       "max_rel_diff": 0.0,
@@ -193,61 +194,68 @@
  },
  "label_alignment": {
   "passed": true,
-  "checked": 3968,
-  "max_abs_error": 1.7285346984863281e-06
+  "checked": 3967,
+  "max_abs_error": 1.7881393432617188e-06
  },
  "duplicates_timestamps": {
   "duplicate_insider_rows": 0,
   "price_files_checked": 316,
   "weekend_price_rows": 0,
   "duplicate_price_dates": 0,
-  "8k_acceptance_inconsistent": 82,
-  "8k_checked": 721461,
+  "8k_acceptance_inconsistent": 76,
+  "8k_checked": 693943,
   "passed": true
  },
  "diagnostics": {
   "survivorship": {
    "candidates": 6743,
    "removed_sp500_without_current_ticker_excluded": 321,
-   "price_series_available": 5982,
+   "price_series_available": 5986,
    "series_ending_before_last_session": 0,
-   "note": "Yahoo has no prices for most delisted tickers; delisting returns assumed 0% (vendor survivorship bias)"
+   "note": "Current-listing histories remain survivorship-biased unless verified historical coverage passes. Missing terminal outcomes are excluded, never assigned zero returns."
   },
   "restatement": {
-   "periods": 501685,
-   "periods_with_later_different_value": 30427,
-   "share_restated": 0.06064961081156502,
-   "median_abs_rel_change_when_restated": 0.01790568303938302,
+   "periods": 501811,
+   "periods_with_later_different_value": 30397,
+   "share_restated": 0.060574598803135045,
+   "median_abs_rel_change_when_restated": 0.017849877816070534,
    "policy": "features use the value known at each filing date (as-reported); the latest-restated series is kept separately in reports/facts_latest_restated.parquet"
   },
   "stale": {
-   "share_rows_fundamentals_older_than_limit": 0.0653095167968953,
-   "mean_quality_score": 0.8954752683639526
+   "share_rows_fundamentals_older_than_limit": 0.06531185031185031,
+   "mean_quality_score": 0.8294903039932251
   },
   "missing_not_at_random": {
    "fundamentals": {
-    "missing_share": 0.011760425509797468,
-    "ic_missing_vs_fwd_return": 0.001054612555356849,
-    "t": 0.22145156272598798
+    "missing_share": 0.01176022176022176,
+    "ic_missing_vs_fwd_return": 0.0010559782697050393,
+    "t": 0.22173735886498175
    },
    "sue": {
-    "missing_share": 0.09044508740622671,
-    "ic_missing_vs_fwd_return": -0.007660174513560879,
-    "t": -1.3813928251044711
+    "missing_share": 0.09044698544698544,
+    "ic_missing_vs_fwd_return": -0.007660140204489357,
+    "t": -1.3813748758843842
    },
    "13f": {
-    "missing_share": 0.31241705504253364,
-    "ic_missing_vs_fwd_return": -0.0033802433809903927,
-    "t": -0.7229228413582256
+    "missing_share": 0.31241164241164243,
+    "ic_missing_vs_fwd_return": -0.0033813106775475695,
+    "t": -0.7231555874962986
    }
   },
   "corporate_actions": {
    "sampled_files": 300,
-   "unexplained_moves_gt_60pct": 424,
+   "unexplained_moves_gt_60pct": 535,
    "note": "split adjustment comes from Yahoo adjclose; large moves present in both raw and adjusted series are reviewed, not removed"
   }
  },
+ "historical_universe": {
+  "passed": false,
+  "failed_checks": [
+   "verified historical security bundle missing"
+  ]
+ },
  "blocking": {
+  "historical_universe": false,
   "truncation_invariance": true,
   "label_alignment": true,
   "duplicates_timestamps": true
