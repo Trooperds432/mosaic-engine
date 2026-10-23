@@ -73,6 +73,11 @@ FEATURES = {
     "text_sim_jac": ("text", +1, "Jaccard word-set similarity of the latest 10-K/10-Q to the year-ago filing"),
     "text_sim_rf": ("text", +1, "cosine similarity of the latest 10-K Item 1A risk factors to the prior 10-K's"),
     "text_len_chg": ("text", 0, "log change in filing length vs the year-ago filing (control for document growth)"),
+    # filing tone (Loughran & McDonald 2011 word lists; non-commercial research licence)
+    "text_neg": ("text", -1, "share of Loughran-McDonald negative words in the latest 10-K/10-Q"),
+    "text_d_neg": ("text", -1, "change in negative-word share vs the year-ago filing"),
+    "text_d_unc": ("text", -1, "change in uncertainty-word share vs the year-ago filing"),
+    "text_d_lit": ("text", -1, "change in litigious-word share vs the year-ago filing"),
     # investor attention (Wikipedia page views; cf. Da, Engelberg & Gao 2011 on search attention): sign not pre-specified
     "wiki_attn_abn": ("attention", 0, "log(mean daily Wikipedia views over the last 5 days / median of the prior 60 days)"),
     "wiki_attn_level": ("attention", 0, "log median daily Wikipedia views over the prior 60 days (investor recognition)"),
@@ -725,10 +730,14 @@ def text_features(dec_idx, cal, ciks):
     on/after its available_date (day after EDGAR acceptance); 10-K/10-Q measures expire after 200 days, the 10-K
     risk-factor measure after 400 days."""
     f = PROC / "text_similarity.parquet"
-    keys = {"text_sim_cos": ("sim_cos", 200), "text_sim_jac": ("sim_jac", 200), "text_len_chg": ("len_chg", 200), "text_sim_rf": ("sim_rf_cos", 400)}
+    keys = {"text_sim_cos": ("sim_cos", 200), "text_sim_jac": ("sim_jac", 200), "text_len_chg": ("len_chg", 200), "text_sim_rf": ("sim_rf_cos", 400),
+            "text_neg": ("neg", 200), "text_d_neg": ("d_neg", 200), "text_d_unc": ("d_unc", 200), "text_d_lit": ("d_lit", 200)}
     out = {k: np.full((len(dec_idx), len(ciks)), np.nan, dtype="float32") for k in keys}
     if f.exists():
-        t = pd.read_parquet(f, columns=["cik", "available_date", "sim_cos", "sim_jac", "sim_rf_cos", "len_chg"])
+        t = pd.read_parquet(f)
+        for src, _ in keys.values():  # files written before the tone measures existed lack those columns
+            if src not in t:
+                t[src] = np.nan
         col = {c: j for j, c in enumerate(ciks)}
         for cik, g in t.groupby("cik"):
             j = col.get(cik)

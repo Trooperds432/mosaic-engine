@@ -7,6 +7,10 @@ reduced to plain words and compared with the same issuer's filing of the same ty
   sim_jac      Jaccard similarity of the word sets
   sim_rf_cos   cosine similarity of the 10-K Item 1A "Risk Factors" section (10-K only, NaN when not located)
   len_chg      log(words / comparator words)
+  neg/pos/unc/lit   share of Loughran-McDonald negative / positive / uncertainty / litigious words (tone level)
+  d_neg/d_unc/d_lit change in those shares vs the comparator filing (tone change)
+The Loughran-McDonald word lists (data/raw/lm/) are free for non-commercial academic research only; a commercial licence
+from the authors is required before any real-money use.
 The paper finds that "changers" (low similarity) underperform over the following year, with no reaction on the filing
 date; changes to risk factors are the most informative. Point-in-time: a filing is usable from the first session after
 its EDGAR acceptance time (data_8k.accepted_et corrects the API's doubled timezone offset).
@@ -61,6 +65,28 @@ HIDDEN = re.compile(r"<(script|style|ix:header|head)\b.*?</\1\s*>", re.S | re.I)
 WORD = re.compile(r"[a-z]{2,}")
 RF_START = re.compile(r"item\s*1a\.?\s*[\-:—–]?\s*risk\s+factors", re.I)
 RF_END = re.compile(r"item\s*(1b\.?\s*[\-:—–]?\s*unresolved|1c\.?\s*[\-:—–]?\s*cybersecurity|2\.?\s*[\-:—–]?\s*properties)", re.I)
+
+
+LM_FILE = C.RAW / "lm" / "LM_pysentiment2.csv"
+TONE = ("Negative", "Positive", "Uncertainty", "Litigious")
+
+
+def _lm():
+    if not LM_FILE.exists():
+        return {}
+    d = pd.read_csv(LM_FILE, usecols=["Word", *TONE])
+    return {k: frozenset(d.loc[d[k] != 0, "Word"].str.lower()) for k in TONE}
+
+
+LM = _lm()
+
+
+def tone(counts, n):
+    """Share of each LM category in a word-count vector."""
+    if not LM or not n:
+        return {k: np.nan for k in ("neg", "pos", "unc", "lit")}
+    return {short: sum(v for w, v in counts.items() if w in LM[k]) / n
+            for short, k in zip(("neg", "pos", "unc", "lit"), TONE)}
 
 
 def clean(raw):
@@ -155,13 +181,16 @@ def process_cik(client, cik):
         prev = [(a, v) for a, v in vec.items() if v[0] == r.form and MIN_GAP_DAYS <= (r.filed - v[1]).days <= MAX_GAP_DAYS]
         rec = {"cik": cik, "accession": r.accessionNumber, "form": r.form, "filed": r.filed, "report_date": r.reportDate,
                "accepted_et": r.accepted_et, "words": len(w), "comparator": None, "sim_cos": np.nan, "sim_jac": np.nan,
-               "sim_rf_cos": np.nan, "len_chg": np.nan}
+               "sim_rf_cos": np.nan, "len_chg": np.nan, **tone(vec[r.accessionNumber][2], len(w)),
+               "d_neg": np.nan, "d_unc": np.nan, "d_lit": np.nan, "lm_version": "pysentiment2-0.1.1"}
         if prev:
             a, p = min(prev, key=lambda kv: abs((r.filed - kv[1][1]).days - 365))
             cur = vec[r.accessionNumber]
             rec.update(comparator=a, sim_cos=cosine(cur[2], p[2]), sim_jac=jaccard(cur[2], p[2]),
                        sim_rf_cos=cosine(cur[3], p[3]) if cur[3] and p[3] else np.nan,
                        len_chg=math.log(cur[4] / p[4]) if cur[4] and p[4] else np.nan)
+            pt = tone(p[2], p[4])
+            rec.update(d_neg=rec["neg"] - pt["neg"], d_unc=rec["unc"] - pt["unc"], d_lit=rec["lit"] - pt["lit"])
         rows.append(rec)
         for a in [a for a, v in vec.items() if (r.filed - v[1]).days > MAX_GAP_DAYS]:  # keep memory bounded
             del vec[a]

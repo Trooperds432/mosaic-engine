@@ -177,7 +177,7 @@ What institutional quantamental desks add on top of a cross-sectional factor mod
 | Documented research mosaic (CFA Standard II(A)) | `overlay.py note` -> `ledger/research_notes.jsonl`; every overlay action -> `ledger/overlay_actions.jsonl` | live |
 | Reading filings systematically ("Lazy Prices", Cohen-Malloy-Nguyen 2020) | `data_text.py`: 10-K/10-Q text since 2011, year-on-year cosine/Jaccard similarity, 10-K risk-factor similarity, length change; features `text_*` | backfill + discovery test |
 | Alternative data (attention) | `data_wiki.py`: Wikipedia page views via Wikidata CIK links; features `wiki_attn_abn`, `wiki_attn_level` | backfill + discovery test |
-| Dictionary tone (Loughran-McDonald) | not used: the dictionary is free for academic research only; commercial use needs a licence | needs licence |
+| Dictionary tone (Loughran-McDonald 2011) | `data_text.py`: negative/positive/uncertainty/litigious word shares and year-on-year changes; features `text_neg`, `text_d_neg`, `text_d_unc`, `text_d_lit`. Word lists from the `pysentiment2` 0.1.1 bundle (2014 edition) in `data/raw/lm/` | used under the owner's non-commercial research use; **a commercial licence (loughranmcdonald@gmail.com) is required before any real-money use** |
 | Paid alternative data (card spend, web traffic, app data), expert networks, transcripts at scale | not available on free sources | not implemented |
 
 New features enter a model only through a full re-validation with a newly frozen recipe; `text_eval.py` runs their
