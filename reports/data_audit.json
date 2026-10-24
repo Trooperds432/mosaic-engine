@@ -1,7 +1,7 @@
 {
- "generated_at_utc": "2026-10-22T22:39:47+00:00",
+ "generated_at_utc": "2026-10-24T00:42:50+00:00",
  "profile": "large",
- "dataset_version": "ds-cbd7da8bb095",
+ "dataset_version": "ds-d89ffa78e583",
  "truncation_invariance": {
   "passed": true,
   "worst": 0.0,
@@ -129,7 +129,7 @@
     }
    },
    {
-    "date": "2024-12-19",
+    "date": "2024-12-20",
     "diffs": {
      "price:mom_12_1": {
       "max_rel_diff": 0.0,
@@ -195,15 +195,15 @@
  "label_alignment": {
   "passed": true,
   "checked": 3967,
-  "max_abs_error": 1.7881393432617188e-06
+  "max_abs_error": 1.6093254089355469e-06
  },
  "duplicates_timestamps": {
   "duplicate_insider_rows": 0,
   "price_files_checked": 316,
   "weekend_price_rows": 0,
   "duplicate_price_dates": 0,
-  "8k_acceptance_inconsistent": 76,
-  "8k_checked": 693943,
+  "8k_acceptance_inconsistent": 88,
+  "8k_checked": 773659,
   "passed": true
  },
  "diagnostics": {
@@ -211,14 +211,14 @@
    "candidates": 6743,
    "removed_sp500_without_current_ticker_excluded": 321,
    "price_series_available": 5986,
-   "series_ending_before_last_session": 0,
+   "series_ending_before_last_session": 1,
    "note": "Current-listing histories remain survivorship-biased unless verified historical coverage passes. Missing terminal outcomes are excluded, never assigned zero returns."
   },
   "restatement": {
-   "periods": 501811,
-   "periods_with_later_different_value": 30397,
-   "share_restated": 0.060574598803135045,
-   "median_abs_rel_change_when_restated": 0.017849877816070534,
+   "periods": 502070,
+   "periods_with_later_different_value": 30405,
+   "share_restated": 0.06055928456191368,
+   "median_abs_rel_change_when_restated": 0.017862367093375325,
    "policy": "features use the value known at each filing date (as-reported); the latest-restated series is kept separately in reports/facts_latest_restated.parquet"
   },
   "stale": {
@@ -244,7 +244,7 @@
   },
   "corporate_actions": {
    "sampled_files": 300,
-   "unexplained_moves_gt_60pct": 535,
+   "unexplained_moves_gt_60pct": 542,
    "note": "split adjustment comes from Yahoo adjclose; large moves present in both raw and adjusted series are reviewed, not removed"
   }
  },

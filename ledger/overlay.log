@@ -1,0 +1,10 @@
+review sheet: 50 names -> reports/overlay_review_latest.md
+{
+ "vetoes_scored": 0,
+ "complete": 0,
+ "mean_value_added": null,
+ "hit_rate": null,
+ "t": null,
+ "by_reason": {},
+ "rule": "the overlay earns a place in the process only if completed vetoes add value with t >= 2 over >= 20 vetoes"
+}

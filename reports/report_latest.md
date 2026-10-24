@@ -1,16 +1,16 @@
-# Mosaic Quantamental Research Report — 2026-10-19
+# Mosaic Quantamental Research Report — 2026-10-23
 
-Feature set `fs-2.0` · model `mosaic-xs-ridge` v2.0.0 · generated 2026-10-21 13:09 UTC · evidence tags: [OBS] observation, [CALC] calculated statistic, [MODEL] model estimate, [HYP] hypothesis, [UNVER] unverified
+Feature set `fs-2.1` · model `mosaic-xs-ridge` v2.0.0 · generated 2026-10-24 01:07 UTC · evidence tags: [OBS] observation, [CALC] calculated statistic, [MODEL] model estimate, [HYP] hypothesis, [UNVER] unverified
 
 ## A. Executive summary
 
-- **Regime [CALC]:** uptrend/high_vol; filtered HMM P(high-vol) = 0.26.
-- **Data audit [CALC]:** passed (look-ahead truncation, label alignment, duplicates, timestamps).
+- **Regime [CALC]:** uptrend/high_vol; filtered HMM P(high-vol) = 0.00.
+- **Data audit [CALC]:** FAILED — all LONG signals blocked (look-ahead truncation, label alignment, duplicates, timestamps).
 - **Universe `large` [OBS]:** mcap ≥ $10bn, ADV ≥ 1000k shares and ≥ $5m, point-in-time; 896 names ever eligible, 328 per date; 2009-05-04 → 2026-10-16, holdout from 2024-10-21.
   - **Ensemble at 20d [CALC]:** walk-forward IC -0.0011 (t=-0.14), holdout IC 0.0080 (t=0.43); holdout net excess/period -0.78%. Gate: **UNVALIDATED** — holdout IC t=0.43 < 2.0; walk-forward positive-IC years 55% < 60%; holdout long-only net excess <= 0 after per-name costs; deflated Sharpe 0.0 < 0.9; Hansen SPA p=0.96 > 0.10; forecast deciles not monotonic out-of-sample
 - **Universe `broad` [OBS]:** mcap ≥ $0.3bn, ADV ≥ 200k shares and ≥ $2m, point-in-time; 3064 names ever eligible, 1321 per date; 2009-04-20 → 2026-10-16, holdout from 2024-10-21.
   - **Ensemble at 20d [CALC]:** walk-forward IC 0.0063 (t=1.03), holdout IC 0.0280 (t=2.08); holdout net excess/period -0.59%. Gate: **UNVALIDATED** — holdout long-only net excess <= 0 after per-name costs; deflated Sharpe 0.0 < 0.9; Hansen SPA p=0.64 > 0.10; forecast deciles not monotonic out-of-sample
-- **Signals:** 0 LONG of 2926 evaluated (10 insider-event). A research thesis is not execution approval; the bot's own risk checks always apply.
+- **Signals:** 0 LONG of 2931 evaluated (5 insider-event). A research thesis is not execution approval; the bot's own risk checks always apply.
 
 ## B. Evidence and source audit
 
@@ -31,9 +31,9 @@ Feature set `fs-2.0` · model `mosaic-xs-ridge` v2.0.0 · generated 2026-10-21 1
 | FDA approvals | action date | openFDA drugs@FDA | approvals only | yes |
 | Options / implied volatility / estimate revisions history | — | not available free | NOT_COMPUTED | no |
 
-Audit [CALC]: truncation invariance worst relative difference 0.00000000 over 3 dates; label max error 0.00000173; duplicate insider rows 0; restated periods 6.06%; series ending early 0; rows with stale fundamentals 6.53%. Missing-not-at-random IC: fundamentals 0.0011, sue -0.0077, 13f -0.0034.
+Audit [CALC]: truncation invariance worst relative difference 0.00000000 over 3 dates; label max error 0.00000161; duplicate insider rows 0; restated periods 6.06%; series ending early 1; rows with stale fundamentals 6.53%. Missing-not-at-random IC: fundamentals 0.0011, sue -0.0077, 13f -0.0034.
 
-History being collected [OBS]: Cboe options snapshots 1 days, Nasdaq estimate snapshots 1 days (per-stock options/estimate features enter models after 3 years); Alpha Vantage consensus-surprise backfill 22 companies (24/day, largest first). VIX term structure and CBOE SKEW: full history in use.
+History being collected [OBS]: Cboe options snapshots 4 days, Nasdaq estimate snapshots 4 days (per-stock options/estimate features enter models after 3 years); Alpha Vantage consensus-surprise backfill 94 companies (24/day, largest first). VIX term structure and CBOE SKEW: full history in use.
 
 ## C. Factor and sector Mosaic dashboard (discovery sample, sector-neutral, primary horizon) [CALC]
 
@@ -113,7 +113,7 @@ History being collected [OBS]: Cboe options snapshots 1 days, Nasdaq estimate sn
 
 IC = per-date Spearman correlation with forward SPY-excess return; Newey-West lags = h/step; BH-FDR q=0.1 over 1055 tests (one-sided where a sign was pre-specified). Sector features are NaN outside their sector. Contributions to forecasts are not reported where the gate failed.
 New idiosyncratic / lottery / stationarity features, `large`, discovery period only [CALC]: 7 of 165 tests pass BH-FDR jointly with all 1220 tests: r2_mkt_252 (style_neutral, 120d, IC +0.060, t=5.0).
-New idiosyncratic / lottery / stationarity features, `broad`, discovery period only [CALC]: 41 of 165 tests pass BH-FDR jointly with all 1220 tests: r2_mkt_252 (style_neutral, 60d, IC +0.040, t=4.9), max_ret_21 (style_neutral, 5d, IC -0.011, t=-4.4), ivol_60 (style_neutral, 5d, IC -0.013, t=-3.9), vol_of_vol_60 (style_neutral, 1d, IC -0.008, t=-3.6), beta_instability_252 (style_neutral, 20d, IC -0.015, t=-3.5), variance_ratio_120 (style_neutral, 120d, IC -0.020, t=-2.9), resid_mom_12_1 (style_neutral, 1d, IC +0.012, t=2.7), tail_ratio_60 (style_neutral, 1d, IC -0.004, t=-2.4).
+New idiosyncratic / lottery / stationarity features, `broad`, discovery period only [CALC]: 17 of 150 tests pass BH-FDR jointly with all 1205 tests: text_sim_jac (style_neutral, 20d, IC +0.012, t=4.4), text_sim_cos (style_neutral, 20d, IC +0.007, t=2.6).
 Mutual information (k-NN, permutation null, BH-FDR) [CALC]: 27 of 71 features show significant dependence; strongest: beta_252 (z=13.5), gross_prof (z=7.7), log_mcap (z=4.7), ins_net_90 (z=5.0), fin_slope_tilt (z=4.9), beta_rates (z=4.8), capex_intensity (z=5.2), gm_change (z=2.4). Non-linear only (MI significant, IC not): beta_252, gross_prof, log_mcap, ins_net_90, fin_slope_tilt, beta_rates, capex_intensity, gm_change, op_margin_change, inv_to_sales_chg, io_hhi, ins_purchase_intensity, dist_52w_high, roa, io_holders_chg, fin_provision_ratio, si_change, energy_cot_z, semi_orders, earn_recent, energy_inv_surprise, energy_oil_tilt, ins_surprise, px_sma200, bio_fda_appr_365, fcf_yield.
 Multicollinearity: 13 feature pairs with |ρ| > 0.7; max VIF 17.3.
 
@@ -132,30 +132,30 @@ Event study [CALC] (beta-adjusted CAR from first open after filing; SEs clustere
 | discr_sell | discovery | 24872 | -0.04% (t=-3.78) | -0.06% (t=-1.81) | -0.04% (t=-0.53) | 0.40% (t=2.54) |
 | discr_sell | holdout | 2309 | -0.07% (t=-1.26) | -0.04% (t=-0.25) | -0.09% (t=-0.21) | -0.40% (t=-0.49) |
 
-Pre-registered insider event model (`insider-event-v1`) [CALC]: gate **UNVALIDATED**; discovery net -0.14% (t=-0.89), vs matched controls 0.18% (t=1.16), incremental regression t=1.16.
+Pre-registered insider event model (`insider-event-v1`) [CALC]: gate **UNVALIDATED**; discovery net -0.24% (t=-1.28), vs matched controls 0.27% (t=2.43), incremental regression t=2.16.
 
 Largest open-market purchases filed in the last 30 days [OBS]:
 
 | Filed | Ticker | Insider | Role | Class | Value $ | Plan |
 |---|---|---|---|---|---|---|
 | 2026-10-16 | SAFX | EEME Energy SPV I, LLC | nan | unclassified | 142,083,451 |  |
-| 2026-09-21 | LEN | BERKSHIRE HATHAWAY INC | nan | opportunistic | 93,075,791 |  |
 | 2026-10-01 | UUU | AULT MILTON C III | nan | opportunistic | 92,412,000 |  |
 | 2026-10-05 | LEN | BERKSHIRE HATHAWAY INC | nan | routine | 67,453,950 |  |
 | 2026-09-30 | LEN | BUFFETT WARREN E | nan | opportunistic | 52,120,753 |  |
 | 2026-09-25 | LEN | BUFFETT WARREN E | nan | opportunistic | 43,518,878 |  |
-| 2026-09-21 | LEN | BERKSHIRE HATHAWAY INC | nan | opportunistic | 37,722,588 |  |
 | 2026-10-16 | PAM | Mindlin Marcos Marcelo | nan | unclassified | 35,139,300 |  |
 | 2026-10-05 | LEN | BERKSHIRE HATHAWAY INC | nan | routine | 35,118,616 |  |
 | 2026-10-05 | LEN | BERKSHIRE HATHAWAY INC | nan | routine | 33,852,327 |  |
-| 2026-09-21 | LEN | BERKSHIRE HATHAWAY INC | nan | opportunistic | 32,571,123 |  |
 | 2026-09-25 | LEN | BUFFETT WARREN E | nan | opportunistic | 32,170,598 |  |
-| 2026-09-21 | GRAB | Tan Anthony Ping Yeow | Chief Executive Officer | unclassified | 29,911,500 |  |
-| 2026-09-21 | GSAT | Monroe James III | nan | opportunistic | 29,839,232 |  |
 | 2026-10-09 | BBD | Alvarez Rubens Aguiar | nan | unclassified | 29,494,260 |  |
+| 2026-10-05 | LEN | BERKSHIRE HATHAWAY INC | nan | routine | 27,071,964 |  |
+| 2026-10-09 | GGR | Yin Chung-Yao | nan | unclassified | 26,517,849 |  |
+| 2026-09-25 | LEN | BUFFETT WARREN E | nan | opportunistic | 25,352,361 |  |
+| 2026-09-30 | CRBD | NIPPON LIFE INSURANCE CO | nan | unclassified | 25,125,357 | 10b5-1 |
+| 2026-10-13 | GME | Cohen Ryan | President, CEO and Chairman | unclassified | 20,979,000 |  |
 
-Net discretionary $ (buys − non-plan sales), last 30d, by insider class [CALC]: opportunistic $-129.5m, routine $158.2m, unclassified $-2,196.1m. Routine/opportunistic per Cohen-Malloy-Pomorski using only each insider's earlier trades.
-Cluster indicator [CALC]: 78 issuers with ≥2 distinct buyers in the last 30 days.
+Net discretionary $ (buys − non-plan sales), last 30d, by insider class [CALC]: opportunistic $-105.5m, routine $185.9m, unclassified $-2,039.3m. Routine/opportunistic per Cohen-Malloy-Pomorski using only each insider's earlier trades.
+Cluster indicator [CALC]: 71 issuers with ≥2 distinct buyers in the last 30 days.
 
 13F [CALC]: ownership ratio, breadth change (Chen-Hong-Stein), holder-count change and HHI enter the factor tests in section C. 13F is filed up to 45 days after quarter end, omits short positions and non-13(f) securities, and holding-value changes are not flows.
 
@@ -321,7 +321,7 @@ Fields stay NOT_COMPUTED unless the ensemble's deciles were monotonic both in wa
 
 ## G. Risk and implementation
 
-- Bot limits imported read-only [OBS]: position 9.00% of account (≈ $600), stop-loss 8.00%, long-only True, leverage False, account ≈ $6665.
+- Bot limits imported read-only [OBS]: position 9.00% of account (≈ $600), stop-loss 8.00%, long-only True, leverage False, account ≈ $6662.
 - Cost model [MODEL]: FX 0.15% per side + Corwin-Schultz half-spread + 0.7·σ·√(order/ADV) impact at the bot's order size.
 - Bot's current demo holdings: no open positions.
 - Optimiser proposal: NO_SIGNAL — no validated LONG signals today; nothing to optimise
@@ -341,15 +341,15 @@ VaR / ES backtest since 2010 [CALC] (Kupiec = right number of breaches; Christof
 
 40-stock sample pass rate: historical 2.50%, ewma 0.00%, garch_t 60.00%. **Winner: garch_t** → per-name volatility in signals and the bot's VaR-capped sizing (1-day 99% VaR ≤ 1% of the account).
 - Beta forecasts 2015+ [CALC]: MSE rolling-252 0.541, Blume 0.520, Kalman 0.693 (Kalman vs rolling t=-9.07) → **blume** used for signal betas.
-- Tail dependence, t-copula [CALC] (reference basket: top 20 of tonight's forecasts (not holdings)): mean lower-tail dependence with SPY 0.095, mean pairwise 0.052; t-copula preferred to Gaussian for 95.00% of names.
+- Tail dependence, t-copula [CALC] (reference basket: top 20 of tonight's forecasts (not holdings)): mean lower-tail dependence with SPY 0.096, mean pairwise 0.052; t-copula preferred to Gaussian for 90.00% of names.
 - Factor risk model [MODEL]: Σ = BFB′ + D with 20 factors (market, 7 styles, sectors); EWMA F (126d half-life) shrunk 0.28 toward diagonal.
 - GARCH(1,1) volatility is computed per name on request (risk_model.garch_vol); signals use EWMA (λ≈0.94) volatility.
 
 ## H. Trading-bot signal decision
 
-**NO_SIGNAL for all 2926 entries.** Model gates — `large`: UNVALIDATED; `broad`: UNVALIDATED. Each entry's `signal.reason` lists every failed check.
+**NO_SIGNAL for all 2931 entries.** Model gates — `large`: UNVALIDATED; `broad`: UNVALIDATED. Each entry's `signal.reason` lists every failed check.
 
-**Paper trading (Trading 212 demo) [CALC]:** 0 closed signal trades, open none, 0 entries skipped by the pre-trade price check; forward record 1 nightly forecast dates. Live-review recommendation: **NOT_READY** (>= 63 sessions and >= 20 closed demo trades with mean net excess > 0 and t >= 2.0; forward IC > 0. Never automatic.).
+**Paper trading (Trading 212 demo) [CALC]:** 0 closed signal trades, open none, 0 entries skipped by the pre-trade price check; forward record 4 nightly forecast dates. Live-review recommendation: **NOT_READY** (Per current recipe/model: >= 63 sessions and >= 20 closed demo trades with mean net excess > 0 and t >= 2.0; matching 20d forward IC > 0 with HAC t >= 2.0, >= 63 scored dates and >= 3 positive-net shadow cohorts. Never automatic.).
 
 ## I. Screener — top candidates
 
@@ -359,10 +359,10 @@ No security passed validation, so no ranked list is issued. Showing unsupported 
 
 - Energy/commodities [CALC]: crude–gasoline Engle-Granger p 0.0022, Johansen rank 3, crack half-life 2.2 months; EIA inventory-surprise effect on next-week WTI t=-1.72 (discovery) / 1.19 (holdout). energy: equity beta 0.99, wti loading 0.32; materials_metals: equity beta 0.81, copper loading 0.30.
 - Commodity seasonality significant in discovery and ≥2/3 sign agreement in holdout: natgas, rbob (RBOB continuous series includes seasonal-grade rolls).
-- Macro surprises vs ARIMA forecast from earlier first releases (spec 4D) [MODEL]: UNRATE z=1.10 (ARIMA median error 0.111 vs naive 0.200); PAYEMS z=-0.99 (ARIMA median error 67.579 vs naive 73.000); CPIAUCSL z=1.44 (ARIMA median error 0.165 vs naive 0.195); INDPRO z=-0.38 (ARIMA median error 0.390 vs naive 0.594); ICSA z=0.22 (ARIMA median error 3.242 vs naive 5.688); IPG3344S z=-1.39 (ARIMA median error 0.699 vs naive 0.995).
-- Biotech [CALC]: 678 issuers; 25 with < 1 year cash runway; registry cohorts PHASE1: 16.43% terminated/withdrawn (n=7230), PHASE2: 24.53% terminated/withdrawn (n=6180), PHASE3: 14.58% terminated/withdrawn (n=5623). Clinical success probabilities: NOT_COMPUTED (licensed outcome data required).
-- Catalyst calendar next 90 days [OBS/UNVER]: 1226 events — earnings 1003, trial_primary_completion 194, eia_wpsr 13, macro_release 12, fomc 2, fda_adcomm 2. Not computed: NOT_COMPUTED: bls.gov blocks scripted access; dates not verified; NOT_COMPUTED: no machine-readable OPEC+ schedule; NOT_COMPUTED: usda.gov blocks scripted access; NOT_COMPUTED: DEF 14A meeting dates not parsed.
-- Historical responses [CALC]: earnings median |abnormal| 2.54% (p90 10.94%), drift d2–20 after up/down reactions 0.39% / 0.29%; FOMC days |SPY| ×1.29 normal; FDA approvals 2-day abnormal mean 0.25% (n=574).
+- Macro surprises vs ARIMA forecast from earlier first releases (spec 4D) [MODEL]: UNRATE: NOT_COMPUTED: verified initial releases unavailable; PAYEMS: NOT_COMPUTED: verified initial releases unavailable; CPIAUCSL: NOT_COMPUTED: verified initial releases unavailable; INDPRO: NOT_COMPUTED: verified initial releases unavailable; ICSA: NOT_COMPUTED: verified initial releases unavailable; IPG3344S: NOT_COMPUTED: verified initial releases unavailable.
+- Biotech [CALC]: 680 issuers; 25 with < 1 year cash runway; registry cohorts PHASE1: 16.45% terminated/withdrawn (n=7239), PHASE2: 24.59% terminated/withdrawn (n=6186), PHASE3: 14.58% terminated/withdrawn (n=5625). Clinical success probabilities: NOT_COMPUTED (licensed outcome data required).
+- Catalyst calendar next 90 days [OBS/UNVER]: 1290 events — earnings 1065, trial_primary_completion 195, eia_wpsr 13, macro_release 13, fomc 2, fda_adcomm 2. Not computed: NOT_COMPUTED: bls.gov blocks scripted access; dates not verified; NOT_COMPUTED: no machine-readable OPEC+ schedule; NOT_COMPUTED: usda.gov blocks scripted access; NOT_COMPUTED: DEF 14A meeting dates not parsed.
+- Historical responses [CALC]: earnings median |abnormal| 2.74% (p90 11.43%), drift d2–20 after up/down reactions 0.40% / 0.26%; FOMC days |SPY| ×1.29 normal; FDA approvals 2-day abnormal mean 0.26% (n=575).
 
 ## J. Limitations and reproduction
 
@@ -370,5 +370,5 @@ No security passed validation, so no ranked list is issued. Showing unsupported 
 - Validation: yearly expanding walk-forward with purge (h+1) and 5-session embargo; 2-year holdout. The large-cap holdout was already evaluated by research v1; every run is appended to `ledger/research_runs.jsonl`, and paper trading is the only untouched test left.
 - Known biases/gaps: no delisted-company prices (vendor survivorship), 321 removed S&P names without current tickers excluded; no point-in-time analyst estimate history (only forward consensus in the calendar); no options/IV data; 13F CUSIP mapping by issuer name; ALFRED vintages twice-monthly; ClinicalTrials records are edited in place; continuous futures include roll gaps.
 - Section 13 B's per-feature observed-value table is held in the JSON (`key_drivers`) rather than printed for every security.
-- Versions: feature set fs-2.0; run ids `20261020T084512Z-large-019cad03683b`, `20261020T085623Z-broad-3faa10e07a3c`; schema `schema/signal_v2.schema.json`.
+- Versions: feature set fs-2.1; run ids `20261020T084512Z-large-019cad03683b`, `20261020T085623Z-broad-3faa10e07a3c`; schema `schema/signal_v2.schema.json`.
 - Next tests: 3+ months of paper trading with the bot reading LONG signals only; licensed estimate-revision and options data; delisted-price data (CRSP/Norgate).

@@ -1,6 +1,6 @@
 {
  "source": "/opt/t212-bot/bot.py",
- "imported_at_utc": "2026-10-22T22:47:45+00:00",
+ "imported_at_utc": "2026-10-24T01:07:54+00:00",
  "position_pct": 0.09,
  "stop_loss": 0.08,
  "check_minutes": 15,
@@ -16,18 +16,18 @@
  "free_cash_only": true,
  "account_currency": "GBP",
  "account_total": 4981.16,
- "account_total_usd": 6676.248748,
- "order_size_usd": 600.8623873199999,
+ "account_total_usd": 6662.3015,
+ "order_size_usd": 599.607135,
  "max_names_at_full_size": 11
 }
 {
- "generated_at_utc": "2026-10-22T22:47:46+00:00",
+ "generated_at_utc": "2026-10-24T01:07:55+00:00",
  "profile": "broad",
  "limits_used": {
   "position_pct": 0.09,
   "stop_loss": 0.08,
-  "account_total_usd": 6676.248748,
-  "order_size_usd": 600.8623873199999,
+  "account_total_usd": 6662.3015,
+  "order_size_usd": 599.607135,
   "long_only": true,
   "leverage": false
  },
@@ -40,116 +40,116 @@
    "DAR",
    "CHCT",
    "ADAM",
-   "TPC",
-   "EME",
-   "MO",
    "GTX",
-   "JBL",
+   "TPC",
+   "MO",
+   "LBRT",
+   "EME",
+   "BOW",
    "BRSP",
    "ILPT",
    "GDOT",
-   "HRMY",
+   "JBL",
+   "EQH",
    "BFH",
-   "HELE",
-   "CW",
-   "MTW",
-   "FTI",
-   "UTZ",
-   "LBRT"
+   "CSTM",
+   "TTI",
+   "WKC",
+   "CW"
   ],
   "window_years": 3,
   "vs_spy": {
    "IBKR": {
-    "rho": 0.5428862571716309,
+    "rho": 0.5422280430793762,
     "nu": 6.0,
-    "tail_dependence": 0.1930222993316974,
-    "aic_t": -288.73105452759864,
-    "aic_gaussian": -270.6345426714055,
+    "tail_dependence": 0.19265610459395627,
+    "aic_t": -287.60503628094955,
+    "aic_gaussian": -269.4636976950577,
     "t_preferred": true,
     "obs": 756
    },
    "DAR": {
-    "rho": 0.20013748109340668,
+    "rho": 0.19586391746997833,
     "nu": 8.0,
-    "tail_dependence": 0.036808672232776576,
-    "aic_t": -45.951952993795786,
-    "aic_gaussian": -40.07572689188665,
+    "tail_dependence": 0.036155273024831354,
+    "aic_t": -44.49707116904361,
+    "aic_gaussian": -38.690101418838935,
     "t_preferred": true,
     "obs": 756
    },
    "CHCT": {
-    "rho": 0.22026529908180237,
+    "rho": 0.21642926335334778,
     "nu": 12.0,
-    "tail_dependence": 0.012840092321848426,
-    "aic_t": -37.53259769397895,
-    "aic_gaussian": -35.639316878026534,
+    "tail_dependence": 0.012556639230062894,
+    "aic_t": -36.05176908787378,
+    "aic_gaussian": -34.324123875724766,
     "t_preferred": true,
     "obs": 756
    },
    "ADAM": {
-    "rho": 0.4244159460067749,
+    "rho": 0.42070430517196655,
     "nu": 6.0,
-    "tail_dependence": 0.13648194442665068,
-    "aic_t": -160.1624265472288,
-    "aic_gaussian": -143.71990673901232,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "TPC": {
-    "rho": 0.5361242890357971,
-    "nu": 6.0,
-    "tail_dependence": 0.18929124981192663,
-    "aic_t": -263.1500230357487,
-    "aic_gaussian": -249.5373265562738,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "EME": {
-    "rho": 0.5710822939872742,
-    "nu": 12.0,
-    "tail_dependence": 0.08213689406804277,
-    "aic_t": -306.4222145172524,
-    "aic_gaussian": -300.1395759388845,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "MO": {
-    "rho": -0.09194371104240417,
-    "nu": 6.0,
-    "tail_dependence": 0.02294332580548501,
-    "aic_t": -25.059483347845955,
-    "aic_gaussian": -4.475865921510708,
+    "tail_dependence": 0.13498087410952783,
+    "aic_t": -157.55208745275507,
+    "aic_gaussian": -141.4568090497744,
     "t_preferred": true,
     "obs": 756
    },
    "GTX": {
-    "rho": 0.4377879202365875,
+    "rho": 0.43675675988197327,
     "nu": 20.0,
-    "tail_dependence": 0.009257906645424677,
-    "aic_t": -153.42015048645942,
-    "aic_gaussian": -153.5526427837135,
+    "tail_dependence": 0.009181812581976376,
+    "aic_t": -152.06603489810067,
+    "aic_gaussian": -152.22879723922722,
     "t_preferred": false,
     "obs": 756
    },
-   "JBL": {
-    "rho": 0.6120570302009583,
-    "nu": 8.0,
-    "tail_dependence": 0.1751882317411002,
-    "aic_t": -347.85202620109817,
-    "aic_gaussian": -328.40749502120434,
+   "TPC": {
+    "rho": 0.5341363549232483,
+    "nu": 6.0,
+    "tail_dependence": 0.18820729735885217,
+    "aic_t": -261.00611060107843,
+    "aic_gaussian": -247.59380351388467,
     "t_preferred": true,
     "obs": 756
+   },
+   "MO": {
+    "rho": -0.09052924066781998,
+    "nu": 6.0,
+    "tail_dependence": 0.02307905461295517,
+    "aic_t": -25.101328907487165,
+    "aic_gaussian": -4.255039269043955,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "LBRT": {
+    "rho": 0.30259084701538086,
+    "nu": 12.0,
+    "tail_dependence": 0.020465021777718032,
+    "aic_t": -80.8284948365076,
+    "aic_gaussian": -77.78925910306178,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "EME": {
+    "rho": 0.5703031420707703,
+    "nu": 12.0,
+    "tail_dependence": 0.08182277221057625,
+    "aic_t": -305.01987456553087,
+    "aic_gaussian": -298.72062226336703,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "BOW": {
+    "rho": 0.1471177190542221,
+    "nu": 30.0,
+    "tail_dependence": 3.7977368120742635e-05,
+    "aic_t": -10.550017224161294,
+    "aic_gaussian": -11.973520880635572,
+    "t_preferred": false,
+    "obs": 606
    },
    "BRSP": {
-    "rho": 0.4627908170223236,
+    "rho": 0.46018141508102417,
     "nu": 4.0,
-    "tail_dependence": 0.23339462109047543,
-    "aic_t": -209.80962161292013,
-    "aic_gaussian": -168.9151189386045,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "ILPT": {
-    "rho": 0.3065272271633148,
-    "nu": 8.0,
-    "tail_dependence": 0.0566522974891
+    "tail_dependence": 0.2320614

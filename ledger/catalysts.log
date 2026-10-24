@@ -1,8 +1,8 @@
 {
- "n_events": 1294,
+ "n_events": 1290,
  "by_type": {
-  "earnings": 1068,
-  "trial_primary_completion": 196,
+  "earnings": 1065,
+  "trial_primary_completion": 195,
   "eia_wpsr": 13,
   "macro_release": 13,
   "fomc": 2,
@@ -10,32 +10,32 @@
  },
  "historical_responses": {
   "earnings": {
-   "events": 180984,
-   "pooled_abs_reaction_median": 0.026517548775548495,
-   "pooled_abs_reaction_p90": 0.11341948371931221,
-   "drift_2_20_after_positive_reaction": 0.0039023584962771148,
-   "drift_2_20_after_negative_reaction": 0.0029361206949388833,
-   "drift_t_positive": 6.5489910307382235,
-   "drift_t_negative": 2.0183641712315428,
+   "events": 196560,
+   "pooled_abs_reaction_median": 0.027394076395387552,
+   "pooled_abs_reaction_p90": 0.11429510101597941,
+   "drift_2_20_after_positive_reaction": 0.003966418886566721,
+   "drift_2_20_after_negative_reaction": 0.0026237090734038617,
+   "drift_t_positive": 7.168933389184151,
+   "drift_t_negative": 1.9548962160383572,
    "note": "drift t-stats ignore cross-event correlation (overstated); decay = drift relative to the reaction"
   },
   "fomc": {
    "events": 45,
-   "spy_abs_return_fomc_days": 0.009847210720181465,
-   "spy_abs_return_other_days": 0.007612637709826231,
-   "ratio": 1.2935346364974976
+   "spy_abs_return_fomc_days": 0.009847249835729599,
+   "spy_abs_return_other_days": 0.0076121981255710125,
+   "ratio": 1.2936145067214966
   },
   "eia_wednesday": {
    "energy_names": 180,
-   "abs_abnormal_wed": 0.02247284466963591,
-   "abs_abnormal_other": 0.02239917541736732
+   "abs_abnormal_wed": 0.022473097772046684,
+   "abs_abnormal_other": 0.0224087249201787
   },
   "fda_approval": {
-   "events": 574,
-   "mean_abnormal_2d": 0.002530133022266513,
+   "events": 575,
+   "mean_abnormal_2d": 0.002560885119332473,
    "median": 0.0,
-   "p10": -0.036830382130907634,
-   "p90": 0.039811816387177165,
+   "p10": -0.036791637871763684,
+   "p90": 0.03979866986108866,
    "downside_scenario": "NOT_COMPUTED: complete-response letters / rejections not in openFDA history"
   }
  }

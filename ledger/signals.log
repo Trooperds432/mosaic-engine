@@ -45,3 +45,18 @@ Traceback (most recent call last):
     f"{k} z={f(v['latest']['z'], 2)} (ARIMA median error {f(v['mae_arima'], 3)} vs naive {f(v['mae_random_walk'], 3)})" for k, v in MS["series"].items()) + ".")
                ~^^^^^^^^^^
 KeyError: 'latest'
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 1/4: 449 rows
+chunk 2/4: 44 rows
+chunk 3/4: 34 rows
+chunk 4/4: 44 rows
+profile=large as_of=2026-10-23 evaluated=571 LONG=0 gate=UNVALIDATED
+chunk 1/5: 837 rows
+chunk 2/5: 449 rows
+chunk 3/5: 434 rows
+chunk 4/5: 466 rows
+chunk 5/5: 169 rows
+profile=broad as_of=2026-10-23 evaluated=2355 LONG=0 gate=UNVALIDATED
+total evaluated=2931 insider_events=5 LONG=0 audit=large: data audit was run on ds-d89ffa78e583, current data is ds-9aaa9ce7c5c6; broad: data audit failed: historical_universe
+wrote report 33514 chars

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/refit.py", line 72, in <module>
+    print(p, "trained through", refit(p), flush=True)
+                                ~~~~~^^^
+  File "/opt/mosaic-engine/refit.py", line 28, in refit
+    raise ValueError(why)
+ValueError: frozen recipe or weights manifest missing/invalid
