@@ -28,10 +28,9 @@ import pandas as pd
 import config as C
 from research import EMBARGO, MISSING_GROUPS, date_rank, name_costs, preprocess, sector_neutral, walk_forward
 
-LS_Q = 0.10            # long top decile / short bottom decile within each sector
-LS_BUFFER = 0.20       # keep a holding until it leaves the top / bottom quintile
-LS_GROSS = 1.5         # gross exposure as a multiple of equity
-SI_MAX_SHORT = 0.15    # no shorts above this short interest / shares (hard to borrow)
+import ls_rules as R  # the same selection rules the bot uses
+LS_Q, LS_BUFFER, LS_GROSS, SI_MAX_SHORT = R.LS_Q, R.LS_BUFFER, R.LS_GROSS, R.SI_MAX_SHORT
+REBALANCE_SESSIONS = 20  # as the Alpaca bot
 EQUITY_USD = 100_000.0
 PERIODS_PER_YEAR = 252 / C.DECISION_STEP
 
@@ -74,39 +73,36 @@ def oos_predictions(profile, panel, model, h, cal):
     return wf, ho
 
 
-def ls_backtest(df, spy_ret):
-    """df: date, symbol, sector, score, y (5-session excess return), beta, si, cost. Returns a per-period frame."""
-    rows, w_prev = [], {}
-    for d, g in df.groupby("date", sort=True):
-        g = g.dropna(subset=["score", "y"])
-        if len(g) < 50:
-            continue
-        r = g.groupby("sector")["score"].rank(pct=True)
-        held_l = {s for s, w in w_prev.items() if w > 0}
-        held_s = {s for s, w in w_prev.items() if w < 0}
-        sym = g["symbol"].to_numpy()
-        long_m = (r >= 1 - LS_Q).to_numpy() | (np.isin(sym, list(held_l)) & (r >= 1 - LS_BUFFER).to_numpy())
-        short_ok = (np.nan_to_num(g["si"].to_numpy(), nan=0.0) <= SI_MAX_SHORT)
-        short_m = ((r <= LS_Q).to_numpy() | (np.isin(sym, list(held_s)) & (r <= LS_BUFFER).to_numpy())) & short_ok & ~long_m
-        L, S = g[long_m], g[short_m]
-        if len(L) < 5 or len(S) < 5:
-            continue
-        bl, bs = blume(L["beta"]).mean(), blume(S["beta"]).mean()
-        gl = LS_GROSS * bs / (bl + bs)  # long gross so that gl * bl = gs * bs
-        gs = LS_GROSS - gl
-        w = {**dict(zip(L["symbol"], np.full(len(L), gl / len(L)))), **dict(zip(S["symbol"], np.full(len(S), -gs / len(S))))}
-        c = dict(zip(g["symbol"], g["cost"]))
-        traded = sum(abs(w.get(s, 0.0) - w_prev.get(s, 0.0)) * c.get(s, 0.003) for s in set(w) | set(w_prev))
-        borrow = float((gs / len(S)) * borrow_fee(S["si"].to_numpy()).sum() / PERIODS_PER_YEAR)
+def ls_backtest(df, spy_ret, every=None):
+    """df: date, symbol, sector, score, y (5-session excess return), beta, si, cost. Selection uses the live rules
+    (ls_rules.select, incl. the turnover buffer) and is redone only every REBALANCE_SESSIONS (as the Alpaca bot does);
+    between rebalances the weights are held and scored on the non-overlapping 5-session returns. Returns a per-period frame."""
+    every = every or max(1, REBALANCE_SESSIONS // C.DECISION_STEP)
+    rows, w = [], {}
+    for k, (d, g) in enumerate(df.groupby("date", sort=True)):
         rm = float(spy_ret.get(d, np.nan))
         if math.isnan(rm):
             continue
-        long_ret, short_ret = float(L["y"].mean()) + rm, float(S["y"].mean()) + rm
-        gross = gl * long_ret - gs * short_ret
+        g = g.dropna(subset=["y"])
+        c = dict(zip(g["symbol"], g["cost"]))
+        traded = turnover = 0.0
+        if k % every == 0 or not w:
+            nw = R.select(g, {s for s, x in w.items() if x > 0}, {s for s, x in w.items() if x < 0})
+            if nw:
+                keys = set(nw) | set(w)
+                traded = sum(abs(nw.get(s, 0.0) - w.get(s, 0.0)) * c.get(s, 0.003) for s in keys)
+                turnover = sum(abs(nw.get(s, 0.0) - w.get(s, 0.0)) for s in keys) / 2
+                w = nw
+        if not w:
+            continue
+        y, si = dict(zip(g["symbol"], g["y"])), dict(zip(g["symbol"], g["si"]))
+        longs, shorts = [s for s, x in w.items() if x > 0], [s for s, x in w.items() if x < 0]
+        gross = sum(x * (y.get(s, 0.0) + rm) for s, x in w.items())  # a held name without a label earns the market
+        borrow = sum(-w[s] * float(borrow_fee([si.get(s, 0.0)])[0]) for s in shorts) / PERIODS_PER_YEAR
         rows.append({"date": d, "gross": gross, "cost": traded, "borrow": borrow, "net": gross - traded - borrow, "spy": rm,
-                     "long_excess": float(L["y"].mean()), "short_excess": float(S["y"].mean()), "n_long": len(L), "n_short": len(S),
-                     "gross_long": gl, "gross_short": gs, "turnover": sum(abs(w.get(s, 0.0) - w_prev.get(s, 0.0)) for s in set(w) | set(w_prev)) / 2})
-        w_prev = w
+                     "long_excess": float(np.mean([y.get(s, 0.0) for s in longs])), "short_excess": float(np.mean([y.get(s, 0.0) for s in shorts])),
+                     "n_long": len(longs), "n_short": len(shorts), "gross_long": sum(w[s] for s in longs), "gross_short": -sum(w[s] for s in shorts),
+                     "turnover": turnover, "rebalanced": turnover > 0})
     return pd.DataFrame(rows).set_index("date")
 
 
@@ -166,7 +162,8 @@ def run(profile="broad"):
 
     out = {"profile": profile, "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "recipe_run_id": model["run_id"],
            "holdout_start": str(hold_start.date()), "method": __doc__.strip(),
-           "params": {"q": LS_Q, "buffer": LS_BUFFER, "gross": LS_GROSS, "si_max_short": SI_MAX_SHORT, "equity_usd": EQUITY_USD}, "results": {}}
+           "params": {"q": LS_Q, "buffer": LS_BUFFER, "gross": LS_GROSS, "si_max_short": SI_MAX_SHORT, "equity_usd": EQUITY_USD,
+                      "rebalance_sessions": REBALANCE_SESSIONS, "max_name_weight": R.MAX_NAME_WEIGHT}, "results": {}}
     base = panel[["date", "symbol", "sector", "beta_252", "si_ratio", "y_5", "y_20"]].copy()
     base["sector"] = base["sector"].fillna("Unknown")
     n_names = max(1.0, panel.groupby("date").size().mean() * 2 * LS_Q)

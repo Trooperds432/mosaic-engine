@@ -1,30 +1,31 @@
-Traceback (most recent call last):
-  File "/opt/mosaic-engine/data_macro.py", line 130, in <module>
-    run()
-    ~~~^^
-  File "/opt/mosaic-engine/data_macro.py", line 112, in run
-    parts = [market(c), eia(c), revised(c)]
-             ~~~~~~^^^
-  File "/opt/mosaic-engine/data_macro.py", line 45, in market
-    d = pd.read_csv(io.StringIO(get(client, FRED.format(s)).text))
-  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 872, in read_csv
-    return _read(filepath_or_buffer, kwds)
-  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 306, in _read
-    return parser.read(nrows)
-           ~~~~~~~~~~~^^^^^^^
-  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/readers.py", line 1950, in read
-    ) = self._engine.read(  # type: ignore[attr-defined]
-        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        nrows
-        ^^^^^
-    )
-    ^
-  File "/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 238, in read
-    chunks = self._reader.read_low_memory(nrows)
-  File "pandas/_libs/parsers.pyx", line 832, in pandas._libs.parsers.TextReader.read_low_memory
-  File "pandas/_libs/parsers.pyx", line 897, in pandas._libs.parsers.TextReader._read_rows
-  File "pandas/_libs/parsers.pyx", line 868, in pandas._libs.parsers.TextReader._tokenize_rows
-  File "pandas/_libs/parsers.pyx", line 885, in pandas._libs.parsers.TextReader._check_tokenize_status
-  File "pandas/_libs/parsers.pyx", line 2090, in pandas._libs.parsers.raise_parser_error
-pandas.errors.ParserError: Error tokenizing data. C error: Expected 1 fields in line 5, saw 3
-
+NOT_COMPUTED UNRATE: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED PAYEMS: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED CPIAUCSL: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED INDPRO: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED IPG3344S: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED A34SNO: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED PCOPPUSDM: FRED_API_KEY or verified initial-release cache required
+NOT_COMPUTED ICSA: FRED_API_KEY or verified initial-release cache required
+                          n      first       last
+series                                           
+BAA10Y                10202 1986-01-02 2026-10-22
+DCOILWTICO             9527 1986-01-02 2026-10-20
+DFII10                 5956 2003-01-02 2026-10-22
+DGASNYH                9161 1986-06-02 2026-10-20
+DGS10                 16187 1962-01-02 2026-10-22
+DGS2                  12595 1976-06-01 2026-10-22
+DHHNGSP                5712 1997-01-07 2026-10-20
+DHOILNYH               8810 1986-06-02 2026-10-20
+DTB3                  18193 1954-01-04 2026-10-22
+DTWEXBGS               5212 2006-01-02 2026-10-16
+MORTGAGE30US           5799 1971-04-02 2026-10-22
+NFCI                   5822 1971-01-08 2026-10-16
+T10Y2Y                12596 1976-06-01 2026-10-23
+T10Y3M                11205 1982-01-04 2026-10-23
+T5YIE                  5957 2003-01-02 2026-10-23
+VIXCLS                 9301 1990-01-02 2026-10-22
+crude_production       4564 1983-01-07 2026-10-16
+crude_stocks_ex_spr    4598 1982-08-20 2026-10-16
+distillate_stocks      4598 1982-08-20 2026-10-16
+gasoline_stocks        3840 1990-01-05 2026-10-16
+refinery_utilization   3726 1990-11-02 2026-10-16

@@ -1,0 +1,13 @@
+{
+ "generated_at_utc": "2026-10-24T01:07:15+00:00",
+ "summary": {
+  "vetoes_scored": 0,
+  "complete": 0,
+  "mean_value_added": null,
+  "hit_rate": null,
+  "t": null,
+  "by_reason": {},
+  "rule": "the overlay earns a place in the process only if completed vetoes add value with t >= 2 over >= 20 vetoes"
+ },
+ "vetoes": []
+}

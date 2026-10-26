@@ -1,2 +1,5 @@
-futures futures 85740 rows
-cot cot 13806 rows 2006-06-13..2026-10-13
+futures futures 85781 rows
+cot cot 13819 rows 2006-06-13..2026-10-20
+short short interest 725884 rows over 161 settlement dates
+trials trials 27461 studies for 526 companies
+fda fda 19687 approvals for 64 companies

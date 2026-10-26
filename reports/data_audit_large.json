@@ -1,0 +1,263 @@
+{
+ "generated_at_utc": "2026-10-24T00:42:50+00:00",
+ "profile": "large",
+ "dataset_version": "ds-d89ffa78e583",
+ "truncation_invariance": {
+  "passed": true,
+  "worst": 0.0,
+  "dates": [
+   {
+    "date": "2008-12-24",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   },
+   {
+    "date": "2010-02-08",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   },
+   {
+    "date": "2024-12-20",
+    "diffs": {
+     "price:mom_12_1": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:vol_60": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:rsi_14": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:beta_252": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:cs_spread": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "price:adv_dollar": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:ni": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:shares": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "fund:assets_prev": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:buy_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:sell_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:ins_buyers_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     },
+     "insider:opp_net_usd_90": {
+      "max_rel_diff": 0.0,
+      "nan_mismatch": 0
+     }
+    }
+   }
+  ],
+  "symbols_sampled": 150
+ },
+ "label_alignment": {
+  "passed": true,
+  "checked": 3967,
+  "max_abs_error": 1.6093254089355469e-06
+ },
+ "duplicates_timestamps": {
+  "duplicate_insider_rows": 0,
+  "price_files_checked": 316,
+  "weekend_price_rows": 0,
+  "duplicate_price_dates": 0,
+  "8k_acceptance_inconsistent": 88,
+  "8k_checked": 773659,
+  "passed": true
+ },
+ "diagnostics": {
+  "survivorship": {
+   "candidates": 6743,
+   "removed_sp500_without_current_ticker_excluded": 321,
+   "price_series_available": 5986,
+   "series_ending_before_last_session": 1,
+   "note": "Current-listing histories remain survivorship-biased unless verified historical coverage passes. Missing terminal outcomes are excluded, never assigned zero returns."
+  },
+  "restatement": {
+   "periods": 502070,
+   "periods_with_later_different_value": 30405,
+   "share_restated": 0.06055928456191368,
+   "median_abs_rel_change_when_restated": 0.017862367093375325,
+   "policy": "features use the value known at each filing date (as-reported); the latest-restated series is kept separately in reports/facts_latest_restated.parquet"
+  },
+  "stale": {
+   "share_rows_fundamentals_older_than_limit": 0.06531185031185031,
+   "mean_quality_score": 0.8294903039932251
+  },
+  "missing_not_at_random": {
+   "fundamentals": {
+    "missing_share": 0.01176022176022176,
+    "ic_missing_vs_fwd_return": 0.0010559782697050393,
+    "t": 0.22173735886498175
+   },
+   "sue": {
+    "missing_share": 0.09044698544698544,
+    "ic_missing_vs_fwd_return": -0.007660140204489357,
+    "t": -1.3813748758843842
+   },
+   "13f": {
+    "missing_share": 0.31241164241164243,
+    "ic_missing_vs_fwd_return": -0.0033813106775475695,
+    "t": -0.7231555874962986
+   }
+  },
+  "corporate_actions": {
+   "sampled_files": 300,
+   "unexplained_moves_gt_60pct": 542,
+   "note": "split adjustment comes from Yahoo adjclose; large moves present in both raw and adjusted series are reviewed, not removed"
+  }
+ },
+ "historical_universe": {
+  "passed": false,
+  "failed_checks": [
+   "verified historical security bundle missing"
+  ]
+ },
+ "blocking": {
+  "historical_universe": false,
+  "truncation_invariance": true,
+  "label_alignment": true,
+  "duplicates_timestamps": true
+ }
+}

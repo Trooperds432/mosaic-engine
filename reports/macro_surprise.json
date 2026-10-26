@@ -1,113 +1,23 @@
 {
- "generated_at_utc": "2026-10-20T23:51:55+00:00",
+ "generated_at_utc": "2026-10-23T22:37:26+00:00",
  "series": {
   "UNRATE": {
-   "releases": 284,
-   "forecasted": 236,
-   "rmse_arima": 0.7280230585552664,
-   "rmse_random_walk": 1.0154526418285639,
-   "mae_arima": 0.11126266539821797,
-   "mae_random_walk": 0.1999999999999993,
-   "rmse_arima_ex_2020_21": 0.164397716963371,
-   "rmse_random_walk_ex_2020_21": 0.2176200601186337,
-   "latest": {
-    "obs_date": "2026-09-01 00:00:00",
-    "available_date": "2026-10-15 00:00:00",
-    "change": 0.10000000000000053,
-    "forecast": -0.034930142759851124,
-    "surprise": 0.13493014275985166,
-    "z": 1.1009063579784828
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   },
   "PAYEMS": {
-   "releases": 285,
-   "forecasted": 237,
-   "rmse_arima": 1385.7110473999242,
-   "rmse_random_walk": 1997.3636104638192,
-   "mae_arima": 67.57937072234185,
-   "mae_random_walk": 73.0,
-   "rmse_arima_ex_2020_21": 106.5649377211501,
-   "rmse_random_walk_ex_2020_21": 114.09155371502301,
-   "latest": {
-    "obs_date": "2026-09-01 00:00:00",
-    "available_date": "2026-10-15 00:00:00",
-    "change": 29.0,
-    "forecast": 136.73972324015278,
-    "surprise": -107.73972324015278,
-    "z": -0.9939659139712786
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   },
   "CPIAUCSL": {
-   "releases": 284,
-   "forecasted": 236,
-   "rmse_arima": 0.3042492039132871,
-   "rmse_random_walk": 0.33110482572021044,
-   "mae_arima": 0.1647602813753185,
-   "mae_random_walk": 0.1947741811528939,
-   "rmse_arima_ex_2020_21": 0.303448967478475,
-   "rmse_random_walk_ex_2020_21": 0.3331973642029878,
-   "latest": {
-    "obs_date": "2026-09-01 00:00:00",
-    "available_date": "2026-10-15 00:00:00",
-    "change": 0.646454000833009,
-    "forecast": 0.33949307390824535,
-    "surprise": 0.3069609269247636,
-    "z": 1.4360720648210887
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   },
   "INDPRO": {
-   "releases": 284,
-   "forecasted": 236,
-   "rmse_arima": 1.17302373831733,
-   "rmse_random_walk": 1.40278350511873,
-   "mae_arima": 0.39042409645344206,
-   "mae_random_walk": 0.5937596740248174,
-   "rmse_arima_ex_2020_21": 0.6182772087096354,
-   "rmse_random_walk_ex_2020_21": 0.8038657900771262,
-   "latest": {
-    "obs_date": "2026-08-01 00:00:00",
-    "available_date": "2026-10-01 00:00:00",
-    "change": 0.022123722154190468,
-    "forecast": 0.17829702562337943,
-    "surprise": -0.15617330346918895,
-    "z": -0.37689584517432245
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   },
   "ICSA": {
-   "releases": 930,
-   "forecasted": 882,
-   "rmse_arima": 11.000228147754887,
-   "rmse_random_walk": 13.555330344385016,
-   "mae_arima": 3.2421376711426815,
-   "mae_random_walk": 5.688337414785047,
-   "rmse_arima_ex_2020_21": 5.152924415870058,
-   "rmse_random_walk_ex_2020_21": 8.794974855093283,
-   "latest": {
-    "obs_date": "2026-10-10 00:00:00",
-    "available_date": "2026-10-15 00:00:00",
-    "change": 0.5037794029957081,
-    "forecast": -0.5633004243315445,
-    "surprise": 1.0670798273272526,
-    "z": 0.22411967940442765
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   },
   "IPG3344S": {
-   "releases": 162,
-   "forecasted": 114,
-   "rmse_arima": 1.1399872342120938,
-   "rmse_random_walk": 1.3684684079126375,
-   "mae_arima": 0.6994906908659465,
-   "mae_random_walk": 0.9954894067333481,
-   "rmse_arima_ex_2020_21": 1.0363765846382715,
-   "rmse_random_walk_ex_2020_21": 1.258413737786119,
-   "latest": {
-    "obs_date": "2026-08-01 00:00:00",
-    "available_date": "2026-10-01 00:00:00",
-    "change": -0.08518259824560691,
-    "forecast": 0.9583093631088682,
-    "surprise": -1.043491961354475,
-    "z": -1.3915318072223193
-   }
+   "status": "NOT_COMPUTED: verified initial releases unavailable"
   }
  }
 }

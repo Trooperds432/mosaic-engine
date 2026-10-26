@@ -381,7 +381,8 @@ def run():
     MS = load("macro_surprise.json")
     if MS:
         L.append("- Macro surprises vs ARIMA forecast from earlier first releases (spec 4D) [MODEL]: " + "; ".join(
-            f"{k} z={f(v['latest']['z'], 2)} (ARIMA median error {f(v['mae_arima'], 3)} vs naive {f(v['mae_random_walk'], 3)})" for k, v in MS["series"].items()) + ".")
+            (f"{k} z={f(v['latest']['z'], 2)} (ARIMA median error {f(v.get('mae_arima'), 3)} vs naive {f(v.get('mae_random_walk'), 3)})"
+             if isinstance(v.get("latest"), dict) else f"{k}: {v.get('status', 'NOT_COMPUTED')}") for k, v in MS["series"].items()) + ".")
     if BI:
         L.append(f"- Biotech [CALC]: {BI['issuers']} issuers; {len(BI['short_runway_lt_1y'])} with < 1 year cash runway; registry cohorts " +
                  ", ".join(f"{k}: {f(v['share_terminated_or_withdrawn'], pct=True)} terminated/withdrawn (n={v['n']})" for k, v in BI["registry_cohorts"].items()) +

@@ -18,3 +18,45 @@ total evaluated=2926 insider_events=7 LONG=0 audit=pass
 wrote report 27338 chars
 wrote report 31661 chars
 wrote report 33701 chars
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 1/4: 447 rows
+chunk 2/4: 45 rows
+chunk 3/4: 34 rows
+chunk 4/4: 45 rows
+profile=large as_of=2026-10-22 evaluated=571 LONG=0 gate=UNVALIDATED
+chunk 1/5: 841 rows
+chunk 2/5: 450 rows
+chunk 3/5: 435 rows
+chunk 4/5: 469 rows
+chunk 5/5: 168 rows
+profile=broad as_of=2026-10-22 evaluated=2363 LONG=0 gate=UNVALIDATED
+total evaluated=2938 insider_events=4 LONG=0 audit=data audit failed: historical_universe
+Traceback (most recent call last):
+  File "/opt/mosaic-engine/report.py", line 410, in <module>
+    run()
+    ~~~^^
+  File "/opt/mosaic-engine/report.py", line 374, in run
+    L.append("- Macro surprises vs ARIMA forecast from earlier first releases (spec 4D) [MODEL]: " + "; ".join(
+                                                                                                     ~~~~~~~~~^
+        f"{k} z={f(v['latest']['z'], 2)} (ARIMA median error {f(v['mae_arima'], 3)} vs naive {f(v['mae_random_walk'], 3)})" for k, v in MS["series"].items()) + ".")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/mosaic-engine/report.py", line 375, in <genexpr>
+    f"{k} z={f(v['latest']['z'], 2)} (ARIMA median error {f(v['mae_arima'], 3)} vs naive {f(v['mae_random_walk'], 3)})" for k, v in MS["series"].items()) + ".")
+               ~^^^^^^^^^^
+KeyError: 'latest'
+/opt/mosaic-engine/venv/lib/python3.13/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+chunk 1/4: 449 rows
+chunk 2/4: 44 rows
+chunk 3/4: 34 rows
+chunk 4/4: 44 rows
+profile=large as_of=2026-10-23 evaluated=571 LONG=0 gate=UNVALIDATED
+chunk 1/5: 837 rows
+chunk 2/5: 449 rows
+chunk 3/5: 434 rows
+chunk 4/5: 466 rows
+chunk 5/5: 169 rows
+profile=broad as_of=2026-10-23 evaluated=2355 LONG=0 gate=UNVALIDATED
+total evaluated=2931 insider_events=5 LONG=0 audit=large: data audit was run on ds-d89ffa78e583, current data is ds-9aaa9ce7c5c6; broad: data audit failed: historical_universe
+wrote report 33514 chars

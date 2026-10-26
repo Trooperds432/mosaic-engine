@@ -1,7 +1,7 @@
 {
- "generated_at_utc": "2026-10-19T17:48:58+00:00",
- "as_of": "2026-10-16",
- "issuers": 678,
+ "generated_at_utc": "2026-10-24T01:07:54+00:00",
+ "as_of": "2026-10-23",
+ "issuers": 680,
  "short_runway_lt_1y": [
   {
    "symbol": "CDIO",
@@ -11,133 +11,133 @@
   {
    "symbol": "MAIA",
    "runway_years": 0.0,
-   "dilution_to_fund_24m_pct_mcap": 0.5632951794621542
+   "dilution_to_fund_24m_pct_mcap": 0.538804107551708
   },
   {
    "symbol": "TVGN",
    "runway_years": 0.0,
-   "dilution_to_fund_24m_pct_mcap": 0.5355990654311291
+   "dilution_to_fund_24m_pct_mcap": 0.5798905609301491
   },
   {
    "symbol": "UPC",
    "runway_years": 0.001598851537284166,
-   "dilution_to_fund_24m_pct_mcap": 4560.493374156756
+   "dilution_to_fund_24m_pct_mcap": 4129.663279895212
   },
   {
    "symbol": "KALA",
    "runway_years": 0.007158263261542308,
-   "dilution_to_fund_24m_pct_mcap": 17.349835694854974
+   "dilution_to_fund_24m_pct_mcap": 17.340708851377276
   },
   {
    "symbol": "SHPH",
    "runway_years": 0.00951712492927124,
-   "dilution_to_fund_24m_pct_mcap": 0.7797281867157222
+   "dilution_to_fund_24m_pct_mcap": 0.815024489755107
   },
   {
    "symbol": "IBO",
    "runway_years": 0.010582010582010581,
-   "dilution_to_fund_24m_pct_mcap": 0.013012140806288371
+   "dilution_to_fund_24m_pct_mcap": 0.009686816431476043
   },
   {
    "symbol": "ABVC",
    "runway_years": 0.010696852525483885,
-   "dilution_to_fund_24m_pct_mcap": 0.24278577916243124
+   "dilution_to_fund_24m_pct_mcap": 0.21430514353702906
   },
   {
    "symbol": "PPCB",
    "runway_years": 0.016408057177700133,
-   "dilution_to_fund_24m_pct_mcap": 5.2058986737170345
+   "dilution_to_fund_24m_pct_mcap": 6.358633494817853
   },
   {
    "symbol": "OMER",
    "runway_years": 0.017124054645373577,
-   "dilution_to_fund_24m_pct_mcap": 0.19630068302729095
+   "dilution_to_fund_24m_pct_mcap": 0.1919173973069518
   },
   {
    "symbol": "PCSA",
    "runway_years": 0.01724388559001405,
-   "dilution_to_fund_24m_pct_mcap": 4.7818076194923
+   "dilution_to_fund_24m_pct_mcap": 4.464781992285132
   },
   {
    "symbol": "NRSN",
    "runway_years": 0.021639942641115892,
-   "dilution_to_fund_24m_pct_mcap": 0.15183512497315235
-  },
-  {
-   "symbol": "CELU",
-   "runway_years": 0.027765202957597705,
-   "dilution_to_fund_24m_pct_mcap": 0.6444422235759043
+   "dilution_to_fund_24m_pct_mcap": 0.18948529118016233
   },
   {
    "symbol": "TPST",
    "runway_years": 0.029045488441461594,
-   "dilution_to_fund_24m_pct_mcap": 5.72115596956004
+   "dilution_to_fund_24m_pct_mcap": 6.986304413376843
   },
   {
    "symbol": "APUS",
    "runway_years": 0.031187312880436066,
-   "dilution_to_fund_24m_pct_mcap": 2.8823443980851136
+   "dilution_to_fund_24m_pct_mcap": 4.029297866996878
   },
   {
    "symbol": "QCLS",
    "runway_years": 0.03393171497721226,
-   "dilution_to_fund_24m_pct_mcap": 4.04518589016259
+   "dilution_to_fund_24m_pct_mcap": 4.601078234311779
   },
   {
    "symbol": "HURA",
    "runway_years": 0.03604805070007583,
-   "dilution_to_fund_24m_pct_mcap": 0.4837988733651018
+   "dilution_to_fund_24m_pct_mcap": 0.3905899020339562
   },
   {
    "symbol": "TXMD",
    "runway_years": 0.04026126018795596,
-   "dilution_to_fund_24m_pct_mcap": 12.715990352735602
+   "dilution_to_fund_24m_pct_mcap": 13.422434448364644
   },
   {
    "symbol": "TCRT",
    "runway_years": 0.043220634367375395,
-   "dilution_to_fund_24m_pct_mcap": 0.8402351790102628
+   "dilution_to_fund_24m_pct_mcap": 0.9692187038087043
+  },
+  {
+   "symbol": "CELU",
+   "runway_years": 0.04421306775313113,
+   "dilution_to_fund_24m_pct_mcap": 0.8170320721570069
   },
   {
    "symbol": "ONMD",
    "runway_years": 0.04771424763427962,
-   "dilution_to_fund_24m_pct_mcap": 0.05478306434294307
+   "dilution_to_fund_24m_pct_mcap": 0.05245682180986256
   },
   {
    "symbol": "SPRY",
    "runway_years": 0.04777427925977081,
-   "dilution_to_fund_24m_pct_mcap": 0.8343849224586927
+   "dilution_to_fund_24m_pct_mcap": 0.8323144411272446
   },
   {
    "symbol": "CDT",
    "runway_years": 0.04802314368370299,
-   "dilution_to_fund_24m_pct_mcap": 164.24200191548994
+   "dilution_to_fund_24m_pct_mcap": 296.8990135997622
   },
   {
    "symbol": "HCWB",
    "runway_years": 0.05535731794002173,
-   "dilution_to_fund_24m_pct_mcap": 11.436729118096501
+   "dilution_to_fund_24m_pct_mcap": 12.120978406568181
   },
   {
    "symbol": "ESLA",
    "runway_years": 0.05600110658186606,
-   "dilution_to_fund_24m_pct_mcap": 0.185593606323094
+   "dilution_to_fund_24m_pct_mcap": 0.08102055927653902
   },
   {
    "symbol": "ATRA",
    "runway_years": 0.06323125245386729,
-   "dilution_to_fund_24m_pct_mcap": 1.070679208576189
+   "dilution_to_fund_24m_pct_mcap": 1.1442183104634365
   }
  ],
  "upcoming_ph2_3_completions": [
   {
    "symbol": "AZN",
-   "ph2_3_completions_next_180d": 29,
+   "ph2_3_completions_next_180d": 31,
    "active_phase3": 171
   },
   {
    "symbol": "NVS",
-   "ph2_3_completions_next_180d": 25,
+   "ph2_3_completions_next_180d": 24,
    "active_phase3": 92
   },
   {
@@ -148,16 +148,16 @@
   {
    "symbol": "PFE",
    "ph2_3_completions_next_180d": 21,
-   "active_phase3": 87
+   "active_phase3": 89
   },
   {
    "symbol": "SNY",
-   "ph2_3_completions_next_180d": 18,
-   "active_phase3": 52
+   "ph2_3_completions_next_180d": 17,
+   "active_phase3": 54
   },
   {
    "symbol": "BMY",
-   "ph2_3_completions_next_180d": 11,
+   "ph2_3_completions_next_180d": 9,
    "active_phase3": 59
   },
   {
@@ -169,11 +169,6 @@
    "symbol": "AMGN",
    "ph2_3_completions_next_180d": 8,
    "active_phase3": 50
-  },
-  {
-   "symbol": "INCY",
-   "ph2_3_completions_next_180d": 6,
-   "active_phase3": 23
   },
   {
    "symbol": "GILD",
@@ -191,9 +186,9 @@
    "active_phase3": 45
   },
   {
-   "symbol": "KPTI",
-   "ph2_3_completions_next_180d": 3,
-   "active_phase3": 3
+   "symbol": "INCY",
+   "ph2_3_completions_next_180d": 4,
+   "active_phase3": 23
   },
   {
    "symbol": "ARGX",
@@ -206,9 +201,9 @@
    "active_phase3": 1
   },
   {
-   "symbol": "QNRX",
+   "symbol": "KPTI",
    "ph2_3_completions_next_180d": 3,
-   "active_phase3": 4
+   "active_phase3": 3
   },
   {
    "symbol": "VIR",
@@ -231,19 +226,19 @@
    "active_phase3": 12
   },
   {
+   "symbol": "QNRX",
+   "ph2_3_completions_next_180d": 3,
+   "active_phase3": 4
+  },
+  {
+   "symbol": "OCUL",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 4
+  },
+  {
    "symbol": "MDGL",
    "ph2_3_completions_next_180d": 2,
    "active_phase3": 3
-  },
-  {
-   "symbol": "SXTP",
-   "ph2_3_completions_next_180d": 2,
-   "active_phase3": 0
-  },
-  {
-   "symbol": "XENE",
-   "ph2_3_completions_next_180d": 2,
-   "active_phase3": 8
   },
   {
    "symbol": "MNOV",
@@ -254,20 +249,25 @@
    "symbol": "TRAW",
    "ph2_3_completions_next_180d": 2,
    "active_phase3": 0
+  },
+  {
+   "symbol": "SXTP",
+   "ph2_3_completions_next_180d": 2,
+   "active_phase3": 0
   }
  ],
  "registry_cohorts": {
   "PHASE1": {
-   "n": 7230,
-   "share_terminated_or_withdrawn": 0.16431535269709543
+   "n": 7239,
+   "share_terminated_or_withdrawn": 0.16452548694571073
   },
   "PHASE2": {
-   "n": 6180,
-   "share_terminated_or_withdrawn": 0.2453074433656958
+   "n": 6186,
+   "share_terminated_or_withdrawn": 0.24587778855480116
   },
   "PHASE3": {
-   "n": 5623,
-   "share_terminated_or_withdrawn": 0.14582962831228882
+   "n": 5625,
+   "share_terminated_or_withdrawn": 0.14577777777777778
   }
  },
  "scenario_model": {

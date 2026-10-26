@@ -1,41 +1,41 @@
 {
- "n_events": 1226,
+ "n_events": 1290,
  "by_type": {
-  "earnings": 1003,
-  "trial_primary_completion": 194,
+  "earnings": 1065,
+  "trial_primary_completion": 195,
   "eia_wpsr": 13,
-  "macro_release": 12,
+  "macro_release": 13,
   "fomc": 2,
   "fda_adcomm": 2
  },
  "historical_responses": {
   "earnings": {
-   "events": 196535,
-   "pooled_abs_reaction_median": 0.025385983434892557,
-   "pooled_abs_reaction_p90": 0.10941266228740326,
-   "drift_2_20_after_positive_reaction": 0.0038780794686305887,
-   "drift_2_20_after_negative_reaction": 0.0029169512009442583,
-   "drift_t_positive": 6.958388093902686,
-   "drift_t_negative": 2.1704471804478573,
+   "events": 196560,
+   "pooled_abs_reaction_median": 0.027394076395387552,
+   "pooled_abs_reaction_p90": 0.11429510101597941,
+   "drift_2_20_after_positive_reaction": 0.003966418886566721,
+   "drift_2_20_after_negative_reaction": 0.0026237090734038617,
+   "drift_t_positive": 7.168933389184151,
+   "drift_t_negative": 1.9548962160383572,
    "note": "drift t-stats ignore cross-event correlation (overstated); decay = drift relative to the reaction"
   },
   "fomc": {
    "events": 45,
-   "spy_abs_return_fomc_days": 0.00984724797308445,
-   "spy_abs_return_other_days": 0.0076130833476781845,
-   "ratio": 1.2934638261795044
+   "spy_abs_return_fomc_days": 0.009847249835729599,
+   "spy_abs_return_other_days": 0.0076121981255710125,
+   "ratio": 1.2936145067214966
   },
   "eia_wednesday": {
    "energy_names": 180,
-   "abs_abnormal_wed": 0.02248490028299731,
-   "abs_abnormal_other": 0.02240962278059622
+   "abs_abnormal_wed": 0.022473097772046684,
+   "abs_abnormal_other": 0.0224087249201787
   },
   "fda_approval": {
-   "events": 574,
-   "mean_abnormal_2d": 0.002530124775111663,
+   "events": 575,
+   "mean_abnormal_2d": 0.002560885119332473,
    "median": 0.0,
-   "p10": -0.03683031458774016,
-   "p90": 0.03981130323349833,
+   "p10": -0.036791637871763684,
+   "p90": 0.03979866986108866,
    "downside_scenario": "NOT_COMPUTED: complete-response letters / rejections not in openFDA history"
   }
  }

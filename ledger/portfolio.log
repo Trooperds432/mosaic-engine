@@ -1,9 +1,14 @@
 {
  "source": "/opt/t212-bot/bot.py",
- "imported_at_utc": "2026-10-20T20:09:02+00:00",
+ "imported_at_utc": "2026-10-24T01:07:54+00:00",
  "position_pct": 0.09,
  "stop_loss": 0.08,
  "check_minutes": 15,
+ "sector_cap": null,
+ "turnover_cap": null,
+ "risk_aversion": null,
+ "max_beta": null,
+ "max_adv_participation": null,
  "base_url": "https://demo.trading212.com/api/v0",
  "long_only": true,
  "leverage": false,
@@ -11,18 +16,18 @@
  "free_cash_only": true,
  "account_currency": "GBP",
  "account_total": 4981.16,
- "account_total_usd": 6664.79208,
- "order_size_usd": 599.8312872,
+ "account_total_usd": 6662.3015,
+ "order_size_usd": 599.607135,
  "max_names_at_full_size": 11
 }
 {
- "generated_at_utc": "2026-10-20T20:09:03+00:00",
+ "generated_at_utc": "2026-10-24T01:07:55+00:00",
  "profile": "broad",
  "limits_used": {
   "position_pct": 0.09,
   "stop_loss": 0.08,
-  "account_total_usd": 6664.79208,
-  "order_size_usd": 599.8312872,
+  "account_total_usd": 6662.3015,
+  "order_size_usd": 599.607135,
   "long_only": true,
   "leverage": false
  },
@@ -31,121 +36,120 @@
  "tail_dependence": {
   "basket": "reference basket: top 20 of tonight's forecasts (not holdings)",
   "symbols": [
-   "DAR",
-   "WKC",
    "IBKR",
-   "AMD",
-   "ADAM",
-   "LBRT",
-   "ILPT",
-   "MO",
+   "DAR",
    "CHCT",
-   "OC",
-   "MU",
-   "MATV",
+   "ADAM",
+   "GTX",
+   "TPC",
+   "MO",
+   "LBRT",
+   "EME",
+   "BOW",
    "BRSP",
-   "IRWD",
-   "LXFR",
-   "CRUS",
+   "ILPT",
+   "GDOT",
+   "JBL",
+   "EQH",
+   "BFH",
    "CSTM",
-   "HUN",
    "TTI",
-   "BFH"
+   "WKC",
+   "CW"
   ],
   "window_years": 3,
   "vs_spy": {
-   "DAR": {
-    "rho": 0.19976504147052765,
-    "nu": 8.0,
-    "tail_dependence": 0.03675133425446407,
-    "aic_t": -45.35835236560406,
-    "aic_gaussian": -39.61328893628405,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "WKC": {
-    "rho": 0.3080991208553314,
-    "nu": 8.0,
-    "tail_dependence": 0.057003336983691866,
-    "aic_t": -86.60720116626753,
-    "aic_gaussian": -77.76873580555288,
-    "t_preferred": true,
-    "obs": 756
-   },
    "IBKR": {
-    "rho": 0.541289746761322,
+    "rho": 0.5422280430793762,
     "nu": 6.0,
-    "tail_dependence": 0.19213521653201898,
-    "aic_t": -287.1677886091833,
-    "aic_gaussian": -268.76069449199997,
+    "tail_dependence": 0.19265610459395627,
+    "aic_t": -287.60503628094955,
+    "aic_gaussian": -269.4636976950577,
     "t_preferred": true,
     "obs": 756
    },
-   "AMD": {
-    "rho": 0.6064301133155823,
-    "nu": 20.0,
-    "tail_dependence": 0.033983117195953545,
-    "aic_t": -346.86722065122785,
-    "aic_gaussian": -346.38615569053616,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "ADAM": {
-    "rho": 0.43281033635139465,
-    "nu": 6.0,
-    "tail_dependence": 0.1399312362121679,
-    "aic_t": -165.21589064440144,
-    "aic_gaussian": -149.78627429003205,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "LBRT": {
-    "rho": 0.298843652009964,
-    "nu": 12.0,
-    "tail_dependence": 0.02004550473521337,
-    "aic_t": -78.5158609027418,
-    "aic_gaussian": -75.67836785714015,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "ILPT": {
-    "rho": 0.312336266040802,
+   "DAR": {
+    "rho": 0.19586391746997833,
     "nu": 8.0,
-    "tail_dependence": 0.057958978318292845,
-    "aic_t": -88.01853185683078,
-    "aic_gaussian": -81.95158644910164,
-    "t_preferred": true,
-    "obs": 756
-   },
-   "MO": {
-    "rho": -0.08873709291219711,
-    "nu": 6.0,
-    "tail_dependence": 0.023251910942908093,
-    "aic_t": -24.26392680037388,
-    "aic_gaussian": -3.995463821151864,
+    "tail_dependence": 0.036155273024831354,
+    "aic_t": -44.49707116904361,
+    "aic_gaussian": -38.690101418838935,
     "t_preferred": true,
     "obs": 756
    },
    "CHCT": {
-    "rho": 0.22441332042217255,
+    "rho": 0.21642926335334778,
     "nu": 12.0,
-    "tail_dependence": 0.013152963938803986,
-    "aic_t": -39.116876898111954,
-    "aic_gaussian": -37.20275091652756,
+    "tail_dependence": 0.012556639230062894,
+    "aic_t": -36.05176908787378,
+    "aic_gaussian": -34.324123875724766,
     "t_preferred": true,
     "obs": 756
    },
-   "OC": {
-    "rho": 0.5742245316505432,
-    "nu": 8.0,
-    "tail_dependence": 0.15314622229492716,
-    "aic_t": -293.6810806275038,
-    "aic_gaussian": -278.1097636786549,
+   "ADAM": {
+    "rho": 0.42070430517196655,
+    "nu": 6.0,
+    "tail_dependence": 0.13498087410952783,
+    "aic_t": -157.55208745275507,
+    "aic_gaussian": -141.4568090497744,
     "t_preferred": true,
     "obs": 756
    },
-   "MU": {
-    "rho": 0.550020158290863,
+   "GTX": {
+    "rho": 0.43675675988197327,
+    "nu": 20.0,
+    "tail_dependence": 0.009181812581976376,
+    "aic_t": -152.06603489810067,
+    "aic_gaussian": -152.22879723922722,
+    "t_preferred": false,
+    "obs": 756
+   },
+   "TPC": {
+    "rho": 0.5341363549232483,
+    "nu": 6.0,
+    "tail_dependence": 0.18820729735885217,
+    "aic_t": -261.00611060107843,
+    "aic_gaussian": -247.59380351388467,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "MO": {
+    "rho": -0.09052924066781998,
+    "nu": 6.0,
+    "tail_dependence": 0.02307905461295517,
+    "aic_t": -25.101328907487165,
+    "aic_gaussian": -4.255039269043955,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "LBRT": {
+    "rho": 0.30259084701538086,
+    "nu": 12.0,
+    "tail_dependence": 0.020465021777718032,
+    "aic_t": -80.8284948365076,
+    "aic_gaussian": -77.78925910306178,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "EME": {
+    "rho": 0.5703031420707703,
+    "nu": 12.0,
+    "tail_dependence": 0.08182277221057625,
+    "aic_t": -305.01987456553087,
+    "aic_gaussian": -298.72062226336703,
+    "t_preferred": true,
+    "obs": 756
+   },
+   "BOW": {
+    "rho": 0.1471177190542221,
     "nu": 30.0,
-    "tail_dependence": 0.005289909052847281,
-    "
+    "tail_dependence": 3.7977368120742635e-05,
+    "aic_t": -10.550017224161294,
+    "aic_gaussian": -11.973520880635572,
+    "t_preferred": false,
+    "obs": 606
+   },
+   "BRSP": {
+    "rho": 0.46018141508102417,
+    "nu": 4.0,
+    "tail_dependence": 0.2320614

@@ -1,0 +1,4 @@
+truncation True 0.0
+labels {'passed': True, 'checked': 3966, 'max_abs_error': 1.5690712418248154e-06}
+dups/timestamps {'duplicate_insider_rows': 0, 'price_files_checked': 316, 'weekend_price_rows': 0, 'duplicate_price_dates': 0, '8k_acceptance_inconsistent': 88, '8k_checked': 773659, 'passed': True}
+blocking: {'historical_universe': False, 'truncation_invariance': True, 'label_alignment': True, 'duplicates_timestamps': True}

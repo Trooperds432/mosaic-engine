@@ -1,4 +1,4 @@
 truncation True 0.0
-labels {'passed': True, 'checked': 3968, 'max_abs_error': 1.7285346984863281e-06}
-dups/timestamps {'duplicate_insider_rows': 0, 'price_files_checked': 316, 'weekend_price_rows': 0, 'duplicate_price_dates': 0, '8k_acceptance_inconsistent': 82, '8k_checked': 721461, 'passed': True}
-blocking: {'truncation_invariance': True, 'label_alignment': True, 'duplicates_timestamps': True}
+labels {'passed': True, 'checked': 3967, 'max_abs_error': 1.7881393432617188e-06}
+dups/timestamps {'duplicate_insider_rows': 0, 'price_files_checked': 316, 'weekend_price_rows': 0, 'duplicate_price_dates': 0, '8k_acceptance_inconsistent': 76, '8k_checked': 693943, 'passed': True}
+blocking: {'historical_universe': False, 'truncation_invariance': True, 'label_alignment': True, 'duplicates_timestamps': True}
