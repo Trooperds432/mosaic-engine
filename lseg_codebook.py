@@ -47,6 +47,46 @@ def default_requests():
     return jobs
 
 
+def _batches(items, size):
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def full_requests(universe, start="2012-01-01", end=None, snapshot_batch=200, history_batch=10, membership_from=2009):
+    """Universe-wide capture for building a point-in-time archive (run on a schedule; each run is one snapshot).
+
+    universe: list of RICs, or the dict from lseg_universe.json. Batches keep each request bounded; a batch LSEG rejects
+    is recorded as UNAVAILABLE and can be re-run with a smaller size. Datasets:
+      identifiers / consensus_snapshot          current reference data and FY1 consensus (batches of snapshot_batch)
+      consensus_hist_NNN                        monthly FY1 EPS/revenue consensus history with its calculation date
+      index_SPX/NDX_J/L                         dated joiners / leavers since membership_from
+      members_SPX/NDX_YYYYQq                    quarter-end constituent lists (historical membership snapshots)
+    """
+    rics = universe["rics"] if isinstance(universe, dict) else list(universe)
+    end = end or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    jobs = []
+    for i, part in enumerate(_batches(rics, snapshot_batch)):
+        jobs.append((f"identifiers_{i:03d}", "data", part, ["TR.TickerSymbol", "TR.ISIN", "TR.OrganizationID", "TR.CommonName"], {}))
+        jobs.append((f"consensus_snapshot_{i:03d}", "data", part,
+                     ["TR.EPSMean", "TR.EPSMean.periodenddate", "TR.EPSHigh", "TR.EPSLow", "TR.EPSStdDev", "TR.EPSNumOfEst",
+                      "TR.RevenueMean", "TR.RevenueNumOfEst"], {"Period": "FY1"}))
+    for i, part in enumerate(_batches(rics, history_batch)):
+        jobs.append((f"consensus_hist_{i:03d}", "data", part,
+                     ["TR.EPSMean.calcdate", "TR.EPSMean", "TR.EPSMean.periodenddate", "TR.EPSStdDev", "TR.EPSNumOfEst", "TR.RevenueMean"],
+                     {"SDate": start, "EDate": end, "Frq": "M", "Period": "FY1"}))
+    for index in [".SPX", ".NDX"]:
+        for direction in ["J", "L"]:
+            jobs.append((f"index_{index[1:]}_{direction}", "data", index,
+                         ["TR.IndexJLConstituentChangeDate", "TR.IndexJLConstituentRIC", "TR.IndexJLConstituentName"],
+                         {"SDate": f"{membership_from}-01-01", "EDate": end, "IC": direction}))
+        for year in range(membership_from, int(end[:4]) + 1):
+            for q, md in enumerate(["03-31", "06-30", "09-30", "12-31"], 1):
+                day = f"{year}-{md}"
+                if day <= end:
+                    jobs.append((f"members_{index[1:]}_{year}Q{q}", "data", index,
+                                 ["TR.IndexConstituentRIC", "TR.IndexConstituentName"], {"SDate": day}))
+    return jobs
+
+
 def export(destination=None, requests=None):
     import lseg.data as ld
     ld.open_session()  # CodeBook supplies the session; never paste an API key here.
@@ -54,7 +94,8 @@ def export(destination=None, requests=None):
     root = Path(destination or ("mosaic_lseg_" + started.strftime("%Y%m%dT%H%M%SZ")))
     root.mkdir(exist_ok=False)
     manifest = {"schema_version": VERSION, "provider": "LSEG CodeBook", "generated_at_utc": started.isoformat(),
-                "universe_scope": "six-equity entitlement sample; index changes and selected futures contracts",
+                "universe_scope": ("six-equity entitlement sample; index changes and selected futures contracts" if requests is None
+                                   else f"explicit request list: {len(requests)} requests"),
                 "historical_pit_certified": False, "datasets": []}
     for name, method, universe, fields, parameters in (requests if requests is not None else default_requests()):
         record = {"name": name, "method": method, "universe": universe, "requested_fields": fields,

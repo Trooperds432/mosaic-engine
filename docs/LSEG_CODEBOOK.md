@@ -31,6 +31,23 @@ processed Parquet files. Reimporting an identical archive is idempotent.
 failures and field-level non-null counts. Every previous bundle stays archived.
 The dependency registry fingerprints both the archives and transformed data.
 
+## Full-universe capture (repeat on a schedule)
+
+Upload `lseg_codebook.py` and `lseg_universe.json` (2,352 RICs built from the broad profile) to the CodeBook file
+browser, then run one cell:
+
+```python
+import json
+from lseg_codebook import export, full_requests
+export(requests=full_requests(json.load(open("lseg_universe.json"))))
+```
+
+About 406 bounded requests: identifiers and FY1 consensus snapshots (batches of 200), monthly FY1 EPS/revenue
+consensus history since 2012 with each value's calculation date (batches of 10), S&P 500 / Nasdaq-100 joiners and
+leavers since 2009, and quarter-end constituent lists since 2009. A batch LSEG rejects is recorded as UNAVAILABLE;
+re-run it with a smaller `history_batch`. Download the ZIP and import it with `lseg_data.py` as above. Each capture is
+an observed snapshot; repeated weekly captures build a genuinely point-in-time estimate archive.
+
 ## Research use and availability
 
 ```python
