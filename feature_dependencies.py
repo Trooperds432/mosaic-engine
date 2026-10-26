@@ -28,6 +28,8 @@ DEPENDENCIES = {
                     'sources': ['data_text.py']},
     'attention': {'proc': ['wiki_views.parquet', 'wiki_map.parquet'], 'raw': ['wiki/*.parquet'],
                   'sources': ['data_wiki.py']},
+    'licensed_research': {'proc': ['lseg/*.parquet'], 'raw': ['lseg/*.zip'],
+                         'sources': ['lseg_codebook.py', 'lseg_data.py']},
     'feature_transform': {'sources': ['features.py', 'config.py', 'provenance.py', 'feature_dependencies.py']},
 }
 

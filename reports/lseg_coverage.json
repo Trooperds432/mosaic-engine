@@ -1,0 +1,797 @@
+{
+  "bundle_sha256": "8819d953eb147f529c336ec140062618d743ba8970670c3b8044832ba8177118",
+  "historical_pit_certified": false,
+  "scope": "six-equity entitlement sample; index changes and selected futures contracts",
+  "observations": 4408,
+  "datasets": [
+    {
+      "name": "identifiers",
+      "method": "data",
+      "universe": [
+        "AAPL.O",
+        "MSFT.O",
+        "NVDA.O",
+        "JPM.N",
+        "XOM.N",
+        "PFE.N"
+      ],
+      "requested_fields": [
+        "TR.TickerSymbol",
+        "TR.ISIN",
+        "TR.OrganizationID",
+        "TR.CommonName"
+      ],
+      "parameters": {},
+      "historical_pit_certified": false,
+      "source_id": "LSEG/identifiers",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:22.183914+00:00",
+      "available_at_utc": "2026-10-26T11:41:22.183914+00:00",
+      "rows": 6,
+      "columns": [
+        "Instrument",
+        "Ticker Symbol",
+        "ISIN",
+        "Organization PermID",
+        "Company Common Name"
+      ],
+      "non_null": {
+        "Ticker Symbol": 6,
+        "ISIN": 6,
+        "Organization PermID": 6,
+        "Company Common Name": 6
+      },
+      "status": "OBSERVED",
+      "file": "identifiers.csv",
+      "sha256": "a44823f471d5d48f36f6628f23336590a0edb3a709fe6ef76bf6a27d08584212"
+    },
+    {
+      "name": "consensus_snapshot",
+      "method": "data",
+      "universe": [
+        "AAPL.O",
+        "MSFT.O",
+        "NVDA.O",
+        "JPM.N",
+        "XOM.N",
+        "PFE.N"
+      ],
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSMean.periodenddate",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.EPSStdDev",
+        "TR.EPSNumOfEst",
+        "TR.RevenueMean",
+        "TR.CapexMean"
+      ],
+      "parameters": {
+        "Period": "FY1"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_snapshot",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:22.849616+00:00",
+      "available_at_utc": "2026-10-26T11:41:22.849616+00:00",
+      "rows": 6,
+      "columns": [
+        "Instrument",
+        "Earnings Per Share - Mean",
+        "Period End Date",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Earnings Per Share - Standard Deviation",
+        "EPS Number of Estimates",
+        "Revenue - Mean",
+        "Capital Expenditures - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 6,
+        "Period End Date": 6,
+        "Earnings Per Share - High": 6,
+        "Earnings Per Share - Low": 6,
+        "Earnings Per Share - Standard Deviation": 6,
+        "EPS Number of Estimates": 6,
+        "Revenue - Mean": 6,
+        "Capital Expenditures - Mean": 5
+      },
+      "status": "OBSERVED",
+      "file": "consensus_snapshot.csv",
+      "sha256": "d9a0caf2dd307c237fd73623d11bb8d69e70d0d726ebb70fee9a4360f2073a3d"
+    },
+    {
+      "name": "company_guidance",
+      "method": "data",
+      "universe": [
+        "NVDA.O",
+        "MSFT.O",
+        "PFE.N"
+      ],
+      "requested_fields": [
+        "TR.GuidanceDate",
+        "TR.GuidanceMeasure",
+        "TR.GuidancePeriodYear",
+        "TR.GuidanceText",
+        "TR.GuidanceDocType"
+      ],
+      "parameters": {
+        "Period": "FY1"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/company_guidance",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:24.182670+00:00",
+      "available_at_utc": "2026-10-26T11:41:24.182670+00:00",
+      "rows": 36,
+      "columns": [
+        "Instrument",
+        "Activation Date",
+        "Guidance Measure",
+        "Period Year",
+        "Guidance Text",
+        "The Doc Type"
+      ],
+      "non_null": {
+        "Activation Date": 36,
+        "Guidance Measure": 36,
+        "Period Year": 36,
+        "Guidance Text": 36,
+        "The Doc Type": 36
+      },
+      "status": "OBSERVED",
+      "file": "company_guidance.csv",
+      "sha256": "b90d9e2d09b80fb71a377589b90dc9335ba2147c5d605322e5b60a884eea8f03"
+    },
+    {
+      "name": "banking_snapshot",
+      "method": "data",
+      "universe": [
+        "JPM.N",
+        "BAC.N",
+        "C.N"
+      ],
+      "requested_fields": [
+        "TR.F.DeposCustTotASR",
+        "TR.F.DeposCustTotASR.date"
+      ],
+      "parameters": {},
+      "historical_pit_certified": false,
+      "source_id": "LSEG/banking_snapshot",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:25.172831+00:00",
+      "available_at_utc": "2026-10-26T11:41:25.172831+00:00",
+      "rows": 3,
+      "columns": [
+        "Instrument",
+        "Deposits - Customers - Total (ASR)",
+        "Date"
+      ],
+      "non_null": {
+        "Deposits - Customers - Total (ASR)": 3,
+        "Date": 0
+      },
+      "status": "OBSERVED",
+      "file": "banking_snapshot.csv",
+      "sha256": "e92acbcd913e02053f146096f0efe036737fa4dc91d3d6db69a5fc0c0083c854"
+    },
+    {
+      "name": "dividends",
+      "method": "data",
+      "universe": [
+        "AAPL.O",
+        "MSFT.O",
+        "NVDA.O",
+        "JPM.N",
+        "XOM.N",
+        "PFE.N"
+      ],
+      "requested_fields": [
+        "TR.DivAnnouncementDate",
+        "TR.DivExDate",
+        "TR.DivPayDate",
+        "TR.DivUnadjustedGross",
+        "TR.DivCurr",
+        "TR.DivType"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "DateType": "ED"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/dividends",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:26.355966+00:00",
+      "available_at_utc": "2026-10-26T11:41:26.355966+00:00",
+      "rows": 163,
+      "columns": [
+        "Instrument",
+        "Dividend Announcement Date",
+        "Dividend Ex Date",
+        "Dividend Pay Date",
+        "Gross Dividend Amount",
+        "Dividend Currency",
+        "Dividend Type"
+      ],
+      "non_null": {
+        "Dividend Announcement Date": 163,
+        "Dividend Ex Date": 163,
+        "Dividend Pay Date": 163,
+        "Gross Dividend Amount": 163,
+        "Dividend Currency": 163,
+        "Dividend Type": 163
+      },
+      "status": "OBSERVED",
+      "file": "dividends.csv",
+      "sha256": "d71adaf5523ff75b8c370cde72d1cdaeae9817db52cc9052334c64d4fbd21010"
+    },
+    {
+      "name": "consensus_history_AAPL_O",
+      "method": "history",
+      "universe": "AAPL.O",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_AAPL_O",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:28.590182+00:00",
+      "available_at_utc": "2026-10-26T11:41:28.590182+00:00",
+      "rows": 93,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 81,
+        "Earnings Per Share - High": 81,
+        "Earnings Per Share - Low": 81,
+        "Revenue - Mean": 81
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_AAPL_O.csv",
+      "sha256": "bfb9d11f113bb373c04a476f1441b98873bca2c5b5ca7e518fa60027835e2785"
+    },
+    {
+      "name": "consensus_history_MSFT_O",
+      "method": "history",
+      "universe": "MSFT.O",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_MSFT_O",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:31.052966+00:00",
+      "available_at_utc": "2026-10-26T11:41:31.052966+00:00",
+      "rows": 97,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 79,
+        "Earnings Per Share - High": 79,
+        "Earnings Per Share - Low": 79,
+        "Revenue - Mean": 80
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_MSFT_O.csv",
+      "sha256": "cd0a5abbe7fca74ed2523a13753e6fdea045d7918bd4e8c22e612489c889c58b"
+    },
+    {
+      "name": "consensus_history_NVDA_O",
+      "method": "history",
+      "universe": "NVDA.O",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_NVDA_O",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:33.789285+00:00",
+      "available_at_utc": "2026-10-26T11:41:33.789285+00:00",
+      "rows": 103,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 81,
+        "Earnings Per Share - High": 81,
+        "Earnings Per Share - Low": 81,
+        "Revenue - Mean": 81
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_NVDA_O.csv",
+      "sha256": "be1d91332502b06513638cd82fa17037719942ceb3d57dd00da0a84f3899da20"
+    },
+    {
+      "name": "consensus_history_JPM_N",
+      "method": "history",
+      "universe": "JPM.N",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_JPM_N",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:35.675780+00:00",
+      "available_at_utc": "2026-10-26T11:41:35.675780+00:00",
+      "rows": 105,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 81,
+        "Earnings Per Share - High": 81,
+        "Earnings Per Share - Low": 81,
+        "Revenue - Mean": 80
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_JPM_N.csv",
+      "sha256": "cae3771a825a9513740937d95e97c8af02a649cad20258f86c03eb59c8549fb4"
+    },
+    {
+      "name": "consensus_history_XOM_N",
+      "method": "history",
+      "universe": "XOM.N",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_XOM_N",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:38.283018+00:00",
+      "available_at_utc": "2026-10-26T11:41:38.283018+00:00",
+      "rows": 103,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 81,
+        "Earnings Per Share - High": 81,
+        "Earnings Per Share - Low": 81,
+        "Revenue - Mean": 81
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_XOM_N.csv",
+      "sha256": "63e8176958c22737f512d9b4ce29541c92f02024491be0e3c0cec89cc38df422"
+    },
+    {
+      "name": "consensus_history_PFE_N",
+      "method": "history",
+      "universe": "PFE.N",
+      "requested_fields": [
+        "TR.EPSMean",
+        "TR.EPSHigh",
+        "TR.EPSLow",
+        "TR.RevenueMean"
+      ],
+      "parameters": {
+        "start": "2020-01-01",
+        "end": "2026-10-23",
+        "interval": "1M",
+        "parameters": {
+          "Period": "FY1"
+        }
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/consensus_history_PFE_N",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:40.251799+00:00",
+      "available_at_utc": "2026-10-26T11:41:40.251799+00:00",
+      "rows": 94,
+      "columns": [
+        "Instrument",
+        "observation_date",
+        "Earnings Per Share - Mean",
+        "Earnings Per Share - High",
+        "Earnings Per Share - Low",
+        "Revenue - Mean"
+      ],
+      "non_null": {
+        "Earnings Per Share - Mean": 81,
+        "Earnings Per Share - High": 81,
+        "Earnings Per Share - Low": 81,
+        "Revenue - Mean": 79
+      },
+      "status": "OBSERVED",
+      "file": "consensus_history_PFE_N.csv",
+      "sha256": "c5f9418024da4c13b3893955c14c7f5aef4fbda3ab97d5960cb80901a61019f0"
+    },
+    {
+      "name": "index_SPX_J",
+      "method": "data",
+      "universe": ".SPX",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "J"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_SPX_J",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:42.416885+00:00",
+      "available_at_utc": "2026-10-26T11:41:42.416885+00:00",
+      "rows": 137,
+      "columns": [
+        "Instrument",
+        "Date",
+        "Constituent RIC",
+        "Constituent Name"
+      ],
+      "non_null": {
+        "Date": 137,
+        "Constituent RIC": 137,
+        "Constituent Name": 137
+      },
+      "status": "OBSERVED",
+      "file": "index_SPX_J.csv",
+      "sha256": "4b2c19d832b7446a0cb8f9c4be66e59c3968a7d07c765b0df4a87fbb1d6f064b"
+    },
+    {
+      "name": "index_SPX_L",
+      "method": "data",
+      "universe": ".SPX",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "L"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_SPX_L",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:44.222490+00:00",
+      "available_at_utc": "2026-10-26T11:41:44.222490+00:00",
+      "rows": 139,
+      "columns": [
+        "Instrument",
+        "Date",
+        "Constituent RIC",
+        "Constituent Name"
+      ],
+      "non_null": {
+        "Date": 139,
+        "Constituent RIC": 139,
+        "Constituent Name": 139
+      },
+      "status": "OBSERVED",
+      "file": "index_SPX_L.csv",
+      "sha256": "8f16d0eabfac7e59162a36b44ea8620ef0702a03ea5885146ac44f3accbf4a12"
+    },
+    {
+      "name": "index_NDX_J",
+      "method": "data",
+      "universe": ".NDX",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "J"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_NDX_J",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:45.944497+00:00",
+      "available_at_utc": "2026-10-26T11:41:45.944497+00:00",
+      "rows": 68,
+      "columns": [
+        "Instrument",
+        "Date",
+        "Constituent RIC",
+        "Constituent Name"
+      ],
+      "non_null": {
+        "Date": 68,
+        "Constituent RIC": 68,
+        "Constituent Name": 68
+      },
+      "status": "OBSERVED",
+      "file": "index_NDX_J.csv",
+      "sha256": "77b1b6dabeb57c1db87e503a8ee6ffc62999ce789323836d525a10dc11f6ee3a"
+    },
+    {
+      "name": "index_NDX_L",
+      "method": "data",
+      "universe": ".NDX",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "L"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_NDX_L",
+      "availability_basis": "observed_snapshot",
+      "observed_at_utc": "2026-10-26T11:41:47.340586+00:00",
+      "available_at_utc": "2026-10-26T11:41:47.340586+00:00",
+      "rows": 71,
+      "columns": [
+        "Instrument",
+        "Date",
+        "Constituent RIC",
+        "Constituent Name"
+      ],
+      "non_null": {
+        "Date": 71,
+        "Constituent RIC": 71,
+        "Constituent Name": 71
+      },
+      "status": "OBSERVED",
+      "file": "index_NDX_L.csv",
+      "sha256": "4cb7885a8b8a62af35bdf7699a5c4e5f014640bdc9f5c075db9f92af57f0ee5c"
+    },
+    {
+      "name": "index_RUT_J",
+      "method": "data",
+      "universe": ".RUT",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "J"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_RUT_J",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "ValueError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "index_RUT_L",
+      "method": "data",
+      "universe": ".RUT",
+      "requested_fields": [
+        "TR.IndexJLConstituentChangeDate",
+        "TR.IndexJLConstituentRIC",
+        "TR.IndexJLConstituentName"
+      ],
+      "parameters": {
+        "SDate": "2020-01-01",
+        "EDate": "2026-10-23",
+        "IC": "L"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/index_RUT_L",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "ValueError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_CLZ6",
+      "method": "history",
+      "universe": "CLZ6",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_CLZ6",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_CLF7",
+      "method": "history",
+      "universe": "CLF7",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_CLF7",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_NGZ6",
+      "method": "history",
+      "universe": "NGZ6",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_NGZ6",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_NGF7",
+      "method": "history",
+      "universe": "NGF7",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_NGF7",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_GCZ6",
+      "method": "history",
+      "universe": "GCZ6",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_GCZ6",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    },
+    {
+      "name": "contract_GCG7",
+      "method": "history",
+      "universe": "GCG7",
+      "requested_fields": [
+        "SETTLE",
+        "TRDPRC_1",
+        "ACVOL_UNS",
+        "OPINT_1"
+      ],
+      "parameters": {
+        "start": "2026-04-01",
+        "end": "2026-10-23",
+        "interval": "1D"
+      },
+      "historical_pit_certified": false,
+      "source_id": "LSEG/contract_GCG7",
+      "availability_basis": "observed_snapshot",
+      "status": "UNAVAILABLE",
+      "error_type": "LDError",
+      "error_category": "REQUEST_OR_CONTENT_UNAVAILABLE"
+    }
+  ],
+  "limitation": "Historical values are vendor retrievals; first-release timestamps and identity mappings remain unverified."
+}

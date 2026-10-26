@@ -1,5 +1,10 @@
 # Specification implementation — integrity and validation tranche
 
+The [26 October LSEG CodeBook integration](docs/LSEG_CODEBOOK.md) adds an acquired,
+timestamped research store for accessible estimates, guidance, dividends, bank
+deposits, identifiers and dated index changes. It does not certify historical
+availability or automatically promote those data into trained features.
+
 For the subsequent provenance, profile-audit, risk-freshness and holdings-ledger
 changes, see [the 23 October engineering fixes](docs/REVIEW_FIXES_2026-10-23.md).
 
