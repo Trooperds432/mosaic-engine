@@ -48,6 +48,7 @@ ROUND_TRIP_COST = 2 * (FX_FEE + HALF_SPREAD + SLIPPAGE)
 GATE_MIN_HOLDOUT_IC_T = 2.0
 GATE_MIN_WF_POSITIVE_YEAR_FRAC = 0.6
 GATE_MIN_DSR = 0.90
+GATE_MAX_PBO = 0.50          # CSCV probability of backtest overfitting (Bailey et al. 2014); fails closed if not computed
 FDR_Q = 0.10
 
 # Signal level
@@ -58,18 +59,25 @@ INSIDER_MAX_COVERAGE_GAP_DAYS = 7
 
 MODEL_ID = "mosaic-xs-ridge"
 MODEL_VERSION = "2.0.0"
-FEATURE_SET_VERSION = "fs-2.1"
+FEATURE_SET_VERSION = "fs-2.7"
 
 
 def hold_lock():
-    """Block until the engine's shared lock (/opt/mosaic-engine/.lock, also taken by run_daily/run_research/run_refit)
-    is free, then hold it for the life of the process. Heavy scripts call this when run directly so a manual run can
-    never overlap the nightly job and exhaust memory. Skipped when a wrapper script already holds the lock."""
-    import fcntl
-    import os
+    """Hold the shared research lock until the calling process exits."""
     if os.environ.get("MOSAIC_LOCK_HELD"):
         return None
-    f = open(ROOT / ".lock", "a")
-    fcntl.flock(f, fcntl.LOCK_EX)
+    stream = (ROOT / ".lock").open("a+b")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            stream.seek(0)
+            # Windows can lock a byte beyond the end of an empty lock file.
+            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(stream, fcntl.LOCK_EX)
+    except BaseException:
+        stream.close()
+        raise
     os.environ["MOSAIC_LOCK_HELD"] = "1"
-    return f
+    return stream

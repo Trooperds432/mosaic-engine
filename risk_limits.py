@@ -70,9 +70,11 @@ def run():
     return lim
 
 
-def load():
+def load(*, refresh_if_missing=True):
     f = C.PROC / "bot_risk_limits.json"
-    return json.loads(f.read_text()) if f.exists() else run()
+    if f.exists():
+        return json.loads(f.read_text())
+    return run() if refresh_if_missing else {}
 
 
 if __name__ == "__main__":

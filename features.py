@@ -65,6 +65,7 @@ FEATURES = {
     "share_issuance": ("investment", -1, "year-on-year change in shares outstanding (dilution)"),
     "sue": ("earnings", +1, "standardised unexpected EPS: seasonal change / std of last 8 seasonal changes (filed 10-Q/10-K)"),
     "eps_growth": ("earnings", +1, "year-on-year change in quarterly diluted EPS / |prior EPS|"),
+    "eps_revision_pit_31d": ("earnings", +1, "31-day same-period EPS consensus revision from timestamped vintages"),
     "gm_change": ("earnings", +1, "annual gross-margin change"),
     "op_margin_change": ("earnings", +1, "annual operating-margin change"),
     "inv_to_sales_chg": ("earnings", -1, "change in inventory / revenue (inventory build-up)"),
@@ -136,6 +137,9 @@ FEATURES = {
     "inflation_surprise_tilt": ("macro", 0, "beta to 10y yield changes x CPI surprise z, last 31 days"),
     # earnings surprise vs consensus at report time (Alpha Vantage, backfilled 24 companies/day)
     "sue_consensus": ("earnings", +1, "latest quarterly EPS surprise vs consensus (%), clipped +-100, NaN if > 200 days old"),
+    # earnings surprise net of price momentum (per-date rank residual; built after chunk concatenation)
+    "sue_xmom": ("earnings", +1, "per-date OLS residual of rank(sue) on rank(mom_12_1): post-earnings drift not explained by momentum"),
+    "sue_consensus_xmom": ("earnings", +1, "per-date OLS residual of rank(sue_consensus) on rank(mom_12_1)"),
     # per-stock snapshots collected nightly from 2026-10-20 (excluded from models until >= 3 years of history)
     "opt_iv_rv": ("options", -1, "30d ATM implied vol / 60-session realised vol - 1 (Bali-Hovakimyan)"),
     "opt_term_slope": ("options", +1, "90d / 30d ATM implied vol - 1 (inverted term structure = stress)"),
@@ -206,6 +210,8 @@ def load_prices(min_dollar_adv=None, symbols=None):
     uni = pd.read_parquet(PROC / "universe.parquet")
     spy = pd.read_parquet(RAW / "prices" / f"{BENCHMARK}.parquet").set_index("date")
     spy = spy[~spy.index.duplicated()]
+    if not np.isfinite(spy[["open", "close", "adjclose"]]).all().all() or (spy[["open", "close", "adjclose"]] <= 0).any().any():
+        raise ValueError("benchmark contains invalid opening or closing prices")
     cal = spy.index
     keys = ["adjclose", "adj_open", "close", "volume", "high", "low"]
     arrs = {k: [] for k in keys}
@@ -217,6 +223,11 @@ def load_prices(min_dollar_adv=None, symbols=None):
         if not f.exists():
             continue
         d = pd.read_parquet(f, columns=["date"] + keys).drop_duplicates("date").set_index("date").reindex(cal)
+        # Preserve raw vendor files for audit. An invalid adjustment is an
+        # unknown feature input, not a genuine negative stock price.
+        for k in ("adjclose", "adj_open", "close", "high", "low"):
+            d[k] = d[k].where(np.isfinite(d[k]) & d[k].gt(0))
+        d["volume"] = d["volume"].where(np.isfinite(d["volume"]) & d["volume"].ge(0))
         dv = (d["close"] * d["volume"]).rolling(ADV_WINDOW, min_periods=40).mean()
         if not (dv.max() >= min_dollar_adv):
             continue
@@ -505,17 +516,34 @@ INS_COLS = ["issuercik", "accession_number", "filing_date", "trans_date", "trans
             "rptowner_relationship", "rptowner_title", "aff10b5one", "fn_10b5_1", "document_type"]
 
 
+def insider_availability(d, timestamps=None):
+    """Public date in New York, with date-only filings kept on their filing date."""
+    from insider_filings import accession_key, NY
+
+    raw = d["accepted_at_utc"].astype("string")
+    zoned = raw.str.contains(r"(?:Z|[+-][0-9]{2}:[0-9]{2})$", regex=True).fillna(False)
+    accepted = pd.to_datetime(raw.where(zoned), utc=True, errors="coerce", format="mixed")
+    if timestamps is not None and not timestamps.empty:
+        mapped = accession_key(d["accession_number"]).map(timestamps)
+        if (accepted.notna() & mapped.notna() & accepted.ne(mapped)).any():
+            raise ValueError("Form 4 acceptance sidecar conflicts with the collected timestamp")
+        accepted = accepted.fillna(mapped)
+    day = accepted.dt.tz_convert(NY).dt.tz_localize(None).dt.normalize()
+    return day.fillna(pd.to_datetime(d["filing_date"]).dt.normalize())
+
+
 def load_insider(ciks, codes=("P", "S")):
     files = sorted((RAW / "insider").glob("*.parquet"))
 
     want = set(int(c) for c in ciks)
+    columns = [*INS_COLS, "accepted_at_utc"]
 
     def rd(f):  # older files predate some columns: read what exists; filter rows at read time to save memory
         have = set(pq.read_schema(f).names)
-        t = pq.read_table(f, columns=[c for c in INS_COLS if c in have], filters=[("trans_code", "in", list(codes))])
+        t = pq.read_table(f, columns=[c for c in columns if c in have], filters=[("trans_code", "in", list(codes))])
         d = t.to_pandas(strings_to_categorical=True)
         d = d[d["issuercik"].isin(want)]
-        return d.reindex(columns=INS_COLS)
+        return d.reindex(columns=columns)
     parts = [rd(f) for f in files]
     recent = RAW / "insider_recent" / "form4_recent.parquet"
     if recent.exists():
@@ -524,14 +552,23 @@ def load_insider(ciks, codes=("P", "S")):
         for c in x.columns:
             if isinstance(x[c].dtype, pd.CategoricalDtype):
                 x[c] = x[c].astype(str).where(x[c].notna(), None)
+    if not parts:
+        return pd.DataFrame(columns=columns)
     d = pd.concat(parts, ignore_index=True)
     d = d[d["issuercik"].isin(ciks) & d["trans_code"].isin(codes)]
     for c in ["accession_number", "rptownercik", "rptownername", "rptowner_relationship", "rptowner_title", "document_type", "trans_code"]:
         d[c] = d[c].astype("category")
+    sidecar = PROC / "insider_acceptances.csv"
+    timestamps = None
+    if sidecar.is_file():
+        from insider_filings import acceptance_map
+        timestamps = acceptance_map(sidecar)
+    d["available_day"] = insider_availability(d, timestamps)
+    d = d.sort_values(["available_day", "filing_date"], kind="stable")
     # quarterly SEC files and the recent-filings parser can both carry the same filing
     d = d.drop_duplicates(["accession_number", "trans_date", "trans_code", "trans_shares", "trans_pricepershare"])
     # a 4/A restates transactions already reported on the original 4: keep the earliest report
-    d = d.sort_values("filing_date").drop_duplicates(
+    d = d.drop_duplicates(
         ["issuercik", "rptownercik", "trans_date", "trans_code", "trans_shares", "trans_pricepershare"], keep="first")
     d = d[(d["trans_shares"] > 0) & (d["trans_pricepershare"] > 0)]
     d["value"] = d["trans_shares"] * d["trans_pricepershare"]
@@ -544,7 +581,7 @@ def load_insider(ciks, codes=("P", "S")):
     d["is_director"] = rel.str.contains("Director") & ~d["is_officer"]
     d["is_10pct"] = rel.str.contains("TenPercentOwner") & ~d["is_officer"] & ~rel.str.contains("Director")
     d["filing_date"] = pd.to_datetime(d["filing_date"])
-    d["owner"] = d["rptownercik"].astype(str).where(d["rptownercik"].notna(), d["rptownername"].astype(str)).astype("category")
+    d["owner"] = d["rptownercik"].astype("string").fillna(d["rptownername"].astype("string")).astype("category")
     return classify_insiders(d)
 
 
@@ -553,33 +590,50 @@ def classify_insiders(d):
     calendar month in each of y-1, y-2, y-3; 'opportunistic' if they have trades in all three prior years
     but not this pattern; otherwise unclassified. Uses only the insider's earlier trades. Also the insider's
     prior median trade value (for conviction)."""
-    d = d.sort_values(["owner", "trans_date", "filing_date"]).copy()
+    from collections import deque
+
+    keys = ["issuercik", "owner"]
+    availability = "available_day" if "available_day" in d else "filing_date"
+    d = d.sort_values([*keys, availability, "trans_date"], kind="stable").reset_index(drop=True)
     td = pd.to_datetime(d["trans_date"]).fillna(d["filing_date"])
-    d["_y"], d["_m"] = td.dt.year.to_numpy(), td.dt.month.to_numpy()
     cls = np.full(len(d), "unclassified", dtype=object)
     prior_med = np.full(len(d), np.nan)
-    ys, ms, vals, own = d["_y"].to_numpy(), d["_m"].to_numpy(), d["value"].to_numpy(), d["owner"].to_numpy()
-    start = 0
-    for i in range(1, len(d) + 1):
-        if i == len(d) or own[i] != own[start]:
-            yrs, ym, vv = ys[start:i], set(), []
-            for k in range(start, i):
-                y, m = ys[k], ms[k]
-                prev_years = {yy for yy, _ in ym}
-                if {y - 1, y - 2, y - 3} <= prev_years:
-                    cls[k] = "routine" if all((y - z, m) in ym for z in (1, 2, 3)) else "opportunistic"
-                if vv:
-                    prior_med[k] = np.median(vv[-50:])
-                # make this trade visible only to later-year trades / later trades
-                ym.add((y, m))
-                vv.append(vals[k])
-            start = i
+    for _, owner_rows in d.groupby(keys, observed=True, sort=False):
+        months, years, values = set(), set(), deque(maxlen=50)
+        for _, batch in owner_rows.groupby(availability, sort=False):
+            # Date-only records have no trustworthy ordering within the day.
+            # Compute all same-day rows before updating the public history.
+            median = np.median(values) if values else np.nan
+            for idx in batch.index:
+                day = td.iloc[idx]
+                if pd.isna(day):
+                    continue
+                prior = {day.year - i for i in (1, 2, 3)}
+                if prior <= years:
+                    cls[idx] = "routine" if all((year, day.month) in months for year in prior) else "opportunistic"
+                prior_med[idx] = median
+            for idx in batch.index:
+                day = td.iloc[idx]
+                if pd.notna(day):
+                    years.add(day.year)
+                    months.add((day.year, day.month))
+                    values.append(d.at[idx, "value"])
     d["insider_class"] = cls
     d["prior_median_value"] = prior_med
-    return d.drop(columns=["_y", "_m"])
+    return d
 
 
-def insider_features(ins, dec_dates, ciks):
+def insider_window_coverage(dec_dates, quarter_files, days):
+    """A lookback is covered only when every intersecting quarter is present."""
+    quarters = {pd.Period(path.stem.upper(), freq="Q") for path in quarter_files
+                if re.fullmatch(r"[0-9]{4}q[1-4]", path.stem)}
+    end = pd.DatetimeIndex(dec_dates) - pd.Timedelta(days=1)
+    start = end - pd.Timedelta(days=days - 1)
+    return np.array([all(q in quarters for q in pd.period_range(a, b, freq="Q"))
+                     for a, b in zip(start, end)], dtype=bool)
+
+
+def insider_features(ins, dec_dates, ciks, quarter_files=None):
     t_avail = (pd.DatetimeIndex(dec_dates) - pd.Timedelta(days=1)).to_numpy()
     shape = (len(dec_dates), len(ciks))
     names = ["buy_usd_90", "sell_usd_90", "buy_usd_180", "sell_usd_180", "net_usd_365", "ins_buyers_90", "ins_sellers_90",
@@ -593,16 +647,18 @@ def insider_features(ins, dec_dates, ciks):
         j = col.get(cik)
         if j is None:
             continue
-        g = g.sort_values("filing_date")
-        fd = g["filing_date"].to_numpy()
-        buy = (g["trans_code"] == "P").to_numpy()
+        availability = "available_day" if "available_day" in g else "filing_date"
+        g = g.sort_values(availability)
+        fd = g[availability].to_numpy()
+        buy = (g["trans_code"] == "P").to_numpy() & ~g["is_10b5_1"].to_numpy()
         sale = (g["trans_code"] == "S").to_numpy()
         sell = sale & ~g["is_10b5_1"].to_numpy()
         val = g["value"].to_numpy()
         owner = g["owner"].to_numpy()
         ceo, dire, ten = g["is_ceo_cfo"].to_numpy(), g["is_director"].to_numpy(), g["is_10pct"].to_numpy()
         opp, rout = (g["insider_class"] == "opportunistic").to_numpy(), (g["insider_class"] == "routine").to_numpy()
-        inten = np.where(buy, g["trans_shares"].to_numpy() / np.maximum(g["shrs_ownd_folwng_trans"].fillna(0).to_numpy(), 1.0), np.nan)
+        holdings = g["shrs_ownd_folwng_trans"].where(g["shrs_ownd_folwng_trans"].gt(0))
+        inten = (g["trans_shares"] / holdings).where(buy).to_numpy()
         conv = np.where(buy & (g["prior_median_value"].to_numpy() > 0), np.log(val / g["prior_median_value"].to_numpy()), np.nan)
 
         def cs(x):
@@ -636,6 +692,11 @@ def insider_features(ins, dec_dates, ciks):
                     y = conv[a:b][ob]
                     out["ins_conviction"][i, j] = np.nanmax(y) if np.isfinite(y).any() else np.nan
             out["ins_officer_buy_180"][i, j] = float((buy[s180:b] & ceo[s180:b]).any())
+    if quarter_files is not None:
+        coverage = {days: insider_window_coverage(dec_dates, quarter_files, days) for days in (90, 180, 365)}
+        for key, values in out.items():
+            days = 365 if key == "net_usd_365" else 180 if key.endswith("_180") else 90
+            values[~coverage[days], :] = np.nan
     return {k: pd.DataFrame(v, index=dec_dates, columns=ciks) for k, v in out.items()}
 
 
@@ -949,8 +1010,41 @@ def build_panel_chunked(include_labels=True, last_n_dates=None, profile=None, ch
         metas.append(m)
         print(f"chunk {a // chunk + 1}/{-(-len(syms) // chunk)}: {m['rows']} rows", flush=True)
     panel = pd.concat(parts, ignore_index=True).sort_values(["date", "symbol"], ignore_index=True)
-    meta = metas[0] | {"symbols_with_prices": sum(m["symbols_with_prices"] for m in metas), "rows": len(panel), "chunks": len(metas)}
+    add_momentum_orthogonal(panel)
+    meta = metas[0] | {"symbols_with_prices": sum(m["symbols_with_prices"] for m in metas), "rows": len(panel), "chunks": len(metas),
+                       "features": [k for k in FEATURES if k in panel]}
     return panel, meta
+
+
+MOMENTUM_ORTHOGONAL = {"sue_xmom": "sue", "sue_consensus_xmom": "sue_consensus"}
+
+
+def orthogonal_residual(panel, target, control="mom_12_1"):
+    """Per-date OLS residual of rank(target) on [1, rank(control)], ranks in [-0.5, 0.5] over rows where both exist.
+    Same-date cross-section only, so it adds no look-ahead. NaN where either input is missing or a date has < 3 pairs."""
+    out = pd.Series(np.nan, index=panel.index, dtype="float64")
+    x = panel[control].astype("float64").replace([np.inf, -np.inf], np.nan)
+    y = panel[target].astype("float64").replace([np.inf, -np.inf], np.nan)
+    ok = x.notna() & y.notna()
+    for _, idx in panel.index[ok].to_series().groupby(panel.loc[ok, "date"]):
+        if len(idx) < 3:
+            continue
+        rx = x[idx].rank(pct=True).to_numpy() - 0.5
+        ry = y[idx].rank(pct=True).to_numpy() - 0.5
+        A = np.column_stack([np.ones(len(rx)), rx])
+        beta = np.linalg.lstsq(A, ry, rcond=None)[0]
+        out[idx] = ry - A @ beta
+    return out.astype("float32")
+
+
+def add_momentum_orthogonal(panel):
+    """Requires the full cross-section, hence after symbol chunks are joined (build_panel_chunked)."""
+    if "mom_12_1" not in panel:
+        return panel
+    for name, target in MOMENTUM_ORTHOGONAL.items():
+        if target in panel:
+            panel[name] = orthogonal_residual(panel, target)
+    return panel
 
 
 def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=None):
@@ -988,7 +1082,8 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     fund = fundamentals_asof(dec_dates, issuer_ciks, fdf)
     sue, eps_g = eps_surprise(dec_dates, issuer_ciks, fdf)
     del fdf
-    ins = insider_features(load_insider(issuer_ciks), dec_dates, issuer_ciks)
+    ins = insider_features(load_insider(issuer_ciks), dec_dates, issuer_ciks,
+                           list((RAW / "insider").glob("*.parquet")))
 
     def S(df):
         expanded = df.reindex(columns=ciks).set_axis(syms, axis=1)
@@ -1111,6 +1206,11 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["opt_mkt_term_tilt"] = pf["beta_252"] * ms["vix_term_slope"].to_numpy()[:, None]
     feats["opt_mkt_skew_tilt"] = pf["beta_252"] * ms["skew_z"].to_numpy()[:, None]
     feats["sue_consensus"] = consensus_surprise(dec_dates, syms)
+    estimate_path = PROC / "estimate_vintages.parquet"
+    if historical and estimate_path.is_file():
+        from pit_estimates import revision_panel, validate
+        vintages = validate(pd.read_parquet(estimate_path, filters=[("security_id", "in", list(syms))]))
+        feats["eps_revision_pit_31d"] = revision_panel(vintages, dec_dates, syms)
     feats.update(snapshot_features(dec_dates, syms, pf["vol_60"]))
     feats = {k: v for k, v in feats.items() if v is not None}
 
@@ -1157,8 +1257,24 @@ if __name__ == "__main__":
     _lock = __import__("config").hold_lock()
     import sys
     prof = sys.argv[1] if len(sys.argv) > 1 else C.PROFILE["name"]
+    from provenance import _content_hash, dataset_version
+
+    version = dataset_version()
     panel, meta = build_panel_chunked(profile=prof)
-    panel.to_parquet(PROC / f"panel_{prof}.parquet", index=False)
-    (PROC / f"panel_meta_{prof}.json").write_text(json.dumps(meta, indent=1))
+    path = PROC / f"panel_{prof}.parquet"
+    temporary = path.with_suffix(".parquet.tmp")
+    metadata = PROC / f"panel_meta_{prof}.json"
+    metadata_tmp = metadata.with_suffix(".json.tmp")
+    try:
+        panel.to_parquet(temporary, index=False)
+        meta.update(dataset_version=version, panel_sha256=_content_hash(temporary))
+        if dataset_version() != version:
+            raise ValueError("inputs changed during panel build; rerun on a stable snapshot")
+        metadata_tmp.write_text(json.dumps(meta, indent=1), encoding="utf-8")
+        temporary.replace(path)
+        metadata_tmp.replace(metadata)
+    finally:
+        temporary.unlink(missing_ok=True)
+        metadata_tmp.unlink(missing_ok=True)
     print(meta)
     print(panel.groupby(panel["date"].dt.year)["symbol"].count().to_string())

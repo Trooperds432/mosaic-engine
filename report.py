@@ -213,6 +213,15 @@ def run():
         L.append(f"\nOverfitting: {o['strategies_tested']} strategies; deflated Sharpe {f(o['deflated_sharpe_ratio'], 3)}, PSR {f(o['psr_vs_zero'], 3)}, PBO {f(o['pbo_cscv'], 3)}, "
                  f"White RC p {f(spa.get('reality_check_p'), 3)}, Hansen SPA p {f(spa.get('spa_p'), 3)}, MinTRL {f(o['min_track_record_periods'], 0)} periods, "
                  f"WF→holdout IC degradation {f(o['train_vs_test_ic_degradation'])}.")
+        bv = e.get("buffered_variant")
+        if bv:
+            rows = [[label, f(b.get("mean_gross_excess"), pct=True), f(b.get("mean_cost"), pct=True), f(b.get("mean_net_excess"), pct=True),
+                     f(b.get("mean_turnover"), 2), f(b.get("net_sharpe_ann"), 2)]
+                    for label, b in [("unbuffered WF", e.get("backtest_wf") or {}), ("buffered WF", bv.get("backtest_wf") or {}),
+                                     ("unbuffered holdout", e.get("backtest_holdout") or {}), ("buffered holdout", bv.get("backtest_holdout") or {})]]
+            L.append(f"\nPre-registered low-turnover variant `{bv['prereg_id']}` (enter top {bv['entry_quantile']:.0%}, hold while in top "
+                     f"{bv['buffer_top']:.0%}; research output only, counted as a trial):\n")
+            L.append(table(["Book", "Gross/period", "Cost/period", "Net/period", "Turnover", "Net SR"], rows))
         fa = e.get("factor_adjusted_alpha_holdout") or e.get("factor_adjusted_alpha_wf")
         if fa:
             L.append(f"Factor-adjusted alpha (holdout long-only vs risk-model factors): {f(fa['alpha_per_period'], pct=True)}/period (HAC t={f(fa['alpha_t_hac'], 2)}), R² {f(fa['r2'], 2)}; "

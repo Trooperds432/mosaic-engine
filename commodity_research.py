@@ -2,7 +2,7 @@
 equities, so nothing here becomes a signal directly.
 
 Data: Yahoo continuous front-month futures (roll gaps included; term structure is NOT observable from this
-source), CFTC disaggregated COT (+3d availability), EIA weekly crude stocks (+5d), FRED NY Harbor product prices.
+source), CFTC disaggregated COT (+3d availability), timestamped EIA crude-stock snapshots, FRED NY Harbor product prices.
 Discovery sample ends at the research holdout start; the holdout is reported separately.
 
 Tests per commodity (monthly returns, HAC standard errors):
@@ -16,6 +16,7 @@ Energy-specific:
 Equity separation: energy/materials stock returns regressed on SPY and the matching commodity (monthly): the
 commodity loading is the operational exposure, the SPY loading the equity-market beta.
 """
+import argparse
 import json
 import math
 
@@ -40,13 +41,72 @@ def monthly(fut):
     return {c: g.set_index("date")["close"].resample("ME").last() for c, g in fut.groupby("commodity")}
 
 
+def event_returns(prices, availability, horizon):
+    """Use the first close strictly after the availability date and a full exit horizon."""
+    prices = prices.sort_index()
+    if not prices.index.is_unique or horizon < 1:
+        raise ValueError("unique price sessions and a positive horizon required")
+    entry = prices.index.searchsorted(pd.DatetimeIndex(availability), side="right")
+    exit_position = entry + horizon
+    result = pd.DataFrame({"entry": pd.NaT, "exit": pd.NaT, "y": np.nan}, index=range(len(entry)))
+    valid = exit_position < len(prices)
+    e, x = entry[valid], exit_position[valid]
+    start, end = prices.iloc[e].to_numpy(), prices.iloc[x].to_numpy()
+    valid[valid] = np.isfinite(start) & np.isfinite(end) & (start > 0) & (end > 0)
+    result.loc[valid, "entry"] = prices.index[entry[valid]]
+    result.loc[valid, "exit"] = prices.index[exit_position[valid]]
+    result.loc[valid, "y"] = np.log(prices.iloc[exit_position[valid]].to_numpy() / prices.iloc[entry[valid]].to_numpy())
+    return result
+
+
+def event_splits(frame, holdout):
+    return [("discovery", frame[frame["exit"].lt(holdout)]),
+            ("holdout", frame[frame["entry"].ge(holdout)])]
+
+
+def inventory_observations(frame):
+    """One latest inventory observation per availability date, with as-of history."""
+    d = frame[frame["series"].eq("crude_stocks_ex_spr")
+              & frame["source"].eq("eia_observed_snapshot")].copy()
+    d = d[d["available_date"].notna() & d["obs_date"].notna()
+          & d["available_date"].gt(d["obs_date"]) & np.isfinite(d["value"])]
+    d = d.sort_values(["available_date", "obs_date"], kind="stable")
+    history, rows = {}, []
+    for available, batch in d.groupby("available_date", sort=True):
+        for row in batch.itertuples():
+            history[row.obs_date] = row.value
+        obs = max(history)
+        week = obs.isocalendar().week
+        baseline = pd.Series([value for day, value in history.items()
+                              if obs - pd.Timedelta(days=1830) <= day < obs and day.isocalendar().week == week],
+                             dtype=float)
+        z = (history[obs] - baseline.mean()) / baseline.std() if len(baseline) >= 4 and baseline.std() > 0 else np.nan
+        rows.append({"available_date": available, "obs_date": obs, "z": z})
+    return pd.DataFrame(rows, columns=["available_date", "obs_date", "z"])
+
+
+def contract_curves(decision, session):
+    from futures_curves import curve_at, validate
+
+    paths = sorted((C.PROC / "futures_contracts").glob("*.parquet"))
+    if not paths:
+        return {"status": "NOT_COMPUTED", "reason": "timestamped individual contract settlements required"}
+    observations = pd.concat([pd.read_parquet(path, filters=[("session", "=", pd.Timestamp(session))])
+                              for path in paths], ignore_index=True).drop_duplicates()
+    curves = curve_at(validate(observations), decision, session)
+    computed = any(curve["status"] == "COMPUTED" for curve in curves.values())
+    return {"status": "COMPUTED" if computed else "NOT_COMPUTED",
+            "decision_utc": pd.Timestamp(decision).tz_convert("UTC").isoformat(),
+            "session": str(pd.Timestamp(session).date()), "curves": curves}
+
+
 def run():
     global HOLDOUT
     spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date")
     HOLDOUT = spy.index[-1] - pd.DateOffset(years=C.HOLDOUT_YEARS)
     fut = pd.read_parquet(C.RAW / "alt" / "futures.parquet")
-    fut = fut[fut["close"] > 0]
     M = monthly(fut)
+    M = {commodity: prices.where(prices.gt(0)) for commodity, prices in M.items()}
     out = {"holdout_start": str(HOLDOUT.date()), "commodities": {}}
     cot = pd.read_parquet(C.RAW / "alt" / "cot.parquet")
     for c, px in M.items():
@@ -74,15 +134,9 @@ def run():
         if len(cc) > 200:
             z = (cc["mm_net_pct_oi"] - cc["mm_net_pct_oi"].rolling(156, min_periods=52).mean()) / cc["mm_net_pct_oi"].rolling(156, min_periods=52).std()
             daily = fut[fut["commodity"] == c].set_index("date")["close"]
-            z.index = cc["available_date"]
-            zz = z.dropna()
-            fwd = []
-            for d in zz.index:
-                i = daily.index.searchsorted(d)
-                fwd.append(math.log(daily.iloc[min(i + 20, len(daily) - 1)] / daily.iloc[i]) if i < len(daily) - 1 else np.nan)
-            dz = pd.DataFrame({"z": zz.to_numpy(), "y": fwd}, index=zz.index).dropna()
-            dz = dz[dz["y"].abs() < 0.5]
-            for lab, sub in [("discovery", dz[dz.index < HOLDOUT]), ("holdout", dz[dz.index >= HOLDOUT])]:
+            zz = cc.assign(z=z).dropna(subset=["z"]).reset_index(drop=True)
+            dz = zz.join(event_returns(daily, zz["available_date"], 20)).dropna(subset=["y"])
+            for lab, sub in event_splits(dz, HOLDOUT):
                 if len(sub) > 30:
                     m = hac(sub["y"], sub["z"], lags=4)
                     rec.setdefault("cot_crowding", {})[lab] = {"coef_per_z_4w": float(m.params.iloc[1]), "t": float(m.tvalues.iloc[1]), "n": int(len(sub)),
@@ -91,24 +145,21 @@ def run():
 
     # EIA inventory surprise -> next-week WTI
     mp = pd.read_parquet(C.PROC / "macro_pit.parquet")
-    cr = mp[mp["series"] == "crude_stocks_ex_spr"].sort_values("obs_date").copy()
-    cr["woy"] = cr["obs_date"].dt.isocalendar().week.astype(int)
-    cr["z"] = [(v - h.mean()) / h.std() if len(h) >= 4 and h.std() > 0 else np.nan
-               for v, h in ((r.value, cr[(cr["woy"] == r.woy) & (cr["obs_date"] < r.obs_date) & (cr["obs_date"] >= r.obs_date - pd.Timedelta(days=1830))]["value"]) for r in cr.itertuples())]
+    cr = inventory_observations(mp)
     cr["dz"] = cr["z"].diff()
     wti = fut[fut["commodity"] == "wti"].set_index("date")["close"]
-    ys = []
-    for d in cr["available_date"]:
-        i = wti.index.searchsorted(d)
-        ys.append(math.log(wti.iloc[i + 5] / wti.iloc[i]) if 0 < i < len(wti) - 5 and wti.iloc[i] > 0 and wti.iloc[i + 5] > 0 else np.nan)
-    cr["y"] = ys
-    ci = cr.dropna(subset=["dz", "y"])
-    ci = ci[(ci["available_date"] >= "2000-01-01") & (ci["y"].abs() < 0.4)]
+    ci = cr.join(event_returns(wti, cr["available_date"], 5)).dropna(subset=["dz", "y"])
     inv = {}
-    for lab, sub in [("discovery", ci[ci["available_date"] < HOLDOUT]), ("holdout", ci[ci["available_date"] >= HOLDOUT])]:
+    for lab, sub in event_splits(ci, HOLDOUT):
+        if len(sub) < 30 or sub["dz"].nunique() < 2:
+            inv[lab] = {"status": "NOT_COMPUTED", "n": len(sub),
+                        "reason": "need at least 30 settled timestamped observations and variation"}
+            continue
         m = hac(sub["y"], sub["dz"], lags=2)
-        inv[lab] = {"coef_per_z_change_1w": float(m.params.iloc[1]), "t": float(m.tvalues.iloc[1]), "n": int(len(sub))}
-    out["eia_inventory_surprise"] = inv | {"hypothesis": "negative (unexpected builds lower crude)", "measure": "weekly change in 5y same-week z of crude stocks ex SPR"}
+        inv[lab] = {"status": "COMPUTED", "coef_per_z_change_1w": float(m.params.iloc[1]),
+                    "t": float(m.tvalues.iloc[1]), "n": int(len(sub))}
+    out["eia_inventory_surprise"] = inv | {"hypothesis": "negative (unexpected builds lower crude)",
+                                           "measure": "change in as-of same-week inventory z-score"}
 
     # cointegration of crude and products (monthly logs, $/bbl)
     from data_macro import daily
@@ -156,5 +207,14 @@ def run():
 
 
 if __name__ == "__main__":
-    _lock = __import__("config").hold_lock()
-    run()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--curve-session", help="exchange session for the settlement curve")
+    parser.add_argument("--as-of", help="timezone-aware decision timestamp")
+    args = parser.parse_args()
+    if bool(args.curve_session) != bool(args.as_of):
+        parser.error("--curve-session and --as-of must be supplied together")
+    if args.curve_session:
+        print(json.dumps(contract_curves(args.as_of, args.curve_session), indent=2, allow_nan=False))
+    else:
+        _lock = C.hold_lock()
+        run()

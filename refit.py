@@ -17,7 +17,28 @@ import pandas as pd
 
 import config as C
 from features import build_panel_chunked
-from research import MISSING_GROUPS, MODELS_DIR, StyleNeutraliser, fit_predict, name_costs, preprocess, sector_neutral
+from research import MISSING_GROUPS, MODELS_DIR, StyleNeutraliser, fit_predict, name_costs, preprocess, sector_neutral, training_cost
+
+
+def publish_refit_panel(panel, meta, profile, version):
+    """Publish a refit panel with the same provenance contract as the CLI."""
+    from provenance import _content_hash, dataset_version
+
+    path = C.PROC / f"panel_{profile}.parquet"
+    metadata = C.PROC / f"panel_meta_{profile}.json"
+    temporary = path.with_suffix(".parquet.tmp")
+    metadata_tmp = metadata.with_suffix(".json.tmp")
+    try:
+        panel.to_parquet(temporary, index=False)
+        manifest = {**meta, "dataset_version": version, "panel_sha256": _content_hash(temporary)}
+        if dataset_version() != version:
+            raise ValueError("inputs changed during refit panel build")
+        metadata_tmp.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+        temporary.replace(path)
+        metadata_tmp.replace(metadata)
+    finally:
+        temporary.unlink(missing_ok=True)
+        metadata_tmp.unlink(missing_ok=True)
 
 
 def refit(profile):
@@ -27,16 +48,21 @@ def refit(profile):
     if not frozen:
         raise ValueError(why)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    from provenance import dataset_version
+
+    version = dataset_version()
     panel, meta = build_panel_chunked(profile=profile)
-    panel.to_parquet(C.PROC / f"panel_{profile}.parquet", index=False)
-    (C.PROC / f"panel_meta_{profile}.json").write_text(json.dumps(meta, indent=1))
+    publish_refit_panel(panel, meta, profile, version)
     feats = model["feats"]  # frozen at validation: new features enter only through a full re-validation
     X = preprocess(panel, feats)
     Xn = sector_neutral(X, panel, feats)
     Xm = pd.concat([Xn[feats], X[[k for k in MISSING_GROUPS if k in X]]], axis=1).reindex(columns=model["features"], fill_value=0.0)
     sectors = panel["sector"].fillna("Unknown").to_numpy()
     cost = name_costs(panel, model.get("order_size_usd") or 600.0)
-    rt_cost = float(cost.mean() * 2)
+    benchmark = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet", columns=["date"])
+    positions = pd.DatetimeIndex(benchmark["date"].drop_duplicates().sort_values()).get_indexer(panel["date"])
+    if (positions < 0).any():
+        raise ValueError("refit panel contains dates outside the benchmark calendar")
     style = StyleNeutraliser(X, panel) if any("factor_resid" in model["horizons"][str(h)]["names"] for h in C.HORIZONS) else None
     archive = MODELS_DIR / "archive" / stamp
     archive.mkdir(parents=True, exist_ok=True)
@@ -52,7 +78,9 @@ def refit(profile):
             dest = MODELS_DIR / f"{profile}_h{h}_{n}.joblib"
             if dest.exists():
                 shutil.copy2(dest, archive / dest.name)
-            m, _ = fit_predict(n, Xm[ok], yt[ok], Xm.iloc[:2], sectors[ok], sectors[:2], rt_cost)
+            m, _ = fit_predict(n, Xm[ok], yt[ok], Xm.iloc[:2], sectors[ok], sectors[:2],
+                               training_cost(cost, ok) if n == "logit" else None,
+                               positions=positions[ok], horizon=h)
             joblib.dump(m, dest)
             rows[f"h{h}_{n}"] = int(ok.sum())
         print(profile, "h", h, "refit", model["horizons"][str(h)]["names"], flush=True)

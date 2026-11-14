@@ -79,6 +79,31 @@ class EstimateTests(unittest.TestCase):
         frame.loc[1, "fiscal_period"] = "2022FY"
         self.assertTrue(np.isnan(revision(frame, "S", "2020-02-04T16:00Z")))
 
+    def test_panel_midnight_cutoff_and_ambiguous_periods(self):
+        from pit_estimates import revision_panel
+
+        frame = validate_estimates(self.frame())
+        dates = pd.DatetimeIndex(["2020-02-03", "2020-02-04"])
+        panel = revision_panel(frame, dates, ["S", "missing"])
+        self.assertTrue(np.isnan(panel.loc[dates[0], "S"]))
+        self.assertEqual(panel.loc[dates[1], "S"], .5)
+        self.assertTrue(panel["missing"].isna().all())
+        ambiguous = pd.concat([frame, frame.iloc[[1]].assign(fiscal_period="2022FY")])
+        self.assertTrue(revision_panel(ambiguous, dates, ["S"])["S"].isna().all())
+
+    def test_date_only_and_naive_estimate_timestamps_are_rejected(self):
+        for timestamp in ("2020-01-01", "2020-01-01T12:00:00"):
+            frame = self.frame()
+            frame.loc[0, "available_at_utc"] = timestamp
+            with self.assertRaisesRegex(ValueError, "explicit timezone"):
+                validate_estimates(frame)
+
+    def test_observed_estimate_cannot_come_from_the_future(self):
+        frame = self.frame()
+        frame.loc[0, "observed_at_utc"] = "2099-01-01T12:00Z"
+        with self.assertRaisesRegex(ValueError, "future"):
+            validate_estimates(frame)
+
     def test_snapshot_cannot_be_backdated(self):
         frame = self.frame()
         frame.loc[0, "observed_at_utc"] = "2020-06-01T00:00Z"
@@ -133,6 +158,23 @@ class RecipeTests(unittest.TestCase):
                 self.assertFalse(recipe.check(model)[0])
                 with self.assertRaises(ValueError):
                     recipe.freeze("broad")
+
+
+
+
+class MacroAvailabilityTests(unittest.TestCase):
+    def test_late_revision_cannot_replace_newer_visible_period(self):
+        from data_macro import asof_series
+
+        dates = pd.date_range("2026-04-01", periods=6)
+        observations = pd.DataFrame({
+            "obs_date": pd.to_datetime(["2026-02-01", "2026-03-01", "2026-02-01", "2026-03-01"]),
+            "available_date": dates[[1, 2, 4, 5]],
+            "value": [1., 2., 100., 3.],
+        })
+        expected = pd.Series([np.nan, 1., 2., 2., 2., 3.], index=dates, name="value")
+        pd.testing.assert_series_equal(asof_series(observations, dates), expected)
+        pd.testing.assert_series_equal(asof_series(observations.iloc[:2], dates[:4]), expected.iloc[:4])
 
 
 if __name__ == "__main__":

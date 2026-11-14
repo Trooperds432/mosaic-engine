@@ -18,8 +18,14 @@ class FullRequestTests(unittest.TestCase):
         self.assertTrue(all(len(j[2]) <= 10 and "TR.EPSMean.calcdate" in j[3] for j in hist))
         self.assertEqual(sorted(r for j in hist for r in j[2]), sorted(rics))
         members = [j for j in jobs if j[0].startswith("members_")]
-        self.assertEqual(len(members), 2 * 7)  # 2025 Q1-Q4 and 2026 Q1-Q3 for two indices
-        self.assertTrue(all(j[2] in (".SPX", ".NDX") for j in members))
+        self.assertEqual(len(members), 3 * 9)  # Seven quarter ends and both endpoints for three indices
+        for index in (".SPX", ".NDX", ".RUT"):
+            rosters = [j for j in members if j[2] == index]
+            self.assertEqual(len(rosters), 9)
+            self.assertEqual(rosters[0][4], {"SDate": "2025-01-01", "EDate": "2025-01-01"})
+            self.assertEqual(rosters[-1][4], {"SDate": "2026-10-26", "EDate": "2026-10-26"})
+            changes = [j for j in jobs if j[0].startswith(f"index_{index[1:]}_")]
+            self.assertEqual({j[4]["IC"] for j in changes}, {"J", "L"})
 
 
 if __name__ == "__main__":

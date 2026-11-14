@@ -24,7 +24,7 @@ def _t(node, path):
     return x.text.strip() if x is not None and x.text else None
 
 
-def parse(xml, acc, filed, cik):
+def parse(xml, acc, filed, cik, accepted_at_utc=None):
     root = ET.fromstring(xml)
     own = root.find("reportingOwner")
     rel = own.find("reportingOwnerRelationship") if own is not None else None
@@ -34,6 +34,7 @@ def parse(xml, acc, filed, cik):
             if (_t(rel, tag) or "").lower() in ("1", "true"):
                 flags.append(name)
     base = {"accession_number": acc, "filing_date": filed, "issuercik": cik,
+            "accepted_at_utc": accepted_at_utc,
             "issuertradingsymbol": _t(root, "issuer/issuerTradingSymbol"), "document_type": _t(root, "documentType"),
             "period_of_report": _t(root, "periodOfReport"), "aff10b5one": _t(root, "aff10b5One"),
             "rptownercik": _t(own, "reportingOwnerId/rptOwnerCik") if own is not None else None,
@@ -42,11 +43,11 @@ def parse(xml, acc, filed, cik):
     notes = {f.get("id"): (f.text or "") for f in root.findall("footnotes/footnote")}
     from data_insider import DATE_RE, PLAN_RE
     rows = []
-    for tr in root.findall("nonDerivativeTable/nonDerivativeTransaction"):
+    for line, tr in enumerate(root.findall("nonDerivativeTable/nonDerivativeTransaction"), 1):
         txt = " | ".join(notes.get(x.get("id"), "") for x in tr.iter("footnoteId"))
         plan = bool(PLAN_RE.search(txt))
         adopted = DATE_RE.search(txt) if plan else None
-        rows.append({**base, "trans_date": _t(tr, "transactionDate/value"), "trans_code": _t(tr, "transactionCoding/transactionCode"),
+        rows.append({**base, "transaction_line": line, "trans_date": _t(tr, "transactionDate/value"), "trans_code": _t(tr, "transactionCoding/transactionCode"),
                      "trans_shares": _t(tr, "transactionAmounts/transactionShares/value"),
                      "trans_pricepershare": _t(tr, "transactionAmounts/transactionPricePerShare/value"),
                      "trans_acquired_disp_cd": _t(tr, "transactionAmounts/transactionAcquiredDisposedCode/value"),
@@ -77,6 +78,9 @@ def _frame(rows):
             new[col] = pd.to_datetime(new[col], errors="coerce")
         if "plan_adopted" in new:
             new["plan_adopted"] = pd.to_datetime(new["plan_adopted"], errors="coerce", format="mixed")
+        raw = new["accepted_at_utc"].astype("string")
+        zoned = raw.str.contains(r"(?:Z|[+-]\d\d:\d\d)$", regex=True).fillna(False)
+        new["accepted_at_utc"] = pd.to_datetime(raw.where(zoned), utc=True, errors="coerce", format="mixed")
         new["issuercik"] = new["issuercik"].astype("Int64")
         new["dataset"] = "edgar_form4_xml"
         new["ingested_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -121,6 +125,7 @@ def run():
                 print("ERR submissions", cik, e, flush=True)
                 continue
             time.sleep(0.11)
+            accepted = dict(zip(rec["accessionNumber"], rec.get("acceptanceDateTime", [])))
             for form, fd, acc, doc in zip(rec["form"], rec["filingDate"], rec["accessionNumber"], rec["primaryDocument"]):
                 if form not in ("4", "4/A") or pd.Timestamp(fd) <= since or acc in seen:
                     continue
@@ -128,7 +133,7 @@ def run():
                 try:
                     r = _get(c, url)
                     if r.status_code == 200:
-                        rows += parse(r.content, acc, fd, cik)
+                        rows += parse(r.content, acc, fd, cik, accepted.get(acc))
                         fetched.append(acc)
                         n_new += 1
                 except Exception as e:

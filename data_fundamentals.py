@@ -1,7 +1,10 @@
 """As-reported fundamentals from SEC XBRL companyfacts, plus SIC industry codes.
 Every value keeps its `filed` date: a value is usable at t only if filed before t, and when a
 period is restated the original and restated filings are both kept (as-reported vs latest)."""
+import argparse
 import json
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import time
 from datetime import datetime, timezone
 
@@ -66,7 +69,7 @@ def fetch_cik(cik, client, dest, stamp):
     df.to_parquet(dest, index=False)
 
 
-def merge(per):
+def merge(per, destination=None):
     """Stream the per-CIK files into one parquet (concatenating ~6,000 frames in pandas exhausts 3 GB RAM)."""
     import pyarrow as pa
     import pyarrow.parquet as pq
@@ -75,22 +78,44 @@ def merge(per):
     schema = pa.schema([("cik", pa.int64()), ("tag", pa.string()), ("unit", pa.string()), ("start", ts), ("end", ts),
                         ("val", pa.float64()), ("filed", ts), ("form", pa.string()), ("fy", pa.int64()), ("fp", pa.string()),
                         ("accn", pa.string()), ("ingested_utc", pa.string())])
+    destination = Path(destination) if destination is not None else RAW / "facts" / "companyfacts.parquet"
+    if not files:
+        raise ValueError("no cached per-CIK Parquet files")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with NamedTemporaryFile(dir=destination.parent, suffix=".tmp", delete=False) as stream:
+        temporary = Path(stream.name)
     rows = 0
-    with pq.ParquetWriter(RAW / "facts" / "companyfacts.parquet", schema) as w:
-        for f in files:
-            t = pq.read_table(f)
-            if t.num_rows:
-                t = t.select([c for c in schema.names if c in t.column_names])
-                w.write_table(pa.table({c: (t[c].cast(schema.field(c).type) if c in t.column_names else pa.nulls(t.num_rows, schema.field(c).type))
-                                        for c in schema.names}, schema=schema))
-                rows += t.num_rows
+    try:
+        with pq.ParquetWriter(temporary, schema) as writer:
+            for path in files:
+                table = pq.read_table(path)
+                if not table.num_rows:
+                    continue
+                required = {"cik", "tag", "end", "val", "filed", "form", "accn"}
+                if not required <= set(table.column_names):
+                    raise ValueError(f"invalid company-facts cache schema: {path.name}")
+                writer.write_table(pa.table({
+                    field.name: table[field.name].cast(field.type) if field.name in table.column_names
+                    else pa.nulls(table.num_rows, field.type) for field in schema
+                }, schema=schema))
+                rows += table.num_rows
+        if not rows:
+            raise ValueError("no company-facts rows in the local cache")
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
     return pd.DataFrame({"rows": [rows]}).assign(cik=0)
 
 
-def run(refresh=False, merge_only=False):
+def run(refresh=False, merge_only=False, output=None):
     """Caches one parquet per CIK so an interrupted run resumes; `refresh` re-downloads."""
-    uni = pd.read_parquet(PROC / "universe.parquet")
     per = RAW / "facts" / "by_cik"
+    if merge_only:
+        print("cached rows merged:", int(merge(per, output)["rows"].iloc[0]))
+        return
+    if output is not None:
+        raise ValueError("output is only supported for cache-only consolidation")
+    uni = pd.read_parquet(PROC / "universe.parquet")
     per.mkdir(parents=True, exist_ok=True)
     sic_f = PROC / "sic.parquet"
     sic = pd.read_parquet(sic_f).to_dict("records") if sic_f.exists() and not refresh else []
@@ -126,5 +151,12 @@ def run(refresh=False, merge_only=False):
 
 
 if __name__ == "__main__":
-    import sys
-    run(refresh="--refresh" in sys.argv)
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--refresh", action="store_true")
+    mode.add_argument("--merge-only", action="store_true")
+    parser.add_argument("--output", type=Path, help="separate cache-only research snapshot")
+    args = parser.parse_args()
+    if args.output is not None and not args.merge_only:
+        parser.error("--output requires --merge-only")
+    run(args.refresh, args.merge_only, args.output)

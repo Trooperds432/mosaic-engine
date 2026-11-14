@@ -26,7 +26,8 @@ class ResearchEntrypointTests(unittest.TestCase):
             self.assertEqual(profile, 'large')
             with tempfile.TemporaryDirectory() as directory:
                 for name in ['gam', 'hier', 'logit']:
-                    model, expected = research.fit_predict(name, X, y, X, sectors, sectors, cost=0.)
+                    model, expected = research.fit_predict(name, X, y, X, sectors, sectors, cost=0.,
+                                                           positions=np.repeat(np.arange(60), 2), horizon=5)
                     target = Path(directory) / (name + '.joblib')
                     joblib.dump(model, target)
                     restored = joblib.load(target)
