@@ -123,16 +123,45 @@ def block_bootstrap(series, block, reps=2000, seed=1):
             "max_drawdown_q05_q50_q95": q(dds), "prob_mean_below_zero": float(np.mean(np.array(means) < 0))}
 
 
+def verify_research_inputs(report, profile):
+    from provenance import _content_hash, dataset_version
+
+    provenance = report.get("panel_provenance") or {}
+    if report.get("profile") != profile or not provenance.get("panel_sha256"):
+        raise ValueError("baseline comparison requires a research report with panel provenance")
+    panel_path = C.PROC / f"panel_{profile}.parquet"
+    if provenance["panel_sha256"] != _content_hash(panel_path):
+        raise ValueError("baseline panel differs from the panel used in research")
+    if provenance.get("dataset_version") != dataset_version():
+        raise ValueError("baseline inputs differ from the research snapshot")
+
+
+def load_research_periods(report, profile, horizon):
+    from provenance import _content_hash
+
+    path = C.REPORTS / f"ensemble_backtest_{profile}_h{horizon}.parquet"
+    expected = report.get("ensemble_periods_sha256", {}).get(str(horizon))
+    if not expected or not path.is_file() or _content_hash(path) != expected:
+        raise ValueError(f"h{horizon} portfolio returns do not match the research report")
+    periods = pd.read_parquet(path)
+    if ("research_run_id" not in periods
+            or not periods["research_run_id"].eq(report["run_id"]).all()
+            or _content_hash(path) != expected):
+        raise ValueError(f"h{horizon} portfolio returns changed or belong to a different research run")
+    return periods
+
+
 def run(profile="large"):
     R = json.loads((C.REPORTS / f"research_results_{profile}.json").read_text())
+    verify_research_inputs(R, profile)
     panel = pd.read_parquet(C.PROC / f"panel_{profile}.parquet")
     order_usd = R["costs"]["order_size_usd"]
     cost = name_costs(panel, order_usd).to_numpy()
     spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date")
     hold_start = pd.Timestamp(R["sample"]["holdout_start"])
     out = {"profile": profile, "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "paths": N_PATHS, "results": {}}
-    for h in (5, 20):
-        periods = pd.read_parquet(C.REPORTS / f'ensemble_backtest_{profile}_h{h}.parquet')
+    schedules = {h: load_research_periods(R, profile, h) for h in (5, 20)}
+    for h, periods in schedules.items():
         e = R["models"][str(h)]["models"]["ensemble"]
         first_wf = min(int(y) for y in e["wf_years"]) if e["wf_years"] else None
         for label, bt, mask in [("walk_forward", e["backtest_wf"], (panel["date"] < hold_start) & (panel["date"].dt.year >= (first_wf or 0))),
@@ -164,11 +193,14 @@ def run(profile="large"):
                                                                                                       'turnover_match': 'target mean membership retention; realized dollar turnover is path-dependent'}}
             print(profile, h, label, {k: round(v, 4) if isinstance(v, float) else v for k, v in out["results"][f"h{h}_{label}"].items() if k != "matched"}, flush=True)
     # block bootstrap of the saved ensemble backtest series (written by research.py from the next re-validation on)
-    for h in (5, 20):
-        f = C.REPORTS / f"ensemble_backtest_{profile}_h{h}.parquet"
-        if f.exists():
-            s = pd.read_parquet(f)
-            out["results"][f"h{h}_bootstrap"] = {lab: block_bootstrap(g["net"], block=max(2, 60 // h)) for lab, g in s.groupby("sample")}
+    for h, periods in schedules.items():
+        out["results"][f"h{h}_bootstrap"] = {
+            label: block_bootstrap(group["net"], block=max(2, 60 // h))
+            for label, group in periods.groupby("sample")
+        }
+    verify_research_inputs(R, profile)
+    out["research_run_id"] = R["run_id"]
+    out["panel_provenance"] = R["panel_provenance"]
     (C.REPORTS / f"baselines_{profile}.json").write_text(json.dumps(out, indent=1, default=float))
     return out
 

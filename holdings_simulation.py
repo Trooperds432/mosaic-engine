@@ -35,7 +35,7 @@ def simulate(frame, schedule, top, cost_mult=1., buffer_top=None, holdings=None,
         raise ValueError('rebalance schedule must be ordered and unique')
     groups = {d: g for d, g in frame[frame.d.isin(schedule)].groupby('d')}
     cash, values, last_costs, rows, missing = 1., {}, {}, [], []
-    periods = []
+    periods, missing_details = [], []
     for d in schedule:
         g = groups.get(d)
         if g is None:
@@ -59,7 +59,13 @@ def simulate(frame, schedule, top, cost_mult=1., buffer_top=None, holdings=None,
             pick = g.head(k)
         # Never replace a chosen name because its future outcome is unavailable.
         if not np.isfinite(pick[['y', 'b', 'relative_benchmark']]).all().all():
-            missing.append(str(pd.Timestamp(d).date()))
+            day = str(pd.Timestamp(d).date())
+            missing.append(day)
+            for row in pick.itertuples():
+                if not np.isfinite([row.y, row.b, row.relative_benchmark]).all():
+                    missing_details.append({"date": day, "symbol": str(row.sym),
+                                            "outcome_missing": not bool(np.isfinite(row.y)),
+                                            "benchmark_missing": not bool(np.isfinite([row.b, row.relative_benchmark]).all())})
             break  # an unknown held outcome breaks the NAV chain; no silent bridge
         benchmark = float(pick.b.iloc[0])
         relative = float(pick.relative_benchmark.iloc[0])
@@ -151,5 +157,5 @@ def simulate(frame, schedule, top, cost_mult=1., buffer_top=None, holdings=None,
     result = pd.DataFrame(rows).set_index('d') if rows else pd.DataFrame(columns=[
         'gross', 'net', 'cost', 'transaction_cost', 'turnover', 'n', 'nav_start', 'nav_end', 'portfolio_return', 'benchmark_return'])
     result.attrs.update(accounting='self_financing_adjusted_return_drift', missing_selected_outcome_dates=missing,
-                        fills='modeled_not_broker', terminal_liquidation=True)
+                        missing_selected_outcomes=missing_details, fills='modeled_not_broker', terminal_liquidation=True)
     return result

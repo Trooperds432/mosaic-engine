@@ -44,7 +44,7 @@ class ResearchPipelineTests(unittest.TestCase):
             with patch.object(C, 'ROOT', root), patch.object(C, 'RAW', raw), patch.object(C, 'PROC', proc), \
                  patch.object(C, 'REPORTS', reports), patch.object(C, 'LEDGER', ledger), patch.object(C, 'HORIZONS', [20]), \
                  patch.object(C, 'WF_MIN_TRAIN_YEARS', 1), patch.object(research, 'MODELS_DIR', root / 'models'), \
-                 patch.object(research, 'FULL_SUITE_H', ()), patch('risk_limits.load', return_value={'order_size_usd': 600}), \
+                 patch.object(research, 'FULL_SUITE_H', ()), patch('risk_limits.run', side_effect=AssertionError('research must not call the broker')), \
                  patch.object(research, 'hmm_filtered', return_value=pd.Series(.5, index=calendar)), \
                  patch('historical_data.coverage_check', return_value={'passed': False, 'failed_checks': ['synthetic data only']}), \
                  contextlib.redirect_stdout(io.StringIO()):
@@ -55,6 +55,9 @@ class ResearchPipelineTests(unittest.TestCase):
             self.assertTrue((reports / 'oos_scores_large_h20.parquet').exists())
             self.assertEqual(result['overfitting']['reality_check_spa']['implementation'], 'arch.bootstrap')
             self.assertGreaterEqual(result['overfitting']['reality_check_spa']['periods'], 20)
+            self.assertEqual(result["costs"]["order_size_source"], "research_assumption")
+            self.assertIn("order size is a research assumption; bot configuration is required",
+                          primary["models"]["ensemble"]["gate"]["failed_checks"])
             self.assertIn('synthetic data only', primary['models']['ensemble']['gate']['failed_checks'])
             report = json.loads((reports / 'institutional_comparison_large.json').read_text())
             json.dumps(report, allow_nan=False)

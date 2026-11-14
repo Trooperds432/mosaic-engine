@@ -36,6 +36,22 @@ def dataset_version():
     return "ds-" + hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 
 
+def panel_identity(profile, version):
+    """Verify that the saved panel was built from the audited input version."""
+    path = C.PROC / f"panel_{profile}.parquet"
+    metadata = C.PROC / f"panel_meta_{profile}.json"
+    try:
+        doc = json.loads(metadata.read_text(encoding="utf-8"))
+        if (not isinstance(doc, dict) or doc.get("profile") != profile
+                or doc.get("feature_set_version") != C.FEATURE_SET_VERSION
+                or doc.get("dataset_version") != version
+                or doc.get("panel_sha256") != _content_hash(path)):
+            return False, "panel identity does not match the current inputs or saved panel bytes"
+    except (OSError, ValueError):
+        return False, "panel provenance missing or unreadable"
+    return True, None
+
+
 def _observed(d):
     return d - timedelta(days=1) if d.weekday() == 5 else d + timedelta(days=1) if d.weekday() == 6 else d
 

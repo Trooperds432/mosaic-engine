@@ -14,6 +14,7 @@ fold only; hyper-parameters are fixed in config/this file, not tuned on the hold
 """
 import hashlib
 from functools import partial
+from pathlib import Path
 import itertools
 import json
 import math
@@ -339,6 +340,33 @@ def long_only_backtest(score, y, dates, syms, cost, h, top=C.SIGNAL_TOP_QUANTILE
     return result
 
 
+TURNOVER_PREREG = C.ROOT / "prereg" / "cross_section_turnover_v1.json"
+
+
+def turnover_prereg(path=TURNOVER_PREREG):
+    """Frozen buffered-ensemble parameters plus the file's sha256 (recorded with every run that uses them)."""
+    raw = Path(path).read_bytes()
+    reg = json.loads(raw)
+    v = reg["variant"]
+    if not 0 < v["entry_quantile"] <= v["buffer_top"] <= 1:
+        raise ValueError("prereg buffer must lie between the entry quantile and one")
+    return reg, hashlib.sha256(raw).hexdigest()
+
+
+def buffered_ensemble(backtest, wf_scores, holdout_scores, y, dates, syms, cost, h, path=TURNOVER_PREREG):
+    reg, sha = turnover_prereg(path)
+    v = reg["variant"]
+    if h != v["horizon_sessions"]:
+        raise ValueError("buffered variant is registered for a different horizon")
+    kw = dict(top=v["entry_quantile"], buffer_top=v["buffer_top"])
+    bw = backtest(wf_scores, y, dates, syms, cost, h, **kw)
+    bh = backtest(holdout_scores, y, dates, syms, cost, h, **kw)
+    summary = {"name": v["name"], "prereg_id": reg["id"], "prereg_sha256": sha, "entry_quantile": v["entry_quantile"],
+               "buffer_top": v["buffer_top"], "backtest_wf": bt_summary(bw, h), "backtest_holdout": bt_summary(bh, h),
+               "use": "research output only; the gate evaluates the unbuffered ensemble"}
+    return {"summary": summary, "wf_net": bw["net"] if len(bw) else None}
+
+
 def bt_summary(bt, h):
     if len(bt) < 4:
         return None
@@ -348,7 +376,8 @@ def bt_summary(bt, h):
             "net_sharpe_ann": float(st["sr"] * math.sqrt(252 / max(h, 1))) if st else None, "net_t_hac": hac_mean(bt["net"], 2)["t"],
             "hit_rate": float((bt["net"] > 0).mean()), "max_drawdown_excess": float((bt["net"].cumsum() - bt["net"].cumsum().cummax()).min()),
             'accounting': bt.attrs.get('accounting', 'unknown'),
-            'missing_selected_outcome_dates': bt.attrs.get('missing_selected_outcome_dates', [])}
+            'missing_selected_outcome_dates': bt.attrs.get('missing_selected_outcome_dates', []),
+            'missing_selected_outcomes': bt.attrs.get('missing_selected_outcomes', [])}
     if 'nav_end' in bt:
         nav = np.r_[float(bt.nav_start.iloc[0]), bt.nav_end.to_numpy()]
         result.update(portfolio_total_return=float(nav[-1] / nav[0] - 1),
@@ -402,16 +431,25 @@ class Hierarchical:
 
 class CalibratedLogit:
     """P(excess > round-trip cost): logistic on the first 80% of the time-ordered training rows, isotonic
-    calibration on the last 20%."""
+    calibration on the last 20% of sessions, with purging and embargo."""
 
     def __init__(self, threshold):
         self.th = threshold
 
-    def fit(self, X, y):
-        cut = int(len(y) * 0.8)
+    def fit(self, X, y, *, positions, horizon):
+        positions = np.asarray(positions)
+        sessions = np.unique(positions)
+        if len(sessions) < 2:
+            raise ValueError("probability calibration requires multiple training sessions")
+        boundary = sessions[min(len(sessions) - 1, int(len(sessions) * .8))]
+        train = settled_before(positions, horizon, boundary)
+        calibrate = positions >= boundary
         lab = (y > self.th).astype(int)
-        self.lr = LogisticRegression(C=0.05, max_iter=300).fit(X[:cut], lab[:cut])
-        self.iso = IsotonicRegression(out_of_bounds="clip").fit(self.lr.predict_proba(X[cut:])[:, 1], lab[cut:])
+        if not train.any() or np.unique(lab[train]).size < 2:
+            raise ValueError("purged probability training requires both outcome classes")
+        self.lr = LogisticRegression(C=0.05, max_iter=300).fit(X[train], lab[train])
+        self.iso = IsotonicRegression(out_of_bounds="clip").fit(
+            self.lr.predict_proba(X[calibrate])[:, 1], lab[calibrate])
         return self
 
     def predict(self, X):
@@ -443,7 +481,7 @@ def make_model(name, n_rows, sectors=None, cost=None):
     raise ValueError(name)
 
 
-def fit_predict(name, Xtr, ytr, Xte, sec_tr=None, sec_te=None, cost=None):
+def fit_predict(name, Xtr, ytr, Xte, sec_tr=None, sec_te=None, cost=None, *, positions=None, horizon=None):
     lo, hi = np.nanquantile(ytr, [C.WINSOR_Q, 1 - C.WINSOR_Q])  # label clipping thresholds from training labels only
     yc = np.clip(ytr, lo, hi)
     if name == "huber" and len(yc) > 150_000:  # IRLS on a deterministic, evenly spaced subsample
@@ -452,7 +490,7 @@ def fit_predict(name, Xtr, ytr, Xte, sec_tr=None, sec_te=None, cost=None):
         sec_tr = sec_tr[sel] if sec_tr is not None else None
     m = make_model(name, len(yc), sec_tr, cost)
     if name == "logit":
-        m.fit(Xtr.to_numpy(dtype="float32"), ytr)
+        m.fit(Xtr.to_numpy(dtype="float32"), ytr, positions=positions, horizon=horizon)
     elif name in ("gam", "lgbm"):
         m.fit(Xtr, yc)
     else:
@@ -462,6 +500,13 @@ def fit_predict(name, Xtr, ytr, Xte, sec_tr=None, sec_te=None, cost=None):
     if name in ("gam", "lgbm"):
         return m, m.predict(Xte)
     return m, m.predict(Xte.to_numpy(dtype="float32"))
+
+
+def training_cost(cost, mask):
+    """Use only the training rows to set the probability model's cost hurdle."""
+    if cost is None or np.isscalar(cost):
+        return cost
+    return float(2 * np.asarray(cost)[mask].mean())
 
 
 def walk_forward(name, X, y, dates, tpos, h, hpos, sectors, cost):
@@ -478,11 +523,11 @@ def walk_forward(name, X, y, dates, tpos, h, hpos, sectors, cost):
         train = ok & (tpos + 1 + h + EMBARGO < tpos[test].min())
         if train.sum() < 5000:
             continue
-        _, p = fit_predict(name, X[train], y[train], X[test], sectors[train], sectors[test], cost)
+        _, p = fit_predict(name, X[train], y[train], X[test], sectors[train], sectors[test], training_cost(cost, train), positions=tpos[train], horizon=h)
         preds[test] = p
     hold = tpos >= hpos
     train = ok & (tpos + 1 + h + EMBARGO < hpos)
-    _, p = fit_predict(name, X[train], y[train], X[hold], sectors[train], sectors[hold], cost)
+    _, p = fit_predict(name, X[train], y[train], X[hold], sectors[train], sectors[hold], training_cost(cost, train), positions=tpos[train], horizon=h)
     hp = np.full(len(y), np.nan)
     hp[hold] = p
     return preds, hp
@@ -564,44 +609,79 @@ def factor_alpha(bt, h, profile):
 
 
 # ------------------------------------------------------------- main
+def settled_before(positions, horizon, boundary):
+    """True only for outcomes observable before the next evaluation block."""
+    return np.asarray(positions) + 1 + horizon + EMBARGO < boundary
+
+
+def discovery_features(discovery):
+    """Select features by availability using the discovery sample alone."""
+    from features import NON_PIT_FEATURES, SNAPSHOT_FEATURES, SNAPSHOT_MIN_YEARS
+
+    minimum_history = SNAPSHOT_FEATURES | {"eps_revision_pit_31d"}
+    selected = []
+    for feature in FEATURES:
+        if feature not in discovery or feature in NON_PIT_FEATURES:
+            continue
+        observed = discovery[feature].notna()
+        if not observed.mean() > 0.02:
+            continue
+        if feature in minimum_history:
+            dates = discovery.loc[observed, "date"]
+            if (dates.max() - dates.min()).days / 365.25 < SNAPSHOT_MIN_YEARS:
+                continue
+        selected.append(feature)
+    return selected
+
+
 def run(profile=None):
     prof = C.PROFILES[profile] if profile else C.PROFILE
     pname = prof["name"]
-    panel = pd.read_parquet(C.PROC / f"panel_{pname}.parquet")
-    feats = [f for f in FEATURES if f in panel and panel[f].notna().mean() > 0.02]
-    # snapshot features (options / estimates collected nightly since 2026-10-20) need a long enough history to be tested
-    from features import SNAPSHOT_FEATURES, SNAPSHOT_MIN_YEARS
-    span = {f: (panel.loc[panel[f].notna(), "date"].max() - panel.loc[panel[f].notna(), "date"].min()).days / 365.25 for f in feats if f in SNAPSHOT_FEATURES}
-    feats = [f for f in feats if f not in SNAPSHOT_FEATURES or span.get(f, 0) >= SNAPSHOT_MIN_YEARS]
-    from features import NON_PIT_FEATURES
-    feats = [f for f in feats if f not in NON_PIT_FEATURES]  # cannot be reconstructed point-in-time
-    spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date")
+    from provenance import _content_hash, dataset_version, panel_identity
+
+    input_version = dataset_version()
+    panel_ok, panel_reason = panel_identity(pname, input_version)
+    panel_path = C.PROC / f"panel_{pname}.parquet"
+    panel_sha256 = _content_hash(panel_path)
+    panel = pd.read_parquet(panel_path)
+    spy = pd.read_parquet(C.RAW / "prices" / f"{C.BENCHMARK}.parquet").drop_duplicates("date").set_index("date").sort_index()
     cal = spy.index
     panel["tpos"] = cal.get_indexer(panel["date"])
+    if panel["tpos"].lt(0).any():
+        raise ValueError("panel contains decision dates outside the benchmark calendar")
+    hpos = int(cal.searchsorted(cal[-1] - pd.DateOffset(years=C.HOLDOUT_YEARS)))
+    pre = panel["tpos"].to_numpy() < hpos
+    feats = discovery_features(panel.loc[pre])
+    if not feats:
+        raise ValueError("no eligible features in the discovery sample")
     X = preprocess(panel, feats)
     Xn = sector_neutral(X, panel, feats)
     style = StyleNeutraliser(X, panel)
     dates, tpos = panel["date"].to_numpy(), panel["tpos"].to_numpy()
     syms, sectors = panel["symbol"].to_numpy(), panel["sector"].fillna("Unknown").to_numpy()
-    hpos = int(cal.searchsorted(cal[-1] - pd.DateOffset(years=C.HOLDOUT_YEARS)))
-    pre, hm = tpos < hpos, tpos >= hpos
+    hm = tpos >= hpos
     from risk_limits import load as load_limits
-    order_usd = load_limits().get("order_size_usd") or 600.0
+    order_usd = load_limits(refresh_if_missing=False).get("order_size_usd")
+    order_size_source = "bot_configuration" if order_usd is not None else "research_assumption"
+    if order_usd is None:
+        order_usd = 600.0
+    if not np.isfinite(order_usd) or order_usd <= 0:
+        raise ValueError("research order size must be positive and finite")
     cost = name_costs(panel, order_usd)
-    rt_cost = float(cost.mean() * 2)
     chash = config_hash(feats, pname)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{pname}-" + chash
     R = {"run_id": run_id, "profile": pname, "config_hash": chash, "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-         "features": feats, "sample": {"first_date": str(pd.Timestamp(dates.min()).date()), "last_date": str(pd.Timestamp(dates.max()).date()),
+         "features": feats, "historical_holdout_status": "PREVIOUSLY_VIEWED_DEVELOPMENT", "sample": {"first_date": str(pd.Timestamp(dates.min()).date()), "last_date": str(pd.Timestamp(dates.max()).date()),
                                        "holdout_start": str(cal[hpos].date()), "rows": int(len(panel)), "symbols": int(panel["symbol"].nunique()),
                                        "decision_dates": int(panel["date"].nunique()), "avg_names_per_date": float(panel.groupby("date").size().mean())},
          "costs": {"model": "FX fee + max(half Corwin-Schultz spread, config half-spread) + 0.7*daily vol*sqrt(order/ADV$)", "order_size_usd": order_usd,
-                   "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST,
+                   "order_size_source": order_size_source, "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST,
                    'accounting': 'self-financing adjusted-return holdings; all dollar rebalances and liquidation charged',
                    'cost_column': 'gross minus net return drag; transaction_cost separately records paid fees / starting NAV'}}
     print("panel", R["sample"], flush=True)
     from historical_data import coverage_check
     R["historical_integrity"] = coverage_check(R["sample"]["first_date"], R["sample"]["last_date"])
+    R["panel_provenance"] = {"passed": panel_ok, "reason": panel_reason, "dataset_version": input_version, "panel_sha256": panel_sha256}
 
     # ---- multicollinearity (discovery)
     corr = X.loc[pre, feats].corr()
@@ -631,7 +711,7 @@ def run(profile=None):
             variants["style_neutral"] = style(X[f])
         miss = panel[f].isna().to_numpy()
         for h in C.HORIZONS:
-            yy = np.where(pre & ~miss, panel[f"y_{h}"].to_numpy(), np.nan)
+            yy = np.where(settled_before(tpos, h, hpos) & ~miss, panel[f"y_{h}"].to_numpy(), np.nan)
             for vname, xs in variants.items():
                 ic = ic_series(xs.to_numpy(), yy, dates)
                 s = ic_summary(ic, h, boot=(h == C.PRIMARY_HORIZON))
@@ -662,6 +742,10 @@ def run(profile=None):
     years = pd.DatetimeIndex(dates).year
     for h in C.HORIZONS:
         y = panel[f"y_{h}"].to_numpy().astype("float64")
+        # Discovery statistics and model selection cannot consume outcomes
+        # that settle in or too close to the next evaluation block.
+        settled_discovery = settled_before(tpos, h, hpos)
+        y = np.where(settled_discovery | hm, y, np.nan)
         benchmark_returns = benchmark_label_returns(spy, dates, h)
         backtest = partial(long_only_backtest, benchmark_returns=benchmark_returns, session_positions=tpos,
                            entry_prices=panel['entry_adj_open'].to_numpy() if 'entry_adj_open' in panel else None)
@@ -672,19 +756,21 @@ def run(profile=None):
             y_res[np.isnan(y)] = np.nan
         oos, hold = {}, {}
         for name in names:
-            wf, hp = walk_forward(name, Xm, y_res if name == "factor_resid" else y, dates, tpos, h, hpos, sectors, rt_cost)
+            wf, hp = walk_forward(name, Xm, y_res if name == "factor_resid" else y, dates, tpos, h, hpos, sectors, cost if name == "logit" else None)
+            wf[pre & ~settled_discovery] = np.nan
             oos[name], hold[name] = wf, hp
             print("model", h, name, "wf IC", round(float(ic_series(wf, y, dates).mean()), 4), flush=True)
         ics = {n: ic_series(oos[n], y, dates) for n in names}
-        yearly = {n: ics[n].groupby(pd.DatetimeIndex(ics[n].index).year).mean() for n in names}
         ranks = {n: date_rank(np.where(hm, hold[n], oos[n]), dates) for n in names}
         # leakage-free ensemble: in year t, average the ranks of models whose walk-forward IC in years < t was positive
         ens = np.full(len(y), np.nan)
         members_by_year = {}
         for yr in sorted(set(years[pre])):
-            mem = [n for n in names if yearly[n][yearly[n].index < yr].mean() > 0] or names
-            members_by_year[int(yr)] = mem
             m = pre & (years == yr)
+            boundary = int(tpos[m].min())
+            mem = [n for n in names
+                   if ics[n].loc[settled_before(cal.get_indexer(ics[n].index), h, boundary)].mean() > 0] or names
+            members_by_year[int(yr)] = mem
             stack = np.stack([ranks[n][m] for n in mem])
             if not np.isnan(stack).all():
                 ens[m] = np.nanmean(stack, axis=0)
@@ -697,11 +783,22 @@ def run(profile=None):
             icw, ich = ic_series(wfm, y, dates), ic_series(hpm, y, dates)
             yr_ic = icw.groupby(pd.DatetimeIndex(icw.index).year).mean()
             bt_w = backtest(wfm, y, dates, syms, cost, h)
+            bt_h = backtest(hpm, y, dates, syms, cost, h)
             res["models"][n] = {"walk_forward": ic_summary(icw, h, boot=True), "holdout": ic_summary(ich, h, boot=True),
                                 "wf_years": {int(k): float(v) for k, v in yr_ic.items()}, "wf_positive_year_frac": float((yr_ic > 0).mean()) if len(yr_ic) else None,
-                                "backtest_wf": bt_summary(bt_w, h), "backtest_holdout": bt_summary(backtest(hpm, y, dates, syms, cost, h), h)}
+                                "backtest_wf": bt_summary(bt_w, h), "backtest_holdout": bt_summary(bt_h, h),
+                                "backtest_missing_outcomes": {
+                                    "backtest_wf": bt_w.attrs.get("missing_selected_outcomes", []),
+                                    "backtest_holdout": bt_h.attrs.get("missing_selected_outcomes", []),
+                                }}
             if h == C.PRIMARY_HORIZON and len(bt_w):
                 strategy_returns[f"model:{n}"] = bt_w["net"]
+            if n == "ensemble" and h == C.PRIMARY_HORIZON:
+                # pre-registered low-turnover variant: research output only, counted as an extra trial (DSR/PBO/SPA)
+                buffered = buffered_ensemble(backtest, wfm, hpm, y, dates, syms, cost, h)
+                res["models"][n]["buffered_variant"] = buffered["summary"]
+                if buffered["wf_net"] is not None:
+                    strategy_returns[buffered["summary"]["name"]] = buffered["wf_net"]
             if n == "ensemble" and h in FULL_SUITE_H:  # saved for baselines.py (matched random paths, block bootstrap)
                 ledger, fills = [], []
                 bt_w = backtest(wfm, y, dates, syms, cost, h, holdings=ledger, trades=fills)
@@ -713,8 +810,10 @@ def run(profile=None):
                     r['sample'] = 'holdout'
                 pd.DataFrame(ledger + hold_ledger).to_parquet(C.REPORTS / f'ensemble_holdings_{pname}_h{h}.parquet', index=False)
                 pd.DataFrame(fills + hold_fills).to_parquet(C.REPORTS / f'ensemble_fills_{pname}_h{h}.parquet', index=False)
-                pd.concat([bt_w.assign(sample="walk_forward"), bt_h.assign(sample="holdout")]).reset_index().to_parquet(
-                    C.REPORTS / f"ensemble_backtest_{pname}_h{h}.parquet", index=False)
+                periods_path = C.REPORTS / f"ensemble_backtest_{pname}_h{h}.parquet"
+                periods = pd.concat([bt_w.assign(sample="walk_forward"), bt_h.assign(sample="holdout")])
+                periods.reset_index().assign(research_run_id=run_id).to_parquet(periods_path, index=False)
+                R.setdefault("ensemble_periods_sha256", {})[str(h)] = _content_hash(periods_path)
         if len(names) > 1:
             res["models"]["ensemble"]["model_disagreement_mean_rank_std"] = float(np.nanmean(np.nanstd(np.stack([ranks[n] for n in names]), axis=0)))
         e = res["models"]["ensemble"]
@@ -745,10 +844,11 @@ def run(profile=None):
         if "logit" in names:
             pl = np.where(hm, hold["logit"], np.nan)
             okb = ~np.isnan(pl) & ~np.isnan(y)
-            lab = (y[okb] > rt_cost).astype(float)
+            holdout_cost = training_cost(cost, settled_discovery & np.isfinite(y))
+            lab = (y[okb] > holdout_cost).astype(float)
             rel = pd.DataFrame({"p": pl[okb], "y": lab})
             rel["b"] = pd.cut(rel["p"], [0, .3, .4, .45, .5, .55, .6, .7, 1], include_lowest=True).astype(str)
-            e["probability_model"] = {"target": f"P(excess > mean round-trip cost {rt_cost:.4f})", "holdout_brier": float(np.mean((pl[okb] - lab) ** 2)),
+            e["probability_model"] = {"target": f"P(excess > training mean round-trip cost {holdout_cost:.4f})", "holdout_brier": float(np.mean((pl[okb] - lab) ** 2)),
                                       "holdout_base_rate_brier": float(np.mean((lab.mean() - lab) ** 2)),
                                       "reliability": rel.groupby("b").agg(p=("p", "mean"), freq=("y", "mean"), n=("y", "size")).reset_index().to_dict(orient="records")}
         if h == C.PRIMARY_HORIZON:
@@ -799,7 +899,7 @@ def run(profile=None):
                 res.setdefault("diagnostic_errors", []).append(repr(ex)[:300])
                 print("diagnostic error", repr(ex)[:300], flush=True)
             for f in feats:  # signed single-feature strategies join the model strategies for RC/SPA/DSR/PBO
-                bt = backtest(np.where(pre, (FEATURES[f][1] or 1) * Xm[f].to_numpy(), np.nan), y, dates, syms, cost, h)
+                bt = backtest(np.where(settled_discovery, (FEATURES[f][1] or 1) * Xm[f].to_numpy(), np.nan), y, dates, syms, cost, h)
                 if len(bt):
                     strategy_returns[f"feat:{f}"] = bt["net"]
         R["models"][h] = res
@@ -807,7 +907,8 @@ def run(profile=None):
         okp = ~np.isnan(y)
         for n in names:
             yt = y_res if n == "factor_resid" else y
-            m, _ = fit_predict(n, Xm[okp & ~np.isnan(yt)], yt[okp & ~np.isnan(yt)], Xm.iloc[:2], sectors[okp & ~np.isnan(yt)], sectors[:2], rt_cost)
+            m, _ = fit_predict(n, Xm[okp & ~np.isnan(yt)], yt[okp & ~np.isnan(yt)], Xm.iloc[:2], sectors[okp & ~np.isnan(yt)], sectors[:2], training_cost(cost, okp & ~np.isnan(yt)) if n == "logit" else None,
+                               positions=tpos[okp & ~np.isnan(yt)], horizon=h)
             joblib.dump(m, MODELS_DIR / f"{pname}_h{h}_{n}.joblib")
         final[h] = {"members": hold_members, "names": names}
         print("horizon done", h, {k: (v["walk_forward"]["mean"], v["holdout"]["mean"]) for k, v in res["models"].items()}, flush=True)
@@ -828,12 +929,21 @@ def run(profile=None):
     print("overfitting", R["overfitting"], flush=True)
 
     # ---- validation gate on the ensemble (thresholds pre-set in config.py)
+    if dataset_version() != input_version or _content_hash(panel_path) != panel_sha256:
+        R["panel_provenance"].update(passed=False, reason="inputs or panel changed during research")
+    elif panel_ok:
+        still_ok, reason = panel_identity(pname, input_version)
+        R["panel_provenance"].update(passed=still_ok, reason=reason)
     for hh, res in R["models"].items():
         m = res["models"]["ensemble"]
         reasons = []
         for sample in ['backtest_wf', 'backtest_holdout']:
-            if (m.get(sample) or {}).get('missing_selected_outcome_dates'):
+            if m.get('backtest_missing_outcomes', {}).get(sample) or (m.get(sample) or {}).get('missing_selected_outcome_dates'):
                 reasons.append(f'{sample}: selected outcomes missing; ledger incomplete')
+        if order_size_source != "bot_configuration":
+            reasons.append("order size is a research assumption; bot configuration is required")
+        if not R["panel_provenance"]["passed"]:
+            reasons.append(R["panel_provenance"]["reason"])
         if not R["historical_integrity"]["passed"]:
             reasons.extend(R["historical_integrity"]["failed_checks"])
         ho, wf = m["holdout"], m["walk_forward"]
@@ -851,8 +961,9 @@ def run(profile=None):
                 if dsr is None or dsr < C.GATE_MIN_DSR:
                     reasons.append(f"deflated Sharpe {dsr if dsr is None else round(dsr, 3)} < {C.GATE_MIN_DSR}")
                 spa = R["overfitting"]["reality_check_spa"]
-                from gates import joint_test_failures
+                from gates import joint_test_failures, pbo_failures
                 reasons.extend(joint_test_failures(spa))
+                reasons.extend(pbo_failures(R["overfitting"]["pbo_cscv"], C.GATE_MAX_PBO))
             if m["calibration"]["status"] != "HISTORICAL_DECILE_CALIBRATED":
                 reasons.append("forecast deciles not monotonic out-of-sample")
             wf_sig = wf["t"] is not None and wf["t"] >= 2 and wf["mean"] > 0
@@ -874,7 +985,10 @@ def run(profile=None):
     (C.REPORTS / f"research_results_{pname}.json").write_text(json.dumps(R, indent=1, default=str))
     with (C.LEDGER / "research_runs.jsonl").open("a") as f:
         f.write(json.dumps({"run_id": run_id, "profile": pname, "config_hash": chash, "at": R["generated_at_utc"], "holdout_start": R["sample"]["holdout_start"],
-                            "tested_hypotheses": R["tested_hypotheses"], "note": "research v2 (fs-2.0, model suite); large-cap holdout previously viewed by the v1 run",
+                            "tested_hypotheses": R["tested_hypotheses"],
+                            "turnover_prereg_sha256": (R["models"][C.PRIMARY_HORIZON]["models"]["ensemble"].get("buffered_variant") or {}).get("prereg_sha256"),
+                            "feature_set_version": C.FEATURE_SET_VERSION, "panel_provenance": R["panel_provenance"],
+                            "historical_holdout_status": R["historical_holdout_status"],
                             "gate": {h: R["models"][h]["models"]["ensemble"]["gate"]["status"] for h in C.HORIZONS},
                             "holdout_ic": {h: R["models"][h]["models"]["ensemble"]["holdout"]["mean"] for h in C.HORIZONS}}) + "\n")
     print(json.dumps({h: {"ens_wf_ic": R["models"][h]["models"]["ensemble"]["walk_forward"]["mean"], "ens_ho_ic": R["models"][h]["models"]["ensemble"]["holdout"]["mean"],

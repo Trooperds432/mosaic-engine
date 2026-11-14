@@ -24,7 +24,7 @@ import risk_limits
 import gates
 
 HIST = C.PROC / "forecast_history.parquet"
-BOT_TRADES = __import__("pathlib").Path("/opt/t212-bot/trades.jsonl")
+BOT_TRADES = __import__("pathlib").Path(__import__("os").environ.get("MOSAIC_T212_TRADES", "/opt/t212-bot/trades.jsonl"))
 MIN_SESSIONS, MIN_TRADES, MIN_T = 63, 20, 2.0
 
 
@@ -143,7 +143,8 @@ def forward_gate(sh):
 def executed(run_ids=None):
     """Pair the bot's research-signal buys with later sells and Trading 212 fills."""
     if not BOT_TRADES.exists():
-        return {"trades": 0}
+        # a missing log is not evidence of zero trades (override the path with MOSAIC_T212_TRADES)
+        return {"trades": 0, "trade_log": "NOT_FOUND", "trade_log_path": str(BOT_TRADES)}
     rows = [json.loads(l) for l in BOT_TRADES.read_text().splitlines() if l.strip()]
     rows = [r for r in rows if not r.get("dry_run")]
     skips = [r for r in rows if r["kind"] == "SKIP"]

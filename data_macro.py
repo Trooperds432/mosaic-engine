@@ -124,28 +124,42 @@ def eia(client):
 
 def run():
     OUT.mkdir(parents=True, exist_ok=True)
-    with httpx.Client(timeout=60, headers={"User-Agent": "Mozilla/5.0"}, follow_redirects=True) as c:
+    # FRED tarpits a bare browser UA (read timeouts); an honest client UA is served normally.
+    with httpx.Client(timeout=60, headers={"User-Agent": "mosaic-research-engine"}, follow_redirects=True) as c:
         parts = [market(c), eia(c), revised(c)]
     df = pd.concat(parts, ignore_index=True)
     if (PROC / "macro_pit.parquet").exists():
         old = pd.read_parquet(PROC / "macro_pit.parquet")
         old = old[old["source"].isin(["fred_observed_snapshot", "eia_observed_snapshot"])]
         df = pd.concat([old, df], ignore_index=True).drop_duplicates(["series", "obs_date", "available_date", "source"], keep="first")
-    df.to_parquet(PROC / "macro_pit.parquet", index=False)
+    destination = PROC / "macro_pit.parquet"
+    temporary = destination.with_suffix(".parquet.tmp")
+    df.to_parquet(temporary, index=False)
+    temporary.replace(destination)
     print(df.groupby("series").agg(n=("value", "size"), first=("obs_date", "min"), last=("obs_date", "max")).to_string())
 
 
+def asof_series(observations, calendar):
+    """Latest visible observation period, with its latest visible vintage."""
+    if observations.empty:
+        return pd.Series(float("nan"), index=calendar, dtype=float)
+    ordered = observations.sort_values(["available_date", "obs_date"], kind="stable")
+    # A late revision to an older reference period must not move the live
+    # series backwards. At each release retain the newest visible period.
+    latest_period = ordered["obs_date"].cummax()
+    visible = ordered[ordered["obs_date"].eq(latest_period)]
+    visible = visible.drop_duplicates("available_date", keep="last")
+    values = visible.set_index("available_date")["value"]
+    return values.reindex(values.index.union(calendar)).ffill().reindex(calendar)
+
+
 def daily(calendar):
-    """Wide frame on the trading calendar: latest value whose available_date <= session date."""
+    """Wide frame on the trading calendar using only visible observations."""
     m = pd.read_parquet(PROC / "macro_pit.parquet")
     # Old sampled ALFRED values are not guaranteed initial releases.
     m = m[~m["source"].eq("alfred_first_release")]
     m = m[~m["source"].eq("eia_wpsr") & ~(m["source"].eq("fred") & m["series"].isin(["NFCI", "MORTGAGE30US"]))]
-    out = {}
-    for s, g in m.groupby("series"):
-        g = g.sort_values("available_date").drop_duplicates("available_date", keep="last")
-        idx = g.set_index("available_date")["value"]
-        out[s] = idx.reindex(idx.index.union(calendar)).ffill().reindex(calendar)
+    out = {s: asof_series(g, calendar) for s, g in m.groupby("series")}
     return pd.DataFrame(out, index=calendar).reindex(columns=list(dict.fromkeys(MARKET + REVISED + list(EIA_SERIES.values()))))
 
 

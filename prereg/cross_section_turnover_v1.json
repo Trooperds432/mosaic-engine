@@ -1,0 +1,21 @@
+{
+  "id": "cross-section-turnover-v1",
+  "registered_utc": "2026-11-12T23:30:00Z",
+  "status_note": "Written before any buffered-ensemble result was computed for the main research run. The 2-year holdout has already been viewed by earlier runs, so it is NOT pristine; forward paper trading is the only clean test.",
+  "hypothesis": "Most of the 20-session ensemble's modelled cost (0.37-0.50% per period at ~40% turnover) comes from replacing names that are still near the top of the ranking. Keeping a held name while it stays inside the top 40%, and buying new names only from the top 20%, should lower turnover and cost without materially changing gross excess.",
+  "variant": {
+    "name": "model:ensemble_buffered",
+    "score": "the leakage-free walk-forward rank ensemble used by the gate (research.py)",
+    "entry_quantile": 0.2,
+    "buffer_top": 0.4,
+    "horizon_sessions": 20,
+    "accounting": "holdings_simulation.simulate with the same per-name cost model, benchmark and rebalance calendar as the unbuffered ensemble"
+  },
+  "evaluation": {
+    "discovery": "walk-forward periods only; reported as gross / cost / net / turnover",
+    "holdout": "summarised once per run, sign check only",
+    "multiple_testing": "the walk-forward net series joins strategy_returns, so DSR, PBO, White RC and Hansen SPA count it as an extra trial"
+  },
+  "gate": "none. The research gate keeps evaluating the unbuffered ensemble. Promotion needs a new frozen recipe and its own forward record.",
+  "frozen_parameters": "no parameter in this file may change after results are seen without registering cross-section-turnover-v2"
+}

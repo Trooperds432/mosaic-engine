@@ -8,7 +8,7 @@ import math
 
 AUDIT_MAX_AGE_HOURS = 12        # the audit runs in the same nightly job, minutes before signals.py
 GATE_MAX_AGE_HOURS = 4 * 24     # paper_trading.py runs after signals.py, so the gate is from the previous run (weekends)
-BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps", "historical_universe")
+BLOCKING_TESTS = ("truncation_invariance", "label_alignment", "duplicates_timestamps", "historical_universe", "panel_provenance")
 
 
 def joint_test_failures(result):
@@ -25,6 +25,15 @@ def joint_test_failures(result):
     if not failures and result['spa_p'] > .10:
         failures.append(f"Hansen SPA p={result['spa_p']:.2f} > 0.10")
     return failures
+
+
+def pbo_failures(pbo, max_pbo):
+    """Probability of backtest overfitting (CSCV) must be computed and at most max_pbo. Fails closed like SPA."""
+    if not isinstance(pbo, (int, float)) or isinstance(pbo, bool) or not math.isfinite(pbo) or not 0 <= pbo <= 1:
+        return ['PBO (CSCV) not computed or invalid']
+    if pbo > max_pbo:
+        return [f'PBO {pbo:.2f} > {max_pbo:.2f}']
+    return []
 
 
 def live_review_ready(executed, shadow, horizon=20, min_sessions=63, min_trades=20, min_t=2.0):

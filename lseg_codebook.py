@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 VERSION = "1.0"
+INDEX_RICS = (".SPX", ".NDX", ".RUT")
 EQUITIES = ["AAPL.O", "MSFT.O", "NVDA.O", "JPM.N", "XOM.N", "PFE.N"]
 
 
@@ -36,7 +37,7 @@ def default_requests():
         jobs.append(("consensus_history_" + re.sub(r"\W", "_", ric), "history", ric,
                      ["TR.EPSMean", "TR.EPSHigh", "TR.EPSLow", "TR.RevenueMean"],
                      {"start": "2020-01-01", "end": "2026-10-23", "interval": "1M", "parameters": {"Period": "FY1"}}))
-    for index in [".SPX", ".NDX", ".RUT"]:
+    for index in INDEX_RICS:
         for direction in ["J", "L"]:
             jobs.append(("index_" + index[1:] + "_" + direction, "data", index,
                          ["TR.IndexJLConstituentChangeDate", "TR.IndexJLConstituentRIC", "TR.IndexJLConstituentName"],
@@ -58,8 +59,8 @@ def full_requests(universe, start="2012-01-01", end=None, snapshot_batch=200, hi
     is recorded as UNAVAILABLE and can be re-run with a smaller size. Datasets:
       identifiers / consensus_snapshot          current reference data and FY1 consensus (batches of snapshot_batch)
       consensus_hist_NNN                        monthly FY1 EPS/revenue consensus history with its calculation date
-      index_SPX/NDX_J/L                         dated joiners / leavers since membership_from
-      members_SPX/NDX_YYYYQq                    quarter-end constituent lists (historical membership snapshots)
+      index_SPX/NDX/RUT_J/L                         dated joiners / leavers since membership_from
+      members_SPX/NDX/RUT_*                    start, end and quarter-end constituent snapshots
     """
     rics = universe["rics"] if isinstance(universe, dict) else list(universe)
     end = end or datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -73,17 +74,33 @@ def full_requests(universe, start="2012-01-01", end=None, snapshot_batch=200, hi
         jobs.append((f"consensus_hist_{i:03d}", "data", part,
                      ["TR.EPSMean.calcdate", "TR.EPSMean", "TR.EPSMean.periodenddate", "TR.EPSStdDev", "TR.EPSNumOfEst", "TR.RevenueMean"],
                      {"SDate": start, "EDate": end, "Frq": "M", "Period": "FY1"}))
-    for index in [".SPX", ".NDX"]:
-        for direction in ["J", "L"]:
-            jobs.append((f"index_{index[1:]}_{direction}", "data", index,
-                         ["TR.IndexJLConstituentChangeDate", "TR.IndexJLConstituentRIC", "TR.IndexJLConstituentName"],
-                         {"SDate": f"{membership_from}-01-01", "EDate": end, "IC": direction}))
-        for year in range(membership_from, int(end[:4]) + 1):
-            for q, md in enumerate(["03-31", "06-30", "09-30", "12-31"], 1):
+    return jobs + membership_requests(f"{membership_from}-01-01", end)
+
+
+def membership_requests(start, end):
+    """Archive start/end rosters, quarter-end checks and dated changes separately."""
+    start_day = datetime.strptime(start, "%Y-%m-%d").date()
+    end_day = datetime.strptime(end, "%Y-%m-%d").date()
+    if start_day >= end_day:
+        raise ValueError("membership start must precede end")
+    jobs = []
+    for index in INDEX_RICS:
+        label = index[1:]
+        for direction in ("J", "L"):
+            jobs.append((f"index_{label}_{direction}", "data", index,
+                         ["TR.IndexJLConstituentChangeDate", "TR.IndexJLConstituentRIC",
+                          "TR.IndexJLConstituentName"],
+                         {"SDate": start, "EDate": end, "IC": direction}))
+        snapshots = {start: "start", end: "end"}
+        for year in range(start_day.year, end_day.year + 1):
+            for q, md in enumerate(("03-31", "06-30", "09-30", "12-31"), 1):
                 day = f"{year}-{md}"
-                if day <= end:
-                    jobs.append((f"members_{index[1:]}_{year}Q{q}", "data", index,
-                                 ["TR.IndexConstituentRIC", "TR.IndexConstituentName"], {"SDate": day}))
+                if start < day < end:
+                    snapshots[day] = f"{year}Q{q}"
+        for day, name in sorted(snapshots.items()):
+            jobs.append((f"members_{label}_{name}", "data", index,
+                         ["TR.IndexConstituentRIC", "TR.IndexConstituentName"],
+                         {"SDate": day, "EDate": day}))
     return jobs
 
 

@@ -69,6 +69,9 @@ class ProfileAuditTests(unittest.TestCase):
                 audit.run('broad')
             self.assertEqual(json.loads((reports / 'data_audit_large.json').read_text())['profile'], 'large')
             self.assertEqual(json.loads((reports / 'data_audit_broad.json').read_text())['profile'], 'broad')
+            doc = json.loads((reports / 'data_audit_broad.json').read_text())
+            self.assertFalse(doc["blocking"]["panel_provenance"])
+            self.assertFalse(gates.check_audit(doc, "ds-test", profile="broad")[0])
 
     def test_passing_large_audit_cannot_authorise_broad(self):
         import signals
@@ -189,6 +192,9 @@ class HoldingsLedgerTests(unittest.TestCase):
                                 benchmark_returns=[0, 0], rebalance_dates=pd.unique(dates))
         self.assertTrue(bt.empty)
         self.assertEqual(bt.attrs['missing_selected_outcome_dates'], ['2020-01-02'])
+        self.assertEqual(bt.attrs['missing_selected_outcomes'],
+                         [{'date': '2020-01-02', 'symbol': 'A', 'outcome_missing': True,
+                           'benchmark_missing': False}])
 
     def test_vector_random_paths_use_same_drift_and_liquidation_accounting(self):
         import baselines

@@ -63,3 +63,52 @@ Listing history is documented only after 2010-01-01 and supplies no guarantee of
 delisted prices or terminal payouts. Finnhub access depends on entitlement; 403
 fails explicitly. Exa provides discovery evidence, not certified numerical history.
 Raw responses require identity and coverage review before the bundle import.
+
+The coverage audit checks that actual prices reach the requested end date and
+compares each eligible membership interval with benchmark sessions when the
+benchmark file is available. Missing prices within those intervals and ended
+series without a verified terminal outcome fail the audit. When benchmark data
+are unavailable, the bundle check identifies its fallback calendar explicitly.
+Observed security dates cannot establish that a session missing from the entire
+export was covered.
+
+The fs-2.3 equity panel can use an imported estimate archive via
+`eps_revision_pit_31d`. It joins permanent security IDs from the active
+historical bundle and uses only estimates available by midnight New York time
+on the decision date. Both estimates must refer to the same fiscal period.
+When several fiscal periods share the latest publication timestamp and no
+unique target can be inferred, the revision stays missing. The research model
+applies the existing minimum-history requirement to this feature.
+
+For independent session reconciliation, include `sessions.csv` in the
+vendor directory with columns `date,source`. Supply ordered, unique ISO
+dates from an exchange schedule spanning the backtest window. The audit
+compares the benchmark dates against this schedule and reports missing and
+extra sessions. Use an independent schedule because deriving it from the
+price files would conceal gaps shared by those files.
+
+To prepare membership intervals from sourced constituent changes, use
+`python historical_membership.py roster.csv changes.csv --start YYYY-MM-DD
+--end YYYY-MM-DD --out membership.csv`. The starting roster requires
+`security_id,index,known_at,source`. The change file additionally requires
+`effective_date,action`, with action set to join or leave. Use permanent
+security IDs and independently verified availability dates. The command
+replays the supplied records and does not establish source completeness.
+
+## LSEG CodeBook research export
+
+Run `python lseg_bundle.py SOURCE_DIR OUTPUT_DIR` to build a staged S&P 500
+bundle. Supply the month-end snapshots (`spx_members.csv`), issuer reference
+data (`mosaic_hist_static.csv`), and OHLCV and capitalization export
+(`mosaic_hist_prices.csv`). Request `TR.TotalReturn.CalcDate`,
+`TR.TotalReturn.Date`, and `TR.TotalReturn` separately at daily frequency.
+Save these as `mosaic_sp500_dated_returns.csv.gz` with columns
+`Instrument,CalcDate,ReturnDate,Total Return`.
+
+The converter joins by instrument and date, rejects stale dates and conflicting
+duplicate observations, and stops each series when a dated total return is missing after the first
+matched observation. A dated return without OHLCV contributes to compounding
+and leaves the session unpriced. Conversion counts are
+saved in `coverage.json`. This export covers monthly S&P 500 membership and
+contains no verified terminal payouts. The resulting coverage attestations
+remain false.

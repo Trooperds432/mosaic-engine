@@ -132,17 +132,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", help="ZIP produced by lseg_codebook.py")
     args = parser.parse_args()
-    import os
-    if os.name == "nt":
-        # The engine's general lock uses Linux fcntl. Use the same lock file
-        # with Windows byte locking for this standalone import command.
-        import msvcrt
-        _lock = (C.ROOT / ".lock").open("a+b")
-        if _lock.tell() == 0:
-            _lock.write(b"0")
-            _lock.flush()
-        _lock.seek(0)
-        msvcrt.locking(_lock.fileno(), msvcrt.LK_NBLCK, 1)
-    else:
-        _lock = C.hold_lock()
+    _lock = C.hold_lock()
     print(import_bundle(args.bundle))

@@ -70,6 +70,84 @@ class HistoricalImportTests(unittest.TestCase):
                 self.assertEqual(H.security_for_ticker("REUSED", "2020-01-04"), "NEW")
                 self.assertEqual(H.ticker_for_security("OLD", "2020-01-02"), "REUSED")
                 self.assertEqual(len(pd.read_parquet(bundle / "security_master.parquet")), 2)
+                path = raw / "prices" / "NEW.parquet"
+                changed = pd.read_parquet(path)
+                changed.loc[0, "adj_open"] = 9.0
+                changed.to_parquet(path, index=False)
+                result = H.coverage_check("2020-01-01", "2020-01-05")
+                self.assertFalse(result["passed"])
+                self.assertEqual(result["materialized_price_mismatches"], ["NEW"])
+
+    def test_coverage_rejects_truncated_export_and_member_price_gap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            self.fixture(source)
+            with patch.object(C, "ROOT", root), patch.object(C, "RAW", root / "raw"), \
+                 patch.object(C, "PROC", root / "processed"):
+                bundle = H.import_bundle(source)
+                path = bundle / "prices.parquet"
+                prices = pd.read_parquet(path)
+                start, end = "2020-01-01", "2020-01-05"
+                pd.DataFrame({"date": pd.date_range(start, end)}).to_parquet(
+                    C.RAW / "prices" / "SPY.parquet", index=False)
+                prices[prices["date"].ne(pd.Timestamp("2020-01-04"))].to_parquet(path, index=False)
+                result = H.coverage_check(start, end)
+                self.assertFalse(result["passed"])
+                self.assertEqual(result["members_with_price_gaps"], ["NEW"])
+                prices[prices["date"].ne(pd.Timestamp(end))].to_parquet(path, index=False)
+                result = H.coverage_check(start, end)
+                self.assertFalse(result["passed"])
+                self.assertIn("actual prices do not reach the research window end", result["failed_checks"])
+
+    def test_independent_calendar_detects_benchmark_session_missing_inside_window(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            self.fixture(source)
+            dates = pd.date_range("2020-01-01", periods=5)
+            pd.DataFrame({"date": dates, "source": "synthetic exchange"}).to_csv(source / "sessions.csv", index=False)
+            with patch.object(C, "ROOT", root), patch.object(C, "RAW", root / "raw"), \
+                 patch.object(C, "PROC", root / "processed"):
+                H.import_bundle(source)
+                benchmark = C.RAW / "prices" / "SPY.parquet"
+                pd.DataFrame({"date": dates}).to_parquet(benchmark)
+                self.assertTrue(H.coverage_check(dates[0], dates[-1])["passed"])
+                pd.DataFrame({"date": dates.delete(3)}).to_parquet(benchmark)
+                result = H.coverage_check(dates[0], dates[-1])
+                self.assertFalse(result["passed"])
+                self.assertEqual(result["missing_benchmark_sessions"], ["2020-01-04"])
+
+    def test_failed_publication_restores_previous_price_and_universe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            self.fixture(source)
+            raw, proc = root / "raw", root / "processed"
+            with patch.object(C, "ROOT", root), patch.object(C, "RAW", raw), patch.object(C, "PROC", proc):
+                bundle = H.import_bundle(source)
+                old_price = (raw / "prices" / "NEW.parquet").read_bytes()
+                old_universe = (proc / "universe.parquet").read_bytes()
+                prices = pd.read_csv(source / "prices.csv")
+                prices["adj_open"] += 1
+                prices.to_csv(source / "prices.csv", index=False)
+                replace = Path.replace
+
+                def fail_pointer(path, target):
+                    if target == proc / "historical_bundle.json":
+                        raise PermissionError("simulated pointer write failure")
+                    return replace(path, target)
+
+                with patch.object(Path, "replace", fail_pointer):
+                    with self.assertRaises(PermissionError):
+                        H.import_bundle(source)
+                self.assertEqual(H.active_bundle(), bundle)
+                self.assertEqual((raw / "prices" / "NEW.parquet").read_bytes(), old_price)
+                self.assertEqual((proc / "universe.parquet").read_bytes(), old_universe)
+                self.assertEqual(list(bundle.parent.iterdir()), [bundle])
 
     def test_feature_labels_no_longer_forward_fill_missing_exits(self):
         cal = pd.date_range("2020-01-01", periods=4)
