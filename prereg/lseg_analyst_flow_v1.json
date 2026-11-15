@@ -1,0 +1,22 @@
+{
+  "id": "lseg-analyst-flow-v1",
+  "registered_at_utc": "2026-11-15T00:00:00Z",
+  "registered_before_data": "Written before the LSEG estimate, price-target, recommendation and ETF-flow histories were pulled; no results seen.",
+  "source": "LSEG CodeBook (Workspace) TR fields, monthly calc-dated history 2012-01 onward; ETF daily shares outstanding and NAV",
+  "universe": "S&P 500 historical bundle securities (data/raw/historical active bundle), profile large",
+  "availability_rule": "A value is usable from the New York session after its LSEG calc date (calc date 23:59 America/New_York). Values without a calc date are dropped, never back-filled. timestamp_basis = vendor_archive; not certified first-release.",
+  "features": {
+    "eps_revision_pit_31d": {"group": "estimates", "sign": 1, "definition": "existing pit_estimates.revision_panel: change in FY1 consensus EPS for the same fiscal period over 31 days / |prior|, using only values available by the decision date", "evidence": "analyst forecast revisions (e.g. Chan-Jegadeesh-Lakonishok 1996)"},
+    "est_dispersion_pit": {"group": "estimates", "sign": -1, "definition": "FY1 EPS std dev / |FY1 EPS mean|, latest available value, requires >=3 estimates", "evidence": "Diether-Malloy-Scherbina 2002"},
+    "pt_rev_1m_pit": {"group": "estimates", "sign": 1, "definition": "log change in mean price target over the latest two available monthly values <= 45 days apart"},
+    "rec_rev_1m_pit": {"group": "estimates", "sign": 1, "definition": "-(change in mean recommendation, 1 = strong buy, 5 = sell) over the latest two available monthly values <= 45 days apart"},
+    "sector_etf_flow_20d": {"group": "positioning", "sign": 0, "definition": "sum over 20 sessions of (shares_t - shares_t-1) * NAV_t-1 / AUM_t-21 for the stock's sector SPDR (GICS sector via LSEG membership file); sign 0 = no prior, reported only", "evidence": "none assumed; evaluated as exploratory"}
+  },
+  "implementation_notes_2026-11-15": "Recorded after the pull and before any feature result was computed: (1) pt/rec use the latest value only if it is <= 45 days old at the decision, matching the staleness guard in pit_estimates.revision_series; (2) est_dispersion_pit uses the latest available FY1 vintage <= 45 days old; (3) sector ETF flows are visible from the session after their date and forward-filled at most 5 sessions; XLC starts 2018 and XLRE 2015, earlier values are missing; (4) sector comes from SIC via features.sic_sector; (5) ETF NAV is matched to shares on the same date (merge-asof, 7-day tolerance; observed lag 0 days).",
+  "evaluation": {
+    "trials": "Each feature enters research.py univariate BH-FDR tests (q=0.10) and the signed single-feature strategy set, so it is counted in DSR, Hansen SPA and PBO.",
+    "hurdle": "A new feature is reported as supported only if walk-forward HAC t >= 3.0 (Harvey-Liu-Zhu) and survives BH-FDR; holdout results are exploratory because the holdout has been reused.",
+    "no_tuning": "Definitions, windows and signs above are fixed; any change is a new registration with a new id.",
+    "promotion": "None from historical evidence. Promotion requires a separate recipe and the existing forward gate."
+  }
+}

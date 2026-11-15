@@ -112,3 +112,20 @@ and leaves the session unpriced. Conversion counts are
 saved in `coverage.json`. This export covers monthly S&P 500 membership and
 contains no verified terminal payouts. The resulting coverage attestations
 remain false.
+
+## Registered ridge studies
+
+Audit the staged S&P 500 export with `python ridge_sp500_study.py --staged BUNDLE
+--snapshot SOURCE_ROSTER.csv --out NEW_REPORT.json`. The output lists unresolved
+security identifiers, missing sessions and terminal events. For the registered
+historical run, omit `--staged` and pass `--validation-rosters VERIFIED_ROSTERS.csv`,
+with columns `index,date,security_id`, after installing the verified historical
+bundle and rebuilding the large-cap panel. The registered historical window and
+feature list are in `prereg/sp500_ridge_20_v1.json`.
+
+Use `python ridge_paper.py freeze` once to archive the 120-session model. Run
+`python ridge_paper.py record` after each completed decision session and before
+its next open, with fresh input data. Run `python ridge_paper.py review` after
+updating market data. It writes an isolated review with the expected cohort
+count, IC, base and doubled-cost results, and the modeled fills. The first
+conclusive decision is preserved under the frozen recipe.
