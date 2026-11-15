@@ -509,13 +509,23 @@ def training_cost(cost, mask):
     return float(2 * np.asarray(cost)[mask].mean())
 
 
-def walk_forward(name, X, y, dates, tpos, h, hpos, sectors, cost):
+def walk_forward(name, X, y, dates, tpos, h, hpos, sectors, cost, *, shuffle=None):
     """Yearly expanding refits; training labels must end (t+1+h) before the test block starts minus an embargo."""
     ok = ~np.isnan(y)
     years = pd.DatetimeIndex(dates).year
     first_year = years.min() + C.WF_MIN_TRAIN_YEARS
     preds = np.full(len(y), np.nan)
     pre = tpos < hpos
+    def predict(train, test):
+        Xtr = X[train]
+        if shuffle is not None:
+            from ridge_controls import shuffled_training
+            symbols, seed = shuffle
+            Xtr, keep = shuffled_training(Xtr, dates[train], symbols[train], seed)
+            train = np.flatnonzero(train)[keep]
+        return fit_predict(name, Xtr, y[train], X[test], sectors[train], sectors[test],
+                           training_cost(cost, train), positions=tpos[train], horizon=h)[1]
+
     for yr in range(first_year, years.max() + 1):
         test = pre & (years == yr)
         if not test.any():
@@ -523,14 +533,63 @@ def walk_forward(name, X, y, dates, tpos, h, hpos, sectors, cost):
         train = ok & (tpos + 1 + h + EMBARGO < tpos[test].min())
         if train.sum() < 5000:
             continue
-        _, p = fit_predict(name, X[train], y[train], X[test], sectors[train], sectors[test], training_cost(cost, train), positions=tpos[train], horizon=h)
-        preds[test] = p
+        preds[test] = predict(train, test)
     hold = tpos >= hpos
     train = ok & (tpos + 1 + h + EMBARGO < hpos)
-    _, p = fit_predict(name, X[train], y[train], X[hold], sectors[train], sectors[hold], training_cost(cost, train), positions=tpos[train], horizon=h)
     hp = np.full(len(y), np.nan)
-    hp[hold] = p
+    hp[hold] = predict(train, hold)
     return preds, hp
+
+
+def ridge_control_report(panel, X, feats, y, dates, symbols, positions, holdout, sectors,
+                         cost, settled, ridge_wf, ridge_hold, backtest, strategy_returns):
+    from ridge_controls import REG, signed_composite
+
+    seed = json.loads(REG.read_text(encoding="utf-8-sig"))["development_control"]["shuffle_seed"]
+    baseline = signed_composite(X, panel, {f: FEATURES[f][1] for f in feats})
+    shuffled = walk_forward("ridge", X, y, dates, positions, 20, holdout, sectors, None,
+                            shuffle=(symbols, seed))
+    report = {"shuffle_seed": seed}
+    ridge_returns = {}
+    for sample, ridge, null in zip(("walk_forward", "viewed_holdout"),
+                                   (ridge_wf, ridge_hold), shuffled):
+        common = np.isfinite(ridge) & np.isfinite(baseline) & np.isfinite(null)
+        if sample == "walk_forward":
+            common &= settled
+        ledgers = {}
+        for name, prediction in (("ridge", ridge), ("equal_weight_signed", baseline), ("time_shuffle", null)):
+            ledger = backtest(np.where(common, prediction, np.nan), y, dates, symbols, cost, 20)
+            ledgers[name] = ledger
+            if sample == "walk_forward":
+                ridge_returns[name] = ledger["net"]
+                if name != "ridge":
+                    strategy_returns[f"control:{name}"] = ledger["net"]
+        paired = (ledgers["ridge"]["net"] - ledgers["equal_weight_signed"]["net"]).dropna()
+        report[sample] = {
+            "strategies": {name: {"metrics": bt_summary(ledger, 20),
+                                   "missing_selected_outcomes": ledger.attrs.get("missing_selected_outcomes", [])}
+                           for name, ledger in ledgers.items()},
+            "paired_periods": len(paired),
+            "paired_net_mean": float(paired.mean()) if len(paired) else None,
+            "paired_net_ci": boot_ci(paired, 4) if len(paired) >= 4 else None,
+        }
+        ic = ic_series(np.where(common, ridge, np.nan), y, dates)
+        report[sample]["ridge_ic"] = ic_summary(ic, 20, boot=True)
+        yearly = ic.groupby(pd.DatetimeIndex(ic.index).year).mean()
+        report[sample]["positive_ic_year_fraction"] = float(yearly.gt(0).mean()) if len(yearly) else None
+        table = calibration(np.where(common, ridge, np.nan), y, dates)
+        threshold = .7 if sample == "walk_forward" else .5
+        report[sample]["monotonic_deciles"] = (len(table) > 2 and
+                                                  float(stats.spearmanr(table.index, table["mean"])[0]) >= threshold)
+    comparison = pd.DataFrame(ridge_returns)
+    sharpe = sharpe_stats(comparison["ridge"])
+    trials = [item["sr"] for col in comparison if (item := sharpe_stats(comparison[col]))]
+    report["statistical_tests"] = {
+        "dsr": deflated_sr(sharpe, trials)[0],
+        "pbo": safe(pbo_cscv, comparison),
+        "joint": safe(reality_check_spa, comparison, block=max(2, 20 // C.DECISION_STEP)),
+    }
+    return report
 
 
 def date_rank(p, dates):
@@ -902,6 +961,10 @@ def run(profile=None):
                 bt = backtest(np.where(settled_discovery, (FEATURES[f][1] or 1) * Xm[f].to_numpy(), np.nan), y, dates, syms, cost, h)
                 if len(bt):
                     strategy_returns[f"feat:{f}"] = bt["net"]
+        if pname == "large" and h == 20:
+            res["ridge_controls"] = ridge_control_report(
+                panel, Xm, feats, y, dates, syms, tpos, hpos, sectors, cost,
+                settled_discovery, oos["ridge"], hold["ridge"], backtest, strategy_returns)
         R["models"][h] = res
         # production fits on every labelled row, saved for signals.py
         okp = ~np.isnan(y)
@@ -969,7 +1032,7 @@ def run(profile=None):
             wf_sig = wf["t"] is not None and wf["t"] >= 2 and wf["mean"] > 0
             status = "PAPER_TEST_ELIGIBLE" if not reasons else ("RESEARCH_CANDIDATE" if wf_sig else "UNVALIDATED")
         m["gate"] = {"status": status, "failed_checks": reasons}
-    R["tested_hypotheses"] = len(uni) + sum(len(r["models"]) for r in R["models"].values()) + 13
+    R["tested_hypotheses"] = len(uni) + sum(len(r["models"]) for r in R["models"].values()) + 13 + (2 if "ridge_controls" in R["models"].get(20, {}) else 0)
 
     model = {"model_id": f"{C.MODEL_ID}-{pname}", "model_version": C.MODEL_VERSION, "feature_set_version": C.FEATURE_SET_VERSION,
              "run_id": run_id, "profile": pname, "config_hash": chash, "features": list(Xm.columns), "feats": feats,

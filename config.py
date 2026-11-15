@@ -59,7 +59,7 @@ INSIDER_MAX_COVERAGE_GAP_DAYS = 7
 
 MODEL_ID = "mosaic-xs-ridge"
 MODEL_VERSION = "2.0.0"
-FEATURE_SET_VERSION = "fs-2.7"
+FEATURE_SET_VERSION = "fs-2.8"
 
 
 def hold_lock():

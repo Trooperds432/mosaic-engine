@@ -1,0 +1,310 @@
+{
+  "source_period": "2014-01-09",
+  "source_run": "20261114T165134Z-large-27162afbc663",
+  "benchmark": -0.023103610571241995,
+  "positions": [
+    {
+      "symbol": "DLTR",
+      "score": 0.4666334661354582,
+      "realized_excess": -0.07199977671205482,
+      "one_way_cost": 0.0034120811615139246
+    },
+    {
+      "symbol": "HD",
+      "score": 0.4626494023904383,
+      "realized_excess": -0.040038846370820336,
+      "one_way_cost": 0.0029710824601352215
+    },
+    {
+      "symbol": "NTAP",
+      "score": 0.4516932270916335,
+      "realized_excess": 0.07247742122352818,
+      "one_way_cost": 0.003009759820997715
+    },
+    {
+      "symbol": "STX",
+      "score": 0.39342629482071717,
+      "realized_excess": -0.1207279543164601,
+      "one_way_cost": 0.004330541472882032
+    },
+    {
+      "symbol": "WDC",
+      "score": 0.3690239043824701,
+      "realized_excess": 0.013490600523562324,
+      "one_way_cost": 0.004391397815197706
+    },
+    {
+      "symbol": "PNR",
+      "score": 0.3169820717131474,
+      "realized_excess": 0.011701613190235771,
+      "one_way_cost": 0.003228079993277788
+    },
+    {
+      "symbol": "CVS",
+      "score": 0.31000996015936255,
+      "realized_excess": -0.021591702060856588,
+      "one_way_cost": 0.0030476355459541082
+    },
+    {
+      "symbol": "META",
+      "score": 0.24626494023904383,
+      "realized_excess": 0.14860694208940406,
+      "one_way_cost": 0.005304703954607248
+    },
+    {
+      "symbol": "AAPL",
+      "score": 0.24327689243027886,
+      "realized_excess": -0.010361521887590208,
+      "one_way_cost": 0.003406043630093336
+    },
+    {
+      "symbol": "PEP",
+      "score": 0.23530876494023906,
+      "realized_excess": -0.013314517559688488,
+      "one_way_cost": 0.0029186299070715904
+    }
+  ],
+  "expected_sha256": "5682a03b2c9ce301fb2079eba361c584439ae4107afe1d7b96a70a8459e8cefc",
+  "lower_ranked": [
+    {
+      "symbol": "ABBV",
+      "score": -0.2584661354581673,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ABT",
+      "score": 0.07943227091633466,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ACN",
+      "score": -0.22659362549800796,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ADBE",
+      "score": 0.032868525896414334,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ADI",
+      "score": -0.23530876494023903,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ADM",
+      "score": -0.03735059760956175,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ADP",
+      "score": 0.0988545816733068,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ADSK",
+      "score": -0.4345119521912351,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AEP",
+      "score": 0.14591633466135462,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AES",
+      "score": 0.20318725099601598,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AFL",
+      "score": 0.0951195219123506,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AIG",
+      "score": -0.3334163346613546,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "ALL",
+      "score": 0.08864541832669323,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AMAT",
+      "score": 0.11230079681274899,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AMGN",
+      "score": 0.011454183266932275,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AMP",
+      "score": -0.1471613545816733,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AMT",
+      "score": -0.19347609561752988,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "AON",
+      "score": 0.09038844621513943,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "APD",
+      "score": 0.15214143426294818,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "APTV",
+      "score": 0.05403386454183267,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BA",
+      "score": -0.07993027888446216,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BAC",
+      "score": -0.44422310756972117,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BAX",
+      "score": -0.09412350597609559,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BBWI",
+      "score": -0.32993027888446214,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BBY",
+      "score": 0.20916334661354585,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BEN",
+      "score": -0.43974103585657376,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BHC",
+      "score": -0.2024402390438247,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BIIB",
+      "score": 0.11105577689243029,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BNY",
+      "score": -0.4046314741035857,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BSX",
+      "score": 0.04581673306772907,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "BX",
+      "score": -0.1897410358565737,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "C",
+      "score": -0.4494521912350598,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CAG",
+      "score": 0.10234063745019921,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CAH",
+      "score": -0.16508964143426294,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CAT",
+      "score": -0.2945717131474104,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CB",
+      "score": 0.07021912350597607,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CCI",
+      "score": -0.11354581673306773,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CCL",
+      "score": -0.16259960159362552,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CL",
+      "score": -0.31000996015936255,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    },
+    {
+      "symbol": "CLX",
+      "score": 0.22236055776892427,
+      "realized_excess": 0.0,
+      "one_way_cost": 0.005
+    }
+  ]
+}

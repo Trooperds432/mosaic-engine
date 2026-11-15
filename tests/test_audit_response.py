@@ -47,7 +47,7 @@ class MomentumOrthogonalTests(unittest.TestCase):
         self.assertNotIn('sue_consensus_xmom', panel)  # source column absent -> not invented
         self.assertEqual(FEATURES['sue_xmom'][:2], ('earnings', 1))
         self.assertIn('sue_consensus_xmom', FEATURES)
-        self.assertEqual(C.FEATURE_SET_VERSION, 'fs-2.7')
+        self.assertEqual(C.FEATURE_SET_VERSION, 'fs-2.8')
 
     def test_small_cross_sections_stay_missing(self):
         from features import orthogonal_residual

@@ -140,6 +140,11 @@ FEATURES = {
     # earnings surprise net of price momentum (per-date rank residual; built after chunk concatenation)
     "sue_xmom": ("earnings", +1, "per-date OLS residual of rank(sue) on rank(mom_12_1): post-earnings drift not explained by momentum"),
     "sue_consensus_xmom": ("earnings", +1, "per-date OLS residual of rank(sue_consensus) on rank(mom_12_1)"),
+    # LSEG CodeBook calc-dated monthly history, pre-registered in prereg/lseg_analyst_flow_v1.json (needs the historical bundle)
+    "est_dispersion_pit": ("estimates", -1, "FY1 EPS std dev / |FY1 EPS mean| from timestamped vintages, >= 3 estimates (Diether-Malloy-Scherbina)"),
+    "pt_rev_1m_pit": ("estimates", +1, "log change between the latest two calc-dated mean price targets <= 45 days apart"),
+    "rec_rev_1m_pit": ("estimates", +1, "-(change in mean recommendation, 1 = strong buy) between the latest two calc-dated values <= 45 days apart"),
+    "sector_etf_flow_20d": ("positioning", 0, "20-session net creations of the stock's sector SPDR (sum dShares x prior NAV / AUM 21 sessions earlier)"),
     # per-stock snapshots collected nightly from 2026-10-20 (excluded from models until >= 3 years of history)
     "opt_iv_rv": ("options", -1, "30d ATM implied vol / 60-session realised vol - 1 (Bali-Hovakimyan)"),
     "opt_term_slope": ("options", +1, "90d / 30d ATM implied vol - 1 (inverted term structure = stress)"),
@@ -939,6 +944,87 @@ def consensus_surprise(dec_dates, syms):
     return out
 
 
+SECTOR_SPDR = {"Technology": "XLK", "Health Care": "XLV", "Energy": "XLE", "Utilities": "XLU", "Communication": "XLC",
+               "Financials": "XLF", "Real Estate": "XLRE", "Consumer": "XLY", "Consumer Staples": "XLP",
+               "Materials": "XLB", "Industrials": "XLI"}
+ANALYST_STALE_DAYS = 45
+
+
+def _asof_pair(times, values, decisions, gap_days=ANALYST_STALE_DAYS):
+    """Latest and previous values visible at each decision; NaN unless both exist, the latest is <= gap_days old
+    and the two are <= gap_days apart. times must be sorted, timezone-aware availability timestamps."""
+    gap = pd.Timedelta(days=gap_days)
+    last = times.searchsorted(decisions, side="right") - 1
+    cur = np.full(len(decisions), np.nan)
+    prev = np.full(len(decisions), np.nan)
+    ok = last >= 1
+    ok[ok] &= (decisions[ok] - times[last[ok]] <= gap) & (times[last[ok]] - times[last[ok] - 1] <= gap)
+    cur[ok] = values[last[ok]]
+    prev[ok] = values[last[ok] - 1]
+    return cur, prev
+
+
+def analyst_features(dec_dates, syms, sector_of):
+    """Pre-registered LSEG analyst and ETF-flow features (prereg/lseg_analyst_flow_v1.json).
+    Decisions are midnight New York on the panel date; a value is visible only once its availability timestamp
+    (end of its LSEG calc date) has passed, the same rule as pit_estimates.revision_panel."""
+    dates = pd.DatetimeIndex(dec_dates)
+    decisions = dates.tz_localize("America/New_York").tz_convert("UTC")
+    blank = lambda: pd.DataFrame(np.nan, index=dates, columns=syms)
+    out = {}
+    path = PROC / "lseg_analyst.parquet"
+    if path.is_file():
+        a = pd.read_parquet(path)
+        a = a[a["security_id"].isin(syms)]
+        pt, rec = blank(), blank()
+        for (sid, measure), g in a.groupby(["security_id", "measure"], sort=False):
+            g = g.sort_values("available_at_utc")
+            cur, prev = _asof_pair(pd.DatetimeIndex(g["available_at_utc"]), g["value"].to_numpy(float), decisions)
+            if measure == "pt":
+                pt[sid] = np.log(cur / prev)
+            else:
+                rec[sid] = -(cur - prev)
+        out["pt_rev_1m_pit"], out["rec_rev_1m_pit"] = pt, rec
+    path = PROC / "estimate_vintages.parquet"
+    if path.is_file():
+        v = pd.read_parquet(path, columns=["security_id", "consensus_eps", "available_at_utc", "eps_std", "n_estimates"])
+        v = v[v["security_id"].isin(syms)]
+        disp = blank()
+        for sid, g in v.groupby("security_id", sort=False):
+            g = g.sort_values("available_at_utc")
+            times = pd.DatetimeIndex(pd.to_datetime(g["available_at_utc"], utc=True))
+            last = times.searchsorted(decisions, side="right") - 1
+            ok = last >= 0
+            ok[ok] &= decisions[ok] - times[last[ok]] <= pd.Timedelta(days=ANALYST_STALE_DAYS)
+            mean, std, n = (g[c].to_numpy(float) for c in ["consensus_eps", "eps_std", "n_estimates"])
+            val = np.full(len(dates), np.nan)
+            idx = last[ok]
+            good = (n[idx] >= 3) & (np.abs(mean[idx]) >= 1e-8)
+            sel = np.flatnonzero(ok)[good]
+            val[sel] = std[idx[good]] / np.abs(mean[idx[good]])
+            disp[sid] = val
+        out["est_dispersion_pit"] = disp
+    path = PROC / "etf_flows.parquet"
+    if path.is_file():
+        e = pd.read_parquet(path)
+        flows = {}
+        for etf, g in e.groupby("etf"):
+            g = g.set_index("date").sort_index()
+            aum = g["shares"] * g["nav"]
+            daily = g["shares"].diff() * g["nav"].shift()
+            flow = daily.rolling(20, min_periods=20).sum() / aum.shift(20)
+            # visible from the next session: a decision on date t uses flows dated before t
+            visible = flow.shift(1)  # value on ETF session t uses creations through t-1
+            flows[etf] = visible.reindex(visible.index.union(dates)).ffill(limit=5).reindex(dates)
+        f = blank()
+        for s in syms:
+            etf = SECTOR_SPDR.get(sector_of.get(s))
+            if etf in flows:
+                f[s] = flows[etf].to_numpy()
+        out["sector_etf_flow_20d"] = f
+    return out
+
+
 def snapshot_features(dec_dates, syms, vol60):
     """Per-stock options / estimate snapshots (collected nightly), latest snapshot no older than 5 days."""
     out = {k: pd.DataFrame(np.nan, index=dec_dates, columns=syms) for k in SNAPSHOT_FEATURES}
@@ -1211,6 +1297,8 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
         from pit_estimates import revision_panel, validate
         vintages = validate(pd.read_parquet(estimate_path, filters=[("security_id", "in", list(syms))]))
         feats["eps_revision_pit_31d"] = revision_panel(vintages, dec_dates, syms)
+    if historical:
+        feats.update(analyst_features(dec_dates, syms, {s: sic_sector(sic.get(c)) for s, c in sym2cik.items()}))
     feats.update(snapshot_features(dec_dates, syms, pf["vol_60"]))
     feats = {k: v for k, v in feats.items() if v is not None}
 

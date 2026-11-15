@@ -1,0 +1,24 @@
+{
+  "id": "large-ridge-120-v1",
+  "profile": "large",
+  "hypothesis": "Holding liquid large-cap equities for 120 sessions and retaining near-top holdings reduces turnover enough for ridge forecasts to earn positive net excess.",
+  "horizon": 120,
+  "ridge_alpha": 10.0,
+  "entry_fraction": 0.2,
+  "retention_fraction": 0.4,
+  "order_usd": 600,
+  "benchmark": "SPY",
+  "execution": "next session open; 120 sessions from entry to exit",
+  "min_scored_dates": 63,
+  "min_settled_cohorts": 3,
+  "min_hac_t": 2.0,
+  "cost_sensitivity_multiplier": 2.0,
+  "decision": "At first eligible prospective review, fail if IC is nonpositive, IC HAC t is below two, or mean net excess is nonpositive.",
+  "development_control": {
+    "id": "sp500-large-ridge-20-decision-v1",
+    "horizon": 20,
+    "shuffle_seed": 7,
+    "baseline": "mean signed sector-neutral date ranks over available predeclared features",
+    "decision": "With complete coverage and ledger, fail when walk-forward gross excess is nonpositive; further review requires positive net excess, positive paired net advantage, and existing gates."
+  }
+}
