@@ -10,7 +10,7 @@ Rules (prereg/lseg_analyst_flow_v1.json):
   * security_id comes from the active historical bundle's RIC map; unmapped RICs are dropped and counted.
   * A value is available from the end of its LSEG calc date in New York (23:59:59 America/New_York),
     so a decision on the calc date itself never sees it. Rows without a calc date or period end are dropped.
-  * timestamp_basis = vendor_archive. LSEG restates history for later splits, so levels are on today's
+  * timestamp_basis = inferred_calc_date (sensitivity only). LSEG restates history for later splits, so levels are on today's
     share basis; revisions within one fiscal period are unaffected, levels must not be compared with
     as-reported SEC figures.
 Usage: python lseg_estimates.py mosaic_est_hist.csv OUTPUT.csv [OBSERVED_AT_UTC]
@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from historical_data import active_bundle
+from pit_estimates import SENSITIVITY
 
 SOURCE = "lseg_codebook:TR.EPSMean FY1 monthly"
 
@@ -50,7 +51,7 @@ def convert(path, observed_at=None):
     d["available_at_utc"] = end_of_day.dt.tz_convert("UTC").dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
     d["observed_at_utc"] = observed_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     d["fiscal_period"] = d["period"].dt.strftime("FY%Y-%m-%d")
-    d["timestamp_basis"] = "vendor_archive"
+    d["timestamp_basis"] = SENSITIVITY
     d["source"] = SOURCE
     before = len(d)
     d = d.drop_duplicates(["security_id", "fiscal_period", "available_at_utc"], keep="last")

@@ -9,12 +9,34 @@ import numpy as np
 import pandas as pd
 
 
-def multiple_comparison(returns, block=4, reps=1000, seed=7):
+def multiple_comparison(returns, block=4, reps=1000, seed=7, min_coverage=None, required=None):
+    """min_coverage / required: prereg/spa_coverage_v1.json (with its amendment). If `required` is given,
+    periods are first restricted to those where it has a finite return (its evaluation window). Strategies
+    with finite returns in fewer than min_coverage of the remaining periods are excluded before the
+    complete-common-period rule; if `required` is absent or excluded, the test is not computed."""
     from arch.bootstrap import SPA, RealityCheck
     if not returns.columns.is_unique or not returns.index.is_unique or not returns.index.is_monotonic_increasing:
         raise ValueError("multiple-comparison inputs must have unique strategies and ordered unique periods")
     original = len(returns)
-    matrix = returns.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how="all").dropna(axis=0, how="any")
+    returns = returns.replace([np.inf, -np.inf], np.nan)
+    screen = None
+    if min_coverage is not None:
+        if not 0 < min_coverage <= 1:
+            raise ValueError("min_coverage must be in (0, 1]")
+        if required is not None:
+            if required not in returns:
+                return None
+            returns = returns[returns[required].notna()]
+        coverage = returns.notna().mean()
+        excluded = coverage[coverage < min_coverage]
+        if required is not None and required in excluded.index:
+            return None
+        returns = returns.drop(columns=excluded.index)
+        screen = {"min_coverage": float(min_coverage), "rule": "prereg/spa_coverage_v1.json",
+                  "window": f"periods where {required} has a return" if required else "all periods",
+                  "window_periods": int(len(returns)),
+                  "excluded_strategies": {str(k): round(float(v), 4) for k, v in excluded.sort_values().items()}}
+    matrix = returns.dropna(axis=1, how="all").dropna(axis=0, how="any")
     matrix = matrix.loc[:, matrix.std() > 0]
     if len(matrix) < 20 or matrix.shape[1] < 2:
         return None
@@ -26,11 +48,14 @@ def multiple_comparison(returns, block=4, reps=1000, seed=7):
     rc = RealityCheck(np.zeros(len(matrix)), -matrix, studentize=False, **kwargs)
     spa.compute()
     rc.compute()
-    return {"implementation": "arch.bootstrap", "version": importlib.metadata.version("arch"),
+    out = {"implementation": "arch.bootstrap", "version": importlib.metadata.version("arch"),
             "strategies": matrix.shape[1], "periods": len(matrix), "excluded_periods": original - len(matrix),
             "missing_policy": "complete_common_periods_no_zero_imputation", "block_size": block, "reps": reps, "seed": seed,
             "reality_check_p": float(rc.pvalues["upper"]), "spa_p": float(spa.pvalues["consistent"]),
             "best_strategy": str(matrix.mean().idxmax()), "best_mean": float(matrix.mean().max())}
+    if screen is not None:
+        out["coverage_screen"] = screen
+    return out
 
 
 def purged_combinations(positions, horizon, holdout_position, embargo=5, n_folds=6, n_test_folds=2):

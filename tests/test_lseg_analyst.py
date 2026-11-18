@@ -46,6 +46,8 @@ class AnalystFeatureTests(unittest.TestCase):
     def test_dispersion_requires_three_estimates(self):
         v = pd.DataFrame({"security_id": "S1", "consensus_eps": [2.0, 2.0], "eps_std": [0.2, 0.4], "n_estimates": [5.0, 2.0],
                           "available_at_utc": [eod("2020-01-31"), eod("2020-02-28")]})
+        v = v.assign(fiscal_period="2020Q4", observed_at_utc=v["available_at_utc"],
+                     timestamp_basis="observed_snapshot", source="test")
         out = self.run_features(vintages=v, dates=["2020-02-03", "2020-03-02"])["est_dispersion_pit"]["S1"]
         self.assertAlmostEqual(out.iloc[0], 0.1)
         self.assertTrue(np.isnan(out.iloc[1]))  # latest vintage has only two estimates

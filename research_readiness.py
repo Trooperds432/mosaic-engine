@@ -8,6 +8,7 @@ import pandas as pd
 import config as C
 from historical_data import active_bundle, coverage_check
 from data_macro import REVISED
+from pit_estimates import read_primary_quarterly
 
 
 def inspect(profile):
@@ -23,6 +24,7 @@ def inspect(profile):
         "feature_panel": C.PROC / f"panel_{profile}.parquet",
     }
     present = {name: path.is_file() for name, path in paths.items()}
+    present["estimate_vintages"] = read_primary_quarterly(paths["estimate_vintages"]) is not None
     prices = sum(1 for p in (C.RAW / "prices").glob("*.parquet") if p.is_file())
     filing_files = list((C.RAW / "insider").glob("*.parquet"))
     recent = C.RAW / "insider_recent" / "form4_recent.parquet"

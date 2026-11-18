@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 
 
+VERIFIED_ARCHIVE = "vendor_archive"
+SENSITIVITY = "inferred_calc_date"
+
+
 def validate(frame):
     fields = {"security_id", "fiscal_period", "consensus_eps", "available_at_utc", "observed_at_utc", "timestamp_basis", "source"}
     if not fields <= set(frame) or frame[list(fields)].isna().any().any():
@@ -19,8 +23,11 @@ def validate(frame):
         d[field] = pd.to_datetime(raw, utc=True, format="mixed", errors="raise")
     if (d["observed_at_utc"] > pd.Timestamp.now(tz="UTC")).any():
         raise ValueError("estimate observation timestamp is in the future")
-    if not d["timestamp_basis"].isin(["vendor_archive", "observed_snapshot"]).all():
-        raise ValueError("estimate timestamp basis must be a vendor archive or an observed snapshot")
+    # Existing CodeBook exports were mislabeled before inferred dates had their own class.
+    legacy = d["source"].str.lower().str.startswith("lseg_codebook:")
+    d.loc[legacy, "timestamp_basis"] = SENSITIVITY
+    if not d["timestamp_basis"].isin([VERIFIED_ARCHIVE, "observed_snapshot", SENSITIVITY]).all():
+        raise ValueError("unrecognized estimate timestamp basis")
     snapshot = d["timestamp_basis"].eq("observed_snapshot")
     if (snapshot & (d["available_at_utc"] < d["observed_at_utc"])).any():
         raise ValueError("a current estimate snapshot cannot be backdated")
@@ -28,6 +35,26 @@ def validate(frame):
     if not np.isfinite(d["consensus_eps"]).all() or d.duplicated(["security_id", "fiscal_period", "available_at_utc"]).any():
         raise ValueError("invalid or duplicate consensus observations")
     return d
+
+
+def primary_quarterly(frame):
+    """Admit only documented vendor vintages for the registered historical control."""
+    d = validate(frame)
+    fields = ("availability_evidence", "correction_policy_evidence")
+    if any(field not in d for field in fields):
+        return d.iloc[:0]
+    documented = pd.Series(True, index=d.index)
+    for field in fields:
+        documented &= d[field].astype("string").str.strip().fillna("").ne("")
+    quarterly = d["fiscal_period"].str.fullmatch(r"(?:[0-9]{4}Q[1-4]|FQ[0-9]{4}-[0-9]{2}-[0-9]{2})")
+    return d.loc[d["timestamp_basis"].eq(VERIFIED_ARCHIVE) & quarterly & documented]
+
+
+def read_primary_quarterly(path):
+    if not path.is_file():
+        return None
+    d = primary_quarterly(pd.read_parquet(path))
+    return d if not d.empty else None
 
 
 def revision_series(observations, decisions, days=31):
@@ -96,7 +123,11 @@ def import_csv(path):
         with target.open("xb") as stream:
             stream.write(payload)
     C.PROC.mkdir(parents=True, exist_ok=True)
-    output = C.PROC / "estimate_vintages.parquet"
+    sensitivity = frame["timestamp_basis"].eq(SENSITIVITY)
+    if sensitivity.any() and not sensitivity.all():
+        raise ValueError("import verified and sensitivity estimates as separate files")
+    name = "estimate_vintages_sensitivity" if sensitivity.all() else "estimate_vintages"
+    output = C.PROC / f"{name}.parquet"
     temporary = output.with_suffix(".parquet.tmp")
     frame.to_parquet(temporary, index=False)
     temporary.replace(output)

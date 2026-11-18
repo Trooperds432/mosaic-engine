@@ -66,6 +66,101 @@ followed by lower returns. A single sign-reversed result among 1,385 tests that 
 finding. Treating it as a signal would be a new hypothesis, and it would need its own registration and
 forward test.
 
+## Run D: terminal (delisting) outcomes added (15 November)
+
+All 118 ended bundle securities were classified from SEC submissions (8-K items within ±30 days of the
+last trade, and Form 25-NSE). The list is in `ledger_local/delisting_classification_20261115.csv`.
+
+| Class | Count | Terminal payout |
+|---|---|---|
+| Merger / acquisition (8-K 2.01 or 5.01, or Form 25) | 108 | **Proxy:** last adjusted close, settled one business day after the last trade. This is not the contractual consideration. |
+| Chapter 11 (8-K 1.03): FTR, DO, CHK, VAL, MNK, ENDP, SIVB, BBBY | 8 | 0 (equity cancelled; any warrants valued at 0) |
+| FDIC receivership: SBNY, FRC | 2 | 0, settled on the seizure date |
+
+**Estimate features empty in runs D and E.** Between runs C and D, `pit_estimates` started classifying
+LSEG CodeBook calc-date consensus as `inferred_calc_date` (sensitivity only). `features.py` excludes that
+class, so `eps_revision_pit_31d` and `est_dispersion_pit` are missing on every row of the D/E panel. Their
+run C results above used the calc-date data. Price-target and recommendation revisions are unaffected.
+
+`terminal_events_complete` stays false, and the method is written into the bundle's `coverage.json`.
+Only one ended security remains unresolved (LVLT, which has no LSEG prices).
+
+| Horizon | Walk-forward IC | Holdout IC (t) |
+|---|---|---|
+| 1 | −0.008 | 0.013 (1.00) |
+| 5 | −0.006 | 0.006 (0.74) |
+| 20 | 0.012 | 0.009 (0.56) |
+| 60 | 0.014 | 0.009 (0.29) |
+| 120 | 0.005 | −0.008 (−0.24) |
+
+20-session results: 103 strategies, 111 walk-forward periods.
+
+| Metric | Result |
+|---|---|
+| Deflated Sharpe | 0.013 (gate 0.9) |
+| PBO (CSCV) | **0.17**, now computable; passes the 0.5 limit |
+| Hansen SPA / White RC | Not computed in run D; computed in run E (see below): SPA p 0.64, fails |
+| Strategy ledger | Complete; no missing selected outcomes |
+
+**Pre-registered controls** (`ridge_controls.py`, 20 sessions, walk-forward):
+
+| Strategy | Gross / period | Net / period | Net HAC t |
+|---|---|---|---|
+| Ridge | +0.13% | −0.25% | −0.88 |
+| Equal-weight signed composite | +0.13% | −0.21% | −0.65 |
+| Time-shuffled training (negative control) | +0.11% | −0.16% | −0.57 |
+
+Ridge minus equal-weight, paired: −0.03% per period, 95% CI [−0.64%, +0.54%]. The model is
+indistinguishable from both the equal-weight baseline and the shuffled null.
+
+**SPA not computed in run D:** `multiple_comparison` uses only periods where every strategy has a return.
+Some feature strategies are empty in most periods, so fewer than 20 common periods remained and the test
+failed closed.
+
+## Run E: pre-registered SPA coverage rule (15 November)
+
+Rule: `prereg/spa_coverage_v1.json`, registered at 20:50 UTC before any SPA p-value on real data. A
+strategy enters SPA / Reality Check only if it has returns in ≥ 90% of the periods where the ensemble has
+a return. The ensemble must be present. Then the existing complete-common-period rule applies (no zero
+imputation, ≥ 20 periods). The gate threshold (SPA p ≤ 0.10) is unchanged. DSR still counts all 103
+strategies.
+
+One amendment, recorded in the file before any real result: as first written, coverage was measured over
+all periods. Model strategies start only after the minimum training window, so the ensemble itself covered
+46% of periods on the synthetic test and the rule would always have failed closed. Coverage is now measured
+on the ensemble's own walk-forward window.
+
+| Item | Result |
+|---|---|
+| Evaluation window | 48 periods (the ensemble's walk-forward periods at h=20) |
+| Strategies admitted | 96 of 103 |
+| Excluded (coverage 17% each) | `macd_hist`, `r2_mkt_252`, `vol_ratio_20_60`, `credit_tilt`, `opt_mkt_term_tilt`, `opt_mkt_skew_tilt`, `growth_surprise_tilt` |
+| White Reality Check p | 0.68 |
+| **Hansen SPA p** | **0.64: fails the 0.10 gate** |
+| Best strategy in the set | `feat:energy_crack_chg`, +0.38% net per period |
+
+Excluding seven strategies makes the test less conservative, and it still fails. Over 96 strategies there
+is no evidence that any one has positive expected net excess return over the benchmark. Everything else
+matches run D (DSR 0.013, PBO 0.17, identical ICs).
+
+20-session gate failures for the ensemble: order size is a placeholder; four source attestations are
+missing; holdout IC t 0.56 < 2.0; holdout net excess ≤ 0; DSR 0.013 < 0.9; SPA p 0.64 > 0.10. PBO passes.
+Status: `UNVALIDATED`.
+
+## Insider event forward record: blocked
+
+`insider_study.py freeze` stops with `missing forward inputs: verified quarterly estimate vintages`.
+`pit_estimates.primary_quarterly` admits only `vendor_archive` quarterly vintages with documented
+availability and correction-policy evidence. LSEG CodeBook calc-date exports are classified
+`inferred_calc_date` (sensitivity only). Daily scoring also needs fresh prices for bundle security IDs,
+which Yahoo can't supply while a bundle is active.
+
+Unblocking it needs one of two things:
+- a documented quarterly estimate archive;
+- a new pre-registration that runs without that control.
+
+It also needs a scheduled price refresh for bundle IDs.
+
 ## Data quality
 
 - **Bundle prices vs Yahoo:** total-return CAGR agrees to 0.01 percentage points (AAPL, MSFT, JPM, XOM).
@@ -85,7 +180,7 @@ forward test.
 ## Limitations
 
 - S&P 500 only, from December 2015; membership at month-end resolution.
-- No delisting or terminal payouts.
+- Merger payouts are a proxy (last adjusted close), not the contractual consideration. LVLT has no outcome.
 - CIKs are LSEG data resolved against SEC, not certified.
 - Order size is a placeholder ($600); the T212 bot configuration is not on this machine.
 - The holdout was reused before this rebuild, so every number here is exploratory.
@@ -94,12 +189,12 @@ forward test.
 
 1. **Stop developing the cross-sectional ridge ensemble on this universe.** Log it as a failed
    hypothesis. Further feature additions would be more trials against an exhausted holdout.
-2. **Close the terminal-payout gap** (delisting cash or stock consideration) before any further
-   historical claim. Without it, SPA and PBO can't be computed on a survivorship-corrected universe.
+2. **Terminal payouts: done (run D), with proxy merger values.** PBO (0.17) and SPA (p 0.64, run E) are
+   now computed on the survivorship-corrected universe. Both are consistent with no skill.
 3. **Prioritise the pre-registered insider event model and its forward record** (`insider_forward.py`).
-   It is judged on prospective data, not on the reused holdout.
-4. **Add the three missing controls** from `docs/MOSAIC_PROMPT_REVIEW.md`: an equal-weight composite
-   baseline, a time-shuffled negative control, and a known-answer regression test.
+   It is judged on prospective data, not on the reused holdout. It is currently blocked (see above).
+4. **Controls: done.** Equal-weight baseline, time-shuffled negative control and known-answer test are in
+   `ridge_controls.py`. Ridge is indistinguishable from both.
 
 ## Reproduce
 
@@ -107,8 +202,10 @@ Logs are in `ledger_local/`:
 - A: `research_large_baseline_yahoo.log`
 - B: `research_large_bundle.log`
 - C: `research_large_fs28.log`
+- D: `research_large_terminal.log`
+- E: `research_large_spa.log`
 
 Pre-import backup: `data_backup_2026-11-14_pre_lseg_bundle/`.
 
 Converters: `lseg_bundle.py`, `lseg_estimates.py`. Feature definitions: `features.analyst_features`.
-Pre-registration: `prereg/lseg_analyst_flow_v1.json`.
+Pre-registrations: `prereg/lseg_analyst_flow_v1.json`, `prereg/spa_coverage_v1.json`.

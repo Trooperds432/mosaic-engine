@@ -70,3 +70,17 @@ file is absent from the 90-, 180-, or 365-day window. File presence is a
 minimum check and does not certify issuer coverage. Plan purchases are
 excluded from the discretionary aggregates, and purchase intensity requires
 positive reported holdings.
+
+### Estimate provenance
+
+The primary study accepts quarterly vendor archives with documented availability and
+correction handling. Supply the provider documentation references in
+`availability_evidence` and `correction_policy_evidence`. Quarterly period keys use
+`2026Q4` or `FQ2026-12-31`. Keep the original exports and supporting documentation
+for review.
+
+CodeBook calc-dated consensus is classified as `inferred_calc_date`, including already
+imported records carrying the original CodeBook source tag. The estimate CSV importer
+writes these records to `estimate_vintages_sensitivity.parquet`. Pass its path with
+`historical --sensitivity-estimates` to request a separate diagnostic. Use
+`historical --audit-only` to generate the input and coverage report before fitting.
