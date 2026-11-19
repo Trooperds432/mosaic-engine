@@ -16,11 +16,12 @@ COLS = ["accessionNumber", "filingDate", "acceptanceDateTime", "form", "items"]
 
 
 def accepted_et(ts):
-    """True acceptance time in New York time. The submissions API's acceptanceDateTime applies the Eastern offset
-    twice (EDGAR index shows 16:30:28 ET, API shows 00:30:28Z next day), so subtract one offset before converting."""
-    ts = pd.to_datetime(ts, utc=True)
-    off = ts.dt.tz_convert("America/New_York").map(lambda x: x.utcoffset() if pd.notna(x) else pd.NaT)
-    return (ts + off).dt.tz_convert("America/New_York")
+    """Acceptance time in New York time: the submissions API's acceptanceDateTime converted, with no offset correction.
+    Checked 2026-11-19 against EDGAR index-page "Accepted" times: 20/20 8-Ks and 28/30 Form 4s match exactly
+    (ledger_local/8k_acceptance_tz_check_20261119.csv, form4_acceptance_tz_check_20261119.csv). The earlier version
+    subtracted one Eastern offset from every filing, which moved most times 4-5 h early (after-close filings became
+    same-session: look-ahead). The rare API values that are one offset late are left late (conservative)."""
+    return pd.to_datetime(ts, utc=True, errors="coerce").dt.tz_convert("America/New_York")
 
 
 def frame(block, cik):

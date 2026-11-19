@@ -40,6 +40,18 @@ fail-closed gates. "Working" below means *survives those tests*, not *looked goo
 
 **Status of every tradable strategy: `UNVALIDATED`. Nothing has trading authority.**
 
+> **Update 19 November.**
+> - **Insider v3 (pre-registered, S&P 500 2016–2026, exact filing times, 5 sessions after the next open):**
+>   CEO/CFO or cluster purchases show gross +0.04% (t 0.22) and net −0.44% (t −2.45) over 649 events.
+>   All purchases: gross −0.05%, net −0.52%. **There is no large-cap edge before costs**, so point 4's
+>   gross effect does not carry over to this tradable setting. Details: `docs/INSIDER_STUDY.md`.
+> - **Costs (point 5) are verified:** quoted spreads replaced Corwin-Schultz, and one-way cost is 0.19%.
+> - **Two data bugs were fixed:**
+>   - 8-K acceptance times were shifted 4–5 hours early, which was look-ahead for about half of all
+>     filings.
+>   - Cover-page share counts were zeroed under pandas < 3. The saved panel was built under pandas 3 and
+>     is unaffected.
+
 ---
 
 ## 2. What appears to be working

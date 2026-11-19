@@ -78,6 +78,35 @@ def issuer_acceptances(client, cik, wanted, matched, pause=time.sleep):
         match_table(get(page["name"]), wanted, matched)
 
 
+ACCEPTED_RE = re.compile(r'Accepted</div>\s*<div class="info">([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})</div>')
+
+
+def parse_index_accepted(html):
+    """EDGAR filing index page 'Accepted' field (New York wall time) -> UTC ISO string, or None."""
+    found = ACCEPTED_RE.search(html)
+    if not found:
+        return None
+    return pd.Timestamp(found[1]).tz_localize("America/New_York").tz_convert("UTC").isoformat()
+
+
+def index_acceptance(client, ciks, accession, pause=time.sleep, attempts=3):
+    """Acceptance time from the EDGAR filing index page, trying each CIK folder (filer agent, issuer, owner)."""
+    key = accession.replace("-", "")
+    if not re.fullmatch(r"[0-9]{18}", key):
+        raise ValueError("invalid accession number")
+    dashed = f"{key[:10]}-{key[10:12]}-{key[12:]}"
+    for _ in range(attempts):
+        for cik in ciks:
+            pause(1.0)
+            try:
+                response = client.get(f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{key}/{dashed}-index.htm")
+            except httpx.HTTPError:
+                continue
+            if response.status_code == 200 and (accepted := parse_index_accepted(response.text)):
+                return accepted
+    return None
+
+
 def build_from_api(filings, output, limit=None):
     parts = [pd.read_parquet(path, columns=["issuercik", "accession_number"],
                             filters=[("document_type", "in", ["4", "4/A"]), ("trans_code", "in", ["P", "S"])])
