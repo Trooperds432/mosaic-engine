@@ -1,0 +1,36 @@
+{
+  "id": "spread-check-v1",
+  "registered_at_utc": "2026-11-18T19:13:44Z",
+  "registered_before_data": "Written before any historical bid/ask quote for the bundle universe was pulled or inspected. Known beforehand: the model's half-spread is clip(Corwin-Schultz 60-session mean / 2, 3 bp, 2%); on panel_large its median is about 24 bp; published large-cap quoted spreads are believed to be a few bp, which motivated this check.",
+  "question": "Does the Corwin-Schultz half-spread used in research.name_costs match quoted half-spreads for the same names and dates?",
+  "data": {
+    "source": "LSEG Workspace / CodeBook, lseg.data get_history, daily interval, fields BID and ASK (end-of-day consolidated quote), all RICs in data/raw/historical/8433bd236228ba351c9a/security_master.parquet, 2015-09-01 to 2026-10-30.",
+    "cleaning": "Keep days with BID > 0, ASK > BID and (ASK-BID)/mid < 0.20. Quoted half-spread q = (ASK-BID)/(2*mid). Per name, trailing 60-session mean of q ending on the decision date, at least 40 valid days, mirroring the cs_spread window.",
+    "join": "panel_large rows (date, symbol) via security_master ticker/security_id -> ric."
+  },
+  "comparison": {
+    "model_value": "hs_model = clip(cs_spread/2, 0.0003, 0.02), exactly as name_costs uses it.",
+    "quoted_value": "hs_quoted = trailing 60-session mean q as above.",
+    "reported": [
+      "coverage share of panel rows with hs_quoted",
+      "median and mean of hs_model and hs_quoted",
+      "median ratio hs_model/hs_quoted",
+      "share of rows with hs_model > hs_quoted",
+      "the same by year and by panel market-cap tercile",
+      "Spearman rank correlation across names per date (median over dates)",
+      "mean one-way cost under the current model and under the v2 rule below, at the same $600 order"
+    ]
+  },
+  "decision_rule": {
+    "cost_model_v2": "Half-spread = max(hs_quoted, HALF_SPREAD 3 bp floor), falling back to the current clip(cs_spread/2, 3 bp, 2%) where hs_quoted is missing. FX fee and impact terms unchanged.",
+    "adoption": "Adopt v2 if hs_quoted covers >= 80% of panel_large rows, whatever the direction of the difference (a measured quote is preferred over a range-based estimate a priori). If coverage < 80%, keep the current model and report the comparison only.",
+    "no_tuning": "No other spread estimator, window, floor or cap is tried. The 3 bp floor and $600 order are unchanged."
+  },
+  "known_limitations": [
+    "End-of-day quoted spread, not effective or intraday time-weighted spread; effective spreads with price improvement are usually at or below quoted, so v2 is if anything conservative for marketable orders of this size.",
+    "Closing-auction quote snapshots can be wider or narrower than the intraday average.",
+    "Delisted RICs may lack quote history; coverage is reported."
+  ],
+  "evaluation": "Cost-model measurement, not a signal trial. Any rerun of strategy results under v2 is a new trial on a reused holdout, exploratory only, logged in the trial ledger; no gate threshold changes.",
+  "trial_run_F_2026-11-19T13:16Z": "Registered before running: research.py large (run F) under cost model v2 (config.COST_MODEL='v2_quoted', data/processed/quoted_spread.parquet built from the pre-registered LSEG pull). Everything else identical to run E (same panel, features, ridge alpha, gates, SPA coverage rule, $600 order). Counted as a new trial on the reused holdout; exploratory only. Gate thresholds unchanged; no parameter is tuned on its result."
+}

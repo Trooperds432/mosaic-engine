@@ -161,6 +161,72 @@ Unblocking it needs one of two things:
 
 It also needs a scheduled price refresh for bundle IDs.
 
+## Spread check: modelled vs quoted half-spreads (19 November)
+
+Pre-registered in `prereg/spread_check_v1.json` (2026-11-18T19:13:44Z) before any quote was pulled.
+
+- **Data:** LSEG end-of-day BID/ASK for all 722 bundle RICs, 2015-09 to 2026-10, pulled through the
+  Workspace desktop session (`lseg_quotes_pull.py`). That is 1.7 million quote days. One RIC (GM.N)
+  failed on every attempt. 688 panel rows use the TR.BIDPRICE/TR.ASKPRICE fallback.
+- **Method:** `spread_check.py` computes the quoted half-spread as (ask−bid)/(2·mid) and averages it over
+  the trailing 60 sessions (at least 40 valid days). This matches the Corwin-Schultz (CS) window. The
+  model value is the clipped CS half-spread that `research.name_costs` actually charges.
+- **Result:** `ledger_local/spread_check_v1.json`.
+
+| | Model (CS) half-spread | Quoted half-spread | Median ratio |
+|---|---|---|---|
+| All rows (96,244; coverage 99.4%) | 23.7 bp median / 26.3 bp mean | 1.26 bp median / 1.51 bp mean | 19.0× |
+| Smallest third by market cap | 27.1 bp | 1.68 bp | 16.3× |
+| Middle third | 23.3 bp | 1.17 bp | 19.5× |
+| Largest third | 21.1 bp | 1.00 bp | 21.0× |
+
+- **The model charges more than the quoted spread on 99.998% of rows, in every year from 2016 to 2026.**
+  The yearly median ratio ranges from 16× to 22×.
+- **CS does carry some relative information.** Its rank correlation with quoted spreads across names has a
+  median of 0.37 per date. But its level is about 19 times too high for S&P 500 names.
+- **Cost impact at the $600 order:** the mean one-way cost falls from 0.416% to 0.185%, and round trip
+  from about 0.83% to 0.37%. Under v2, the 3 bp floor binds for most names, so the spread term
+  averages 3.2 bp. FX at 0.15% becomes the largest cost.
+- **Decision under the pre-registered rule:** coverage is 99.4%, above the 80% threshold, so cost model v2
+  is adopted. v2 uses max(quoted half-spread, 3 bp), falls back to CS where no quote exists, and leaves FX
+  and impact unchanged. It is **not yet wired into `name_costs`, and no strategy has been rerun under it.**
+  Any rerun is a new exploratory trial on the reused holdout and must be logged.
+- **Caveats:**
+  - These are end-of-day quotes, not intraday time-weighted or effective spreads.
+  - The T212 fill quality on a $600 market order is not measured.
+  - The 3 bp floor is retained, so v2 still charges about 2.5 times the median quoted half-spread.
+
+## Run F: cost model v2 (19 November)
+
+Registered in `prereg/spread_check_v1.json` (`trial_run_F_2026-11-19T13:16Z`) before running. Uses the
+same panel bytes as run E, with `COST_MODEL=v2_quoted`. Log: `ledger_local/research_large_costv2.log`.
+Books: `ledger_local/ensemble_backtest_large_h{5,20}_runF_v2cost.parquet`. Exploratory: the holdout is
+reused.
+
+| h=20 ensemble, long-only, excess over SPY per period | Gross | Cost | Net (t) |
+|---|---|---|---|
+| Walk-forward (48 periods) | +0.236% | 0.155% | +0.082% (0.22) |
+| Holdout (24 periods) | +0.208% | 0.188% | +0.020% (0.05) |
+
+- **Overfitting checks:** DSR 0.077 (run E 0.013), PBO 0.23 (0.17), SPA p 0.59 (0.64), Reality Check p
+  0.61. At h=5, holdout net is −0.001% and walk-forward net −0.120%.
+- **Gate:** still `UNVALIDATED`. Holdout IC t 0.45 < 2, DSR < 0.9 and SPA p > 0.10 all fail. The
+  "holdout net excess ≤ 0" failure clears at h=20, but net is about zero.
+- **The ensemble also changed slightly, not just its costs.** The logit model's labels depend on cost,
+  so its walk-forward IC moved from 0.0145 to 0.0208. Holdout IC for the ensemble went from 0.0086
+  to 0.0068.
+- **A provenance flag fired.** Another process wrote new `data/processed/lseg/` inputs at 13:30, during
+  the run. `panel_large.parquet` itself was unchanged.
+- **Conclusion:** cheaper, correct costs take the ridge ensemble from a clear loss to about zero net.
+  There is still no evidence of skill.
+- **Like-for-like rerun under the old cost model** (`MOSAIC_COST_MODEL=v1_cs`, log
+  `research_large_costv1_repro.log`) reproduces run E exactly: DSR 0.013, PBO 0.17, SPA p 0.639.
+  - At h=20 its book makes +0.31% before costs in both the earlier period and the test period. That is
+    more than run F's +0.21–0.24%, because the logit change in v2 lowered gross returns.
+  - Its costs are 0.37–0.47%, so its net is −0.05% in the earlier period and −0.16% in the test period.
+  - **Net effect of v2:** costs fall by about 0.22–0.28 points per period, and gross returns fall by
+    about 0.08–0.10. The net result improves by about 0.13–0.18 points, to roughly zero.
+
 ## Data quality
 
 - **Bundle prices vs Yahoo:** total-return CAGR agrees to 0.01 percentage points (AAPL, MSFT, JPM, XOM).
@@ -195,6 +261,9 @@ It also needs a scheduled price refresh for bundle IDs.
    It is judged on prospective data, not on the reused holdout. It is currently blocked (see above).
 4. **Controls: done.** Equal-weight baseline, time-shuffled negative control and known-answer test are in
    `ridge_controls.py`. Ridge is indistinguishable from both.
+5. **Spreads: checked.** The CS spread overstated costs about 19× (see the spread check above). Cost model
+   v2 is adopted under the pre-registered rule but not yet implemented. Lower costs cannot rescue ridge,
+   because before costs it does no better than the shuffled control.
 
 ## Reproduce
 
