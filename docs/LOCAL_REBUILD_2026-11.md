@@ -228,6 +228,36 @@ reused.
     about 0.08–0.10. The net result improves by about 0.13–0.18 points, to roughly zero.
 
 ## Data quality
+- **Share-count bug under pandas < 3 (19 November).**
+  - **The bug:** `features.fundamentals_asof` grouped categorical columns without `observed=True`.
+    Under pandas 2.x this creates zero-valued rows for every unseen category combination, so cover-page
+    `shares` came out as 0 (AAPL, MSFT and AMZN on every date). The insider v3 matched-control step also
+    ran out of memory.
+  - **Fix:** `observed=True` is now explicit.
+  - **Who was affected:** `requirements.txt` pins pandas 3.0.6, where `observed=True` is the default.
+    The saved `panel_large.parquet` has plausible `turnover` (91% coverage, median 0.24%), so it was
+    built correctly. The local scratch venv had pandas 2.3.3; it is now aligned to the pins.
+  - **Separate venv needed:** `lseg-data` 2.1.1 requires pandas < 3, so LSEG pulls need their own venv.
+- **8-K acceptance times corrected (19 November): this fixes look-ahead.**
+  - **The bug:** `data_8k.accepted_et` subtracted one Eastern offset from every SEC submissions-API
+    timestamp. That made most 8-K times 4–5 hours too early, so after-close filings, including most
+    earnings releases, became available in the same session.
+  - **Evidence:** EDGAR index pages agree with the raw API value for 20/20 sampled 8-Ks
+    (`ledger_local/8k_acceptance_tz_check_20261119.csv`).
+  - **Fix:** `accepted_et` now only converts to New York time. `8k_items.parquet` was rebuilt; the old copy
+    is in `ledger_local/8k_items_pre_tzfix_20261119.parquet`.
+  - **Effect:** 409,730 of 774,560 filings (52.9%), and 50.7% of item 2.02 earnings releases, move one
+    session later. None moves earlier.
+  - **Not yet rerun:** the following have not been recomputed under the fix, and earlier runs that used
+    them carry this look-ahead:
+    - `earn_recent` (`features.earnings_recent`), whose flag turned on one session early for after-close
+      releases;
+    - `catalysts.py` and `insider_model.py` inputs;
+    - `data_text.py` outputs.
+- **Form 4 acceptance sidecar:** 28 of 30 sampled times match EDGAR exactly. 2 are late by exactly one
+  Eastern offset, which is conservative (no look-ahead) and left as is
+  (`ledger_local/form4_acceptance_tz_check_20261119.csv`). The 4 unmatched accessions are absent from the
+  EDGAR archive (HTTP 404 and S3 NoSuchKey), so they remain unmatched and no time is inferred.
 
 - **Bundle prices vs Yahoo:** total-return CAGR agrees to 0.01 percentage points (AAPL, MSFT, JPM, XOM).
   Mean absolute daily difference is under 1 bp.

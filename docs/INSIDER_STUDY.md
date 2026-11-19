@@ -84,3 +84,52 @@ imported records carrying the original CodeBook source tag. The estimate CSV imp
 writes these records to `estimate_vintages_sensitivity.parquet`. Pass its path with
 `historical --sensitivity-estimates` to request a separate diagnostic. Use
 `historical --audit-only` to generate the input and coverage report before fitting.
+
+## v3 historical result (19 November 2026)
+
+**Pre-registration:** `prereg/insider_event_v3.json`, registered 2026-11-19T17:58:32Z after user approval and
+before any v3 event or return was computed.
+
+**What v3 changes:** it uses the v2 recipe verbatim (checked at runtime by
+`insider_study_v3.check_recipe`) and rescopes it to data that exists:
+- S&P 500 members from the LSEG bundle, entries 2016-01-04 to 2026-10-30;
+- exact EDGAR acceptance times only;
+- no estimate control in the primary specification (the probe found no vendor archive);
+- events near earnings, material-agreement or M&A 8-Ks are excluded;
+- cost model v2 plus 5 bp slippage per side.
+
+Run: `insider_study_v3.py`. Output: `ledger_local/insider_v3_20261119/`.
+
+**Status: UNVALIDATED.** No edge before costs.
+
+| Beta-adjusted, 5 sessions after the next open | Events | Gross (month-clustered t) | Round trip | Net (t) |
+|---|---|---|---|---|
+| CEO/CFO or cluster purchases (primary trial) | 649 | +0.04% (0.22) | 0.47% | −0.44% (−2.45) |
+| All open-market purchases | 2,700 | −0.05% (−0.41) | 0.47% | −0.52% (−4.50) |
+| Ridge score > 0 | 74 | −0.37% (−1.00) | 0.47% | −0.84% (−2.25) |
+
+- **Portfolio ledgers** (20 positions, $600 orders) agree: CEO/CFO/cluster gross +0.02% per trade, net
+  −0.46%. Year-by-year net for the primary trial is positive in only 3 of 11 years.
+- **The cost sensitivities only add losses** (twice the cost, twice the order size).
+- **Ridge versus all purchases:** this secondary test is significant after BH correction (t 4.27). It only
+  means ridge loses less than buying everything; both are negative.
+- **Gate checks fail:** DSR 0.0003. PBO was not computed.
+- **The matched-control test returned no matched pairs** (0 of 2,497 events). So incremental value over
+  controls is untested, and the calc-date estimate sensitivity is identical to the primary run (estimates
+  enter only through matched controls). Why no controls match is still to diagnose.
+- **The date-only sensitivity is identical to the primary run** because all 658,719 filing rows in the
+  universe carry exact acceptance times.
+- **The concurrent-8-K rule** removed 284 events. Including them (2,996 events) changes little. For the
+  primary trial, the portfolio's mean daily gross goes from +0.0007% to +0.0012% of reference capital, and
+  net stays negative (−0.005% a day).
+- **No events were excluded for price gaps.** The 9 gap or no-price members produced no eligible events.
+- **Coverage audit:**
+  - The five source attestations remain unattested (a registered limitation).
+  - The independent exchange schedule and security-level roster reconciliation are missing.
+  - Session coverage is incomplete.
+
+**Interpretation:** among S&P 500 large caps, the post-filing 5-session insider-buying effect is
+indistinguishable from zero before costs. The earlier positive event-study results (October, broader
+Yahoo universe, 1-session horizon) do not carry over to this tradable large-cap setting. That is
+consistent with published findings that the effect is concentrated in smaller firms. A forward record
+under v3 is not justified by this evidence.

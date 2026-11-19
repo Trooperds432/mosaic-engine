@@ -1,0 +1,67 @@
+{
+  "id": "insider-event-v3",
+  "registered_at_utc": "2026-11-19T17:58:32Z",
+  "registered_before_data": "Approved by the user on 2026-11-19 before any v3 event, return or statistic was computed. Inputs inspected beforehand: the entitlement probe, the acceptance-time checks and the v2 audit-only blocker report (no returns).",
+  "status": "REGISTERED",
+  "relation_to_v2": "insider-event-v2 stays registered and unchanged. v3 rescopes it to data that exists and can be verified; every recipe field below marked 'as v2' is copied verbatim from prereg/insider_event_v2.json.",
+  "why_rescoped": [
+    "v2's coverage gate (historical_data.coverage_check) requires S&P 500, Nasdaq-100 and Russell 2000 membership from 2006 with source attestations; only S&P 500 from 2015-12-31 exists (ledger_local/insider_v2_recheck_20261119).",
+    "No vendor-archive quarterly estimates are available: LSEG estimates content returns 403 (missing scope trapi.data.est.sum), Datastream is not reachable from the session, and calc-date history is restated for later splits (ledger_local/estimate_entitlement_probe_20261119.json)."
+  ],
+  "decided_before_results": "The estimate-control choice below follows the rule fixed in the approved plan (vendor archive found -> primary control; none found -> no primary control, calc-date estimates as labelled sensitivity). The probe found none.",
+  "horizon_sessions": 5,
+  "cooldown_sessions": 20,
+  "cluster_calendar_days": 30,
+  "minimum_close_usd": 5,
+  "minimum_adv_usd": 20000000,
+  "order_usd": 600,
+  "max_open_positions": 20,
+  "ridge_alpha": 10,
+  "min_train_events": 200,
+  "min_calibration_events": 100,
+  "embargo_sessions": 5,
+  "cpcv_folds": 6,
+  "cpcv_test_folds": 2,
+  "interval_coverage": 0.95,
+  "min_forward_events": 100,
+  "min_forward_calendar_days": 90,
+  "trials": [
+    "ridge_positive_net",
+    "ceo_cfo_or_cluster",
+    "any_purchase"
+  ],
+  "secondary_tests": [
+    "ridge_minus_primary",
+    "ridge_minus_any",
+    "incremental_ridge"
+  ],
+  "execution": "as v2: First regular open on a later New York date. Compare beta-adjusted five-session returns on the same calendar. Rank by score within an entry session and enforce the same position cap across variants.",
+  "cost_sensitivities": [
+    "fixed fills at twice order size",
+    "fixed fills at twice execution cost"
+  ],
+  "historical_evidence": "as v2: Development only. All historical dates are treated as potentially viewed.",
+  "forward_review": "as v2: At least 90 calendar days and 100 settled scored events, complete required inputs, positive after-cost performance versus both baselines and user review. Research output never grants trading authority.",
+  "scope": {
+    "universe": "Securities that are S&P 500 members on the event date per membership.parquet of bundle data/raw/historical/8433bd236228ba351c9a (LSEG, month-end resolution, disclosed).",
+    "window": "Entry dates 2016-01-04 to 2026-10-30 (bundle span). Beta and liquidity windows may use earlier bundle prices.",
+    "coverage_gate": "S&P-only audit (ridge_sp500_study.audit_bundle checks): coverage span, benchmark sessions vs an independent exchange schedule, independent roster reconciliation, per-member price gaps and terminal outcomes. The five source attestations (constituents_complete, identifiers_verified, delisted_prices_complete, terminal_events_complete, corporate_actions_verified) are reported as unattested limitations on every output; the study status cannot be VALIDATED while any is false.",
+    "price_gaps": "An event is excluded if any session from entry to exit for that security is missing from bundle prices; exclusions are counted and listed. Current audit: 2 members without prices (HST_HSTN, KMB_KMBN) and 7 with gaps (ARNC_20230818, BIIB, BKR_BKRN, CPB_CPBN, DD, FITB, FTI).",
+    "acceptance_times": "Primary sample: Form 4 events with an exact EDGAR acceptance time in data/processed/insider_acceptances.csv. Events without one (currently 4 accessions absent from the EDGAR archive, ledger_local/form4_index_resolved_20261119.json) are excluded. Date-only results are reported separately as a sensitivity.",
+    "estimate_control": "None in the primary specification. Calc-date FQ1 consensus history (data/processed/estimate_vintages_sensitivity.parquet, timestamp_basis inferred_calc_date) is used only in a labelled sensitivity.",
+    "concurrent_events": "Primary sample excludes events whose entry-to-exit window, extended 2 sessions before entry, contains an 8-K available_date with item 2.02 (results of operations), 1.01 (material agreement) or 2.01 (completed acquisition/disposition), from data/processed/8k_items.parquet after the 2026-11-19 acceptance-time correction (data_8k.accepted_et). A sensitivity includes them.",
+    "costs": "Cost model v2_quoted (config.COST_MODEL; prereg/spread_check_v1.json): FX 0.15% + max(quoted 60-session half-spread, 3 bp) + square-root impact at the order size, plus SLIPPAGE 5 bp per side as in insider_study.StudyMarket."
+  },
+  "data_sensitivities": [
+    "date-only filings included",
+    "explicit non-plan disclosures only",
+    "calc-date FQ1 estimate control (inferred_calc_date)",
+    "concurrent 8-K events included"
+  ],
+  "known_limitations": [
+    "S&P 500 only, 2016-2026; membership at month-end resolution.",
+    "Five source attestations unverified; status stays below VALIDATED until they are.",
+    "No point-in-time quarterly estimate control in the primary result.",
+    "Holdout-style historical evidence is development only; promotion requires the forward record."
+  ]
+}

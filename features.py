@@ -429,7 +429,9 @@ def fundamentals_asof(dec_dates, ciks, f=None):
     for key, (tags, kind) in FUND_DEFS.items():
         sub = f[masks[kind] & f["tag"].isin(tags)][["cik", "tag", "end", "filed", "val", "accn"]]
         if key == "shares":  # multi-class issuers report one cover-page fact per class
-            sub = sub.groupby(["cik", "accn", "end", "filed"], as_index=False)["val"].sum()
+            # observed=True: cik/accn are categoricals; pandas < 3 would otherwise add zero-valued rows for every
+            # unseen category combination, which overrode real share counts with 0
+            sub = sub.groupby(["cik", "accn", "end", "filed"], as_index=False, observed=True)["val"].sum()
         else:
             sub = sub.assign(pri=sub["tag"].map({t: i for i, t in enumerate(tags)})).sort_values("pri")
             sub = sub.drop_duplicates(["cik", "end", "filed"], keep="first")

@@ -252,11 +252,20 @@ def interval_report(events, bounds):
             "mean_width": float((hi - lo).mean()) if ok.any() else None}
 
 
-def history_run(market, filings, vintages, coverage, out, suffix="", date_only=False, explicit_non_plan=False):
+def history_run(market, filings, vintages, coverage, out, suffix="", date_only=False, explicit_non_plan=False,
+                event_filter=None):
+    """event_filter (optional, used by insider_study_v3): events -> (kept events, exclusion counts); applied to
+    candidate events before labelling, so excluded events never influence training, scoring or portfolios."""
     purchases = available_filings(filings, market.cal, date_only, explicit_non_plan)
     events, rejected = build_events(market, purchases)
+    excluded = None
+    if event_filter is not None and not events.empty:
+        events, excluded = event_filter(events)
+        events = events.reset_index(drop=True)
     report = {"candidate_events": len(events), "rejected": rejected, "reasons": [],
               "status": "UNVALIDATED", "evidence": "PREVIOUSLY_VIEWED_DEVELOPMENT"}
+    if excluded is not None:
+        report["scope_exclusions"] = excluded
     if events.empty:
         report["reasons"].append("No eligible purchase events")
         return report, None
