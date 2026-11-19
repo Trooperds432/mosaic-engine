@@ -43,6 +43,11 @@ FX_FEE = 0.0015              # T212 FX conversion fee, 0.15% each way
 HALF_SPREAD = 0.0003         # large-cap assumption, 3 bp
 SLIPPAGE = 0.0005            # 5 bp market-order slippage / impact assumption
 ROUND_TRIP_COST = 2 * (FX_FEE + HALF_SPREAD + SLIPPAGE)
+# Cost model v2 (prereg/spread_check_v1.json): half-spread = max(quoted 60-session mean half-spread, HALF_SPREAD),
+# Corwin-Schultz where no quote exists. Set MOSAIC_COST_MODEL=v1_cs to reproduce earlier runs.
+COST_MODEL = os.environ.get("MOSAIC_COST_MODEL", "v2_quoted")
+QUOTED_SPREAD_FILE = PROC / "quoted_spread.parquet"
+QUOTE_MAX_STALENESS_DAYS = 5
 
 # Validation gate (model level)
 GATE_MIN_HOLDOUT_IC_T = 2.0

@@ -44,7 +44,7 @@ RNG = np.random.default_rng(20261019)
 
 def config_hash(feats, prof):
     keys = ["HORIZONS", "PRIMARY_HORIZON", "DECISION_STEP", "HOLDOUT_YEARS", "WF_MIN_TRAIN_YEARS", "RIDGE_ALPHA",
-            "N_QUANTILES", "FX_FEE", "HALF_SPREAD", "SLIPPAGE", "FEATURE_SET_VERSION"]
+            "N_QUANTILES", "FX_FEE", "HALF_SPREAD", "SLIPPAGE", "COST_MODEL", "FEATURE_SET_VERSION"]
     blob = json.dumps({k: getattr(C, k) for k in keys} | {"features": feats, "profile": prof}, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode()).hexdigest()[:12]
 
@@ -255,8 +255,17 @@ def reality_check_spa(M, block=4, reps=1000, min_coverage=None, required=None):
 # ------------------------------------------------------------- costs
 def name_costs(panel, order_usd):
     """Per-row one-way cost: FX fee + max(half Corwin-Schultz spread, config half-spread) + square-root impact
-    0.7 x daily vol x sqrt(order $ / ADV $) at the bot's actual order size."""
+    0.7 x daily vol x sqrt(order $ / ADV $) at the bot's actual order size.
+    Cost model v2 (C.COST_MODEL == "v2_quoted", prereg/spread_check_v1.json): where a point-in-time quoted
+    half-spread exists (panel column hs_quoted, else looked up from symbol/date), use max(it, config
+    half-spread) instead of Corwin-Schultz."""
     hs = (panel["cs_spread"] / 2).clip(lower=C.HALF_SPREAD, upper=0.02).fillna(C.HALF_SPREAD)
+    if C.COST_MODEL == "v2_quoted":
+        import quoted_spreads
+        q = panel["hs_quoted"] if "hs_quoted" in panel else quoted_spreads.attach(panel)
+        hs = q.clip(lower=C.HALF_SPREAD, upper=0.02).where(q.notna(), hs)
+    elif C.COST_MODEL != "v1_cs":
+        raise ValueError(f"unknown cost model {C.COST_MODEL!r}")
     dvol = (panel["vol_60"] / math.sqrt(252)).fillna(0.02)
     imp = 0.7 * dvol * np.sqrt(order_usd / panel["adv_dollar"].clip(lower=1e5))
     return (C.FX_FEE + hs + imp).astype("float64")
@@ -734,7 +743,7 @@ def run(profile=None):
          "features": feats, "historical_holdout_status": "PREVIOUSLY_VIEWED_DEVELOPMENT", "sample": {"first_date": str(pd.Timestamp(dates.min()).date()), "last_date": str(pd.Timestamp(dates.max()).date()),
                                        "holdout_start": str(cal[hpos].date()), "rows": int(len(panel)), "symbols": int(panel["symbol"].nunique()),
                                        "decision_dates": int(panel["date"].nunique()), "avg_names_per_date": float(panel.groupby("date").size().mean())},
-         "costs": {"model": "FX fee + max(half Corwin-Schultz spread, config half-spread) + 0.7*daily vol*sqrt(order/ADV$)", "order_size_usd": order_usd,
+         "costs": {"model": "FX fee + max(half Corwin-Schultz spread, config half-spread) + 0.7*daily vol*sqrt(order/ADV$)" if C.COST_MODEL == "v1_cs" else "FX fee + max(quoted 60-session half-spread, config half-spread) [Corwin-Schultz where no quote] + 0.7*daily vol*sqrt(order/ADV$)", "cost_model": C.COST_MODEL, "order_size_usd": order_usd,
                    "order_size_source": order_size_source, "mean_one_way": float(cost.mean()), "median_one_way": float(cost.median()), "fixed_round_trip_v1": C.ROUND_TRIP_COST,
                    'accounting': 'self-financing adjusted-return holdings; all dollar rebalances and liquidation charged',
                    'cost_column': 'gross minus net return drag; transaction_cost separately records paid fees / starting NAV'}}

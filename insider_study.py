@@ -69,6 +69,9 @@ class StudyMarket:
         spread = _cs_spread(hi, lo).rolling(60, min_periods=40).mean()
         cost_input = pd.DataFrame({"cs_spread": spread.to_numpy().ravel(),
                                    "vol_60": vol.to_numpy().ravel(), "adv_dollar": self.adv.to_numpy().ravel()})
+        if C.COST_MODEL == "v2_quoted":  # prereg/spread_check_v1.json
+            import quoted_spreads
+            cost_input["hs_quoted"] = quoted_spreads.wide(self.cal, list(self.adv.columns)).to_numpy().ravel()
         self.costs = {size: pd.DataFrame(
             (name_costs(cost_input, size).to_numpy() + C.SLIPPAGE).reshape(self.adv.shape),
             index=self.cal, columns=self.adv.columns) for size in [SIZE, SIZE * 2]}
@@ -352,7 +355,7 @@ def run(out, acceptances=None, sensitivity_estimates=None, *, audit_only=False):
     registration = {"recipe": REG, "recipe_sha256": digest(PREREG), "sources": source_hashes(),
                     "input_sha256": hashes, "registered_at_utc": datetime.now(timezone.utc).isoformat(),
                     "trial_count": len(TRIALS),
-                    "cost_config": {"fx": C.FX_FEE, "half_spread_floor": C.HALF_SPREAD, "slippage": C.SLIPPAGE}}
+                    "cost_config": {"cost_model": C.COST_MODEL, "fx": C.FX_FEE, "half_spread_floor": C.HALF_SPREAD, "slippage": C.SLIPPAGE}}
     out.mkdir(parents=True, exist_ok=False)
     save_json(out / "registration.json", registration)
     reasons = [f"Missing {name}" for name, present in available.items() if not present]
