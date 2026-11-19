@@ -61,6 +61,31 @@ class MaintainedBootstrapTests(unittest.TestCase):
         matrix = pd.DataFrame({'A': [1.] * 30 + [np.nan] * 30, 'B': [np.nan] * 30 + [2.] * 30})
         self.assertIsNone(multiple_comparison(matrix))
 
+    def test_coverage_screen_drops_sparse_strategy_before_common_periods(self):
+        # prereg/spa_coverage_v1.json: a strategy live in < 90% of periods leaves the joint test
+        rng = np.random.default_rng(3)
+        matrix = pd.DataFrame(rng.normal(.001, .02, size=(60, 2)), columns=['model:ensemble', 'B'])
+        matrix['sparse'] = np.where(np.arange(60) % 2 == 0, .01, np.nan)
+        self.assertIsNone(multiple_comparison(matrix.iloc[:38]))  # without the screen: 19 common periods
+        actual = multiple_comparison(matrix, block=4, reps=99, min_coverage=.9, required='model:ensemble')
+        self.assertEqual(actual['strategies'], 2)
+        self.assertEqual(actual['periods'], 60)
+        self.assertEqual(actual['coverage_screen']['excluded_strategies'], {'sparse': .5})
+        expected = multiple_comparison(matrix[['model:ensemble', 'B']], block=4, reps=99)
+        self.assertEqual(actual['spa_p'], expected['spa_p'])
+        json.dumps(actual, allow_nan=False)
+
+    def test_coverage_measured_on_model_window_and_absent_model_fails_closed(self):
+        # model walk-forward starts late; earlier feature-only periods do not count against it
+        rng = np.random.default_rng(4)
+        matrix = pd.DataFrame({'model:ensemble': [np.nan] * 30 + list(rng.normal(0, .02, 30)),
+                               'B': rng.normal(0, .02, 60), 'C': rng.normal(0, .02, 60)})
+        actual = multiple_comparison(matrix, block=4, reps=99, min_coverage=.9, required='model:ensemble')
+        self.assertEqual((actual['periods'], actual['strategies']), (30, 3))
+        self.assertEqual(actual['coverage_screen']['window_periods'], 30)
+        self.assertEqual(actual['coverage_screen']['excluded_strategies'], {})
+        self.assertIsNone(multiple_comparison(matrix[['B', 'C']], min_coverage=.9, required='model:ensemble'))
+
     def test_unordered_input_rejected(self):
         with self.assertRaises(ValueError):
             multiple_comparison(pd.DataFrame({'A': [1., 2.], 'B': [2., 3.]}, index=[1, 0]))

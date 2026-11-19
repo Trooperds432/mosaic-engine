@@ -49,6 +49,7 @@ GATE_MIN_HOLDOUT_IC_T = 2.0
 GATE_MIN_WF_POSITIVE_YEAR_FRAC = 0.6
 GATE_MIN_DSR = 0.90
 GATE_MAX_PBO = 0.50          # CSCV probability of backtest overfitting (Bailey et al. 2014); fails closed if not computed
+SPA_MIN_COVERAGE = 0.90      # strategy admission to SPA/Reality Check (prereg/spa_coverage_v1.json); fixed before results
 FDR_Q = 0.10
 
 # Signal level

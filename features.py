@@ -987,8 +987,10 @@ def analyst_features(dec_dates, syms, sector_of):
         out["pt_rev_1m_pit"], out["rec_rev_1m_pit"] = pt, rec
     path = PROC / "estimate_vintages.parquet"
     if path.is_file():
-        v = pd.read_parquet(path, columns=["security_id", "consensus_eps", "available_at_utc", "eps_std", "n_estimates"])
-        v = v[v["security_id"].isin(syms)]
+        from pit_estimates import SENSITIVITY, validate
+        v = validate(pd.read_parquet(path, filters=[("security_id", "in", list(syms))]))
+        v = v.loc[v["timestamp_basis"].ne(SENSITIVITY)]
+        v = v.dropna(subset=["eps_std", "n_estimates"]) if {"eps_std", "n_estimates"} <= set(v) else v.iloc[:0]
         disp = blank()
         for sid, g in v.groupby("security_id", sort=False):
             g = g.sort_values("available_at_utc")
@@ -1294,9 +1296,9 @@ def build_panel(include_labels=True, last_n_dates=None, profile=None, symbols=No
     feats["sue_consensus"] = consensus_surprise(dec_dates, syms)
     estimate_path = PROC / "estimate_vintages.parquet"
     if historical and estimate_path.is_file():
-        from pit_estimates import revision_panel, validate
+        from pit_estimates import SENSITIVITY, revision_panel, validate
         vintages = validate(pd.read_parquet(estimate_path, filters=[("security_id", "in", list(syms))]))
-        feats["eps_revision_pit_31d"] = revision_panel(vintages, dec_dates, syms)
+        feats["eps_revision_pit_31d"] = revision_panel(vintages.loc[vintages["timestamp_basis"].ne(SENSITIVITY)], dec_dates, syms)
     if historical:
         feats.update(analyst_features(dec_dates, syms, {s: sic_sector(sic.get(c)) for s, c in sym2cik.items()}))
     feats.update(snapshot_features(dec_dates, syms, pf["vol_60"]))

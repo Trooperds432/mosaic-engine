@@ -4,7 +4,7 @@ import pandas as pd
 
 import config as C
 from features import fundamentals_asof, load_facts
-from pit_estimates import validate, revision
+from pit_estimates import read_primary_quarterly, revision
 
 FACTORS = ["earn_yield", "book_to_mkt", "roa", "earnings_revision"]
 
@@ -16,7 +16,7 @@ def attach(market, events, controls):
     facts = fundamentals_asof(dates, ciks, load_facts(ciks))
     cik_of = {sym: cik for cik, sym in market.sym_of.items()}
     path = C.PROC / "estimate_vintages.parquet"
-    estimates = validate(pd.read_parquet(path)) if path.exists() else None
+    estimates = read_primary_quarterly(path)
     for frame in [events, controls]:
         for factor in FACTORS:
             frame[factor] = np.nan

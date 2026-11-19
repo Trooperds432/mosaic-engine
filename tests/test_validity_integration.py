@@ -35,6 +35,26 @@ class EstimateImportTests(unittest.TestCase):
                 pit_estimates.import_csv(source)
                 self.assertEqual(len(list((C.RAW / "estimate_vintages").glob("*.csv"))), 1)
 
+    def test_calc_dates_cannot_become_primary_even_with_legacy_vendor_label(self):
+        row = {"security_id": "A", "fiscal_period": "2026Q4", "consensus_eps": 2.0,
+               "available_at_utc": "2026-01-01T12:00:00Z", "observed_at_utc": "2026-01-02T12:00:00Z",
+               "timestamp_basis": "vendor_archive", "source": "lseg_codebook:TR.EPSMean",
+               "availability_evidence": "field dictionary", "correction_policy_evidence": "archive policy"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "estimates.csv"
+            pd.DataFrame([row]).to_csv(source, index=False)
+            with patch.object(C, "RAW", root / "raw"), patch.object(C, "PROC", root / "processed"):
+                target = pit_estimates.import_csv(source)
+                self.assertEqual(target.name, "estimate_vintages_sensitivity.parquet")
+                self.assertFalse((C.PROC / "estimate_vintages.parquet").exists())
+                self.assertIsNone(pit_estimates.read_primary_quarterly(target))
+                legacy = root / "legacy.parquet"
+                pd.DataFrame([row]).to_parquet(legacy)
+                self.assertIsNone(pit_estimates.read_primary_quarterly(legacy))
+                pd.DataFrame([{**row, "source": "documented quarterly feed"}]).to_parquet(legacy)
+                self.assertEqual(len(pit_estimates.read_primary_quarterly(legacy)), 1)
+
 
 class HistoricalImportTests(unittest.TestCase):
     def fixture(self, source):

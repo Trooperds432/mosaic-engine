@@ -1,0 +1,22 @@
+{
+  "id": "spa-coverage-v1",
+  "registered_at_utc": "2026-11-15T20:50:34Z",
+  "registered_before_data": "Written before any Hansen SPA or White Reality Check p-value was computed on the survivorship-corrected S&P 500 bundle. Runs B, C and D returned no SPA result (fewer than 20 complete common periods). Per-strategy coverage counts had not been inspected.",
+  "problem": "validation_extensions.multiple_comparison keeps only periods where every strategy has a return. Sector-only single-feature strategies (e.g. semi_cycle) are empty in some periods, so the complete common sample falls below 20 periods and the joint test fails closed.",
+  "rule": {
+    "coverage_definition": "For each strategy column of the primary-horizon walk-forward strategy matrix M (periods x strategies), coverage = share of M's periods with a finite net return.",
+    "admission": "A strategy enters SPA / Reality Check only if coverage >= 0.90. The threshold is fixed here and is not changed after results are seen.",
+    "model_must_enter": "If model:ensemble has coverage < 0.90 or is absent, the joint test is not computed (fails closed).",
+    "common_sample": "After admission, the existing rule applies unchanged: complete common periods only, no zero imputation, >= 20 periods and >= 2 strategies, stationary bootstrap, same block size, reps and seed.",
+    "disclosure": "The result reports the threshold, the number and names of excluded strategies and each one's coverage."
+  },
+  "amendment_2026-11-15T21:05Z": "Made before any SPA p-value on real data was computed. The synthetic pipeline test showed that model strategies start only after the minimum walk-forward training window, while single-feature strategies start at the first decision date, so model:ensemble covered 46% of all periods and the rule as first written would always fail closed. Corrected definition: the matrix is first restricted to the periods where model:ensemble has a finite return (its walk-forward evaluation window); coverage and admission (>= 0.90) are measured on that window. Threshold, required model and every other rule are unchanged.",
+  "unchanged": [
+    "Gate threshold: Hansen SPA p <= 0.10 and both p-values computed on >= 20 common periods (gates.joint_test_failures).",
+    "Deflated Sharpe still counts every strategy tested, including those excluded from SPA.",
+    "PBO (CSCV) keeps its own existing rule (periods with >= 80% of strategies live)."
+  ],
+  "known_bias": "Excluding strategies shrinks the multiple-comparison set, which makes SPA less conservative. Excluded strategies are still counted as trials in DSR and the trial ledger.",
+  "sensitivity": "None. One threshold only, to avoid choosing among thresholds after seeing p-values.",
+  "evaluation": "Exploratory: the holdout has been reused. A passing SPA would not by itself promote anything; every other gate still applies."
+}

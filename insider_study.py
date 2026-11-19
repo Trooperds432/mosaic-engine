@@ -16,7 +16,7 @@ import config as C
 import historical_data as historical
 from features import _cs_spread, sic_sector
 from insider_filings import NY, acceptance_map, available_filings, filing_paths, load_filings
-from pit_estimates import validate
+from pit_estimates import SENSITIVITY, read_primary_quarterly, validate
 from research import name_costs
 from validation_extensions import purged_combinations
 from insider_evaluation import diagnostics, matched_evaluation, portfolio
@@ -316,7 +316,7 @@ def history_run(market, filings, vintages, coverage, out, suffix="", date_only=F
     return report, events
 
 
-def inspect_inputs(acceptances=None):
+def inspect_inputs(acceptances=None, sensitivity_estimates=None):
     bundle = historical.active_bundle()
     spy = C.RAW / "prices" / "SPY.parquet"
     sic = C.PROC / "sic.parquet"
@@ -326,8 +326,10 @@ def inspect_inputs(acceptances=None):
     required = {"historical security bundle": bundle is not None,
                 "SPY price history": spy.exists(), "SEC SIC data": sic.exists(),
                 "SEC non-derivative filings": bool(filings), "SEC company facts": facts.exists(),
-                "PIT estimate vintages": estimates.exists()}
+                "verified quarterly estimate vintages": read_primary_quarterly(estimates) is not None}
     paths = [spy, sic, estimates, facts, *filings]
+    if sensitivity_estimates is not None:
+        paths.append(sensitivity_estimates)
     if bundle is not None:
         for name in ("security_master.parquet", "membership.parquet", "prices.parquet", "terminal.parquet", "coverage.json"):
             path = bundle / name
@@ -340,8 +342,13 @@ def inspect_inputs(acceptances=None):
     return bundle, spy, sic, estimates, filings, required, hashes
 
 
-def run(out, acceptances=None):
-    bundle, spy, sic, estimates, paths, available, hashes = inspect_inputs(acceptances)
+def run(out, acceptances=None, sensitivity_estimates=None, *, audit_only=False):
+    bundle, spy, sic, estimates, paths, available, hashes = inspect_inputs(acceptances, sensitivity_estimates)
+    inferred = None
+    if sensitivity_estimates is not None:
+        inferred = validate(pd.read_parquet(sensitivity_estimates))
+        if inferred.empty or not inferred["timestamp_basis"].eq(SENSITIVITY).all():
+            raise ValueError("estimate sensitivity input must contain only inferred calc-date estimates")
     registration = {"recipe": REG, "recipe_sha256": digest(PREREG), "sources": source_hashes(),
                     "input_sha256": hashes, "registered_at_utc": datetime.now(timezone.utc).isoformat(),
                     "trial_count": len(TRIALS),
@@ -359,7 +366,7 @@ def run(out, acceptances=None):
         count = report["acceptance_coverage"]["unmatched"]
         if count:
             reasons.append(f"{count} Form 4 accessions lack exact timestamp coverage in the supplied sidecar")
-    blocking = set(available) - {"SEC company facts", "PIT estimate vintages"}
+    blocking = set(available) - {"SEC company facts", "verified quarterly estimate vintages"}
     if all(available[key] for key in blocking):
         market = StudyMarket(bundle, spy, sic)
         span = json.loads((bundle / "coverage.json").read_text())
@@ -367,7 +374,10 @@ def run(out, acceptances=None):
         coverage = historical.coverage_check(first_decision, market.observed[-1])
         report["historical_coverage"] = coverage
         reasons.extend(coverage["failed_checks"])
-        vintages = validate(pd.read_parquet(estimates)) if estimates.exists() else None
+        if audit_only:
+            save_json(out / "report.json", report)
+            return report
+        vintages = read_primary_quarterly(estimates)
         filings = load_filings(paths, sorted(set(market.cik.values())),
                                acceptance_map(acceptances) if acceptances else None)
         report["filings"] = {"rows": len(filings), "exact_timestamp_rows": int(filings["accepted"].notna().sum()),
@@ -380,8 +390,11 @@ def run(out, acceptances=None):
         report["date_only_sensitivity"], _ = history_run(market, filings, vintages, span, out, "_date_only", date_only=True)
         report["explicit_non_plan_sensitivity"], _ = history_run(
             market, filings, vintages, span, out, "_explicit_non_plan", explicit_non_plan=True)
+        if inferred is not None:
+            report["inferred_estimate_sensitivity"], _ = history_run(
+                market, filings, inferred, span, out, "_inferred_estimates")
         reasons.extend(report["primary"]["reasons"])
-    if inspect_inputs(acceptances)[-1] != hashes:
+    if inspect_inputs(acceptances, sensitivity_estimates)[-1] != hashes:
         reasons.append("Input files changed during the run. Discard computed statistics and rerun on a stable snapshot.")
     reasons.append("Prospective paper evidence and user review are pending")
     save_json(out / "report.json", report)
@@ -540,6 +553,9 @@ def main():
         command = commands.add_parser(name)
         command.add_argument("--out", type=Path, required=True)
         command.add_argument("--acceptances", type=Path)
+        if name == "historical":
+            command.add_argument("--sensitivity-estimates", type=Path)
+            command.add_argument("--audit-only", action="store_true")
         if name in ("score", "review"):
             command.add_argument("--recipe", type=Path, required=True)
         if name == "score":
@@ -548,7 +564,8 @@ def main():
             command.add_argument("--records", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "historical":
-        print(json.dumps(json_value(run(args.out, args.acceptances)), indent=2))
+        print(json.dumps(json_value(run(args.out, args.acceptances, args.sensitivity_estimates,
+                                            audit_only=args.audit_only)), indent=2))
     elif args.command == "freeze":
         freeze(args.out, args.acceptances)
     elif args.command == "score":

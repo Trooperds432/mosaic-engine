@@ -244,11 +244,12 @@ def pbo_cscv(M, S=10):
     return float(np.mean(np.array(lam) <= 0))
 
 
-def reality_check_spa(M, block=4, reps=1000):
+def reality_check_spa(M, block=4, reps=1000, min_coverage=None, required=None):
     """White (2000) Reality Check and Hansen (2005) consistent SPA p-values for H0: no strategy has positive
-    expected net excess return. M: periods x strategies (non-overlapping)."""
+    expected net excess return. M: periods x strategies (non-overlapping). The primary-horizon gate passes
+    min_coverage=C.SPA_MIN_COVERAGE and required="model:ensemble" (prereg/spa_coverage_v1.json)."""
     from validation_extensions import multiple_comparison
-    return multiple_comparison(M, block=block, reps=reps)
+    return multiple_comparison(M, block=block, reps=reps, min_coverage=min_coverage, required=required)
 
 
 # ------------------------------------------------------------- costs
@@ -987,7 +988,8 @@ def run(profile=None):
                         "ensemble_wf_sr_per_period": st["sr"] if st else None,
                         "psr_vs_zero": psr(st["sr"], 0, st["n"], st["skew"], st["kurt"]) if st else None,
                         "deflated_sharpe_ratio": dsr, "dsr_benchmark_sr": sr0, "min_track_record_periods": min_track_record(st),
-                        "pbo_cscv": safe(pbo_cscv, M), "reality_check_spa": safe(reality_check_spa, M, block=max(2, h // C.DECISION_STEP)),
+                        "pbo_cscv": safe(pbo_cscv, M), "reality_check_spa": safe(reality_check_spa, M, block=max(2, h // C.DECISION_STEP),
+                                                                  min_coverage=C.SPA_MIN_COVERAGE, required="model:ensemble"),
                         "train_vs_test_ic_degradation": (e["walk_forward"]["mean"] - e["holdout"]["mean"]) if e["walk_forward"]["mean"] is not None and e["holdout"]["mean"] is not None else None}
     print("overfitting", R["overfitting"], flush=True)
 
